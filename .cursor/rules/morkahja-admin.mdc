@@ -1,0 +1,18 @@
+---
+description: Morkahja admin tool rules
+alwaysApply: true
+---
+
+Morkahja admin tool rules:
+
+- Keep architecture simple and readable
+- Use TypeScript strictly
+- Prefer functional React components
+- Avoid unnecessary abstractions
+- No overengineered patterns
+- Keep UI dark, minimal, atmospheric
+- Assume backend is authoritative
+- Separate API logic from UI
+- Avoid storing sensitive data in browser
+- Build reusable admin panels and tables
+- Prioritize moderation tools, logs, metrics, and player inspection
