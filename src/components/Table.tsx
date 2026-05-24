@@ -12,6 +12,9 @@ interface TableProps<T> {
   data: T[]
   keyField: keyof T & string
   emptyMessage?: string
+  onRowClick?: (row: T) => void
+  onRowDoubleClick?: (row: T) => void
+  selectedKey?: string
 }
 
 export function Table<T extends object>({
@@ -19,6 +22,9 @@ export function Table<T extends object>({
   data,
   keyField,
   emptyMessage = 'No records found.',
+  onRowClick,
+  onRowDoubleClick,
+  selectedKey,
 }: TableProps<T>) {
   if (data.length === 0) {
     return (
@@ -44,10 +50,19 @@ export function Table<T extends object>({
           </tr>
         </thead>
         <tbody>
-          {data.map((row) => (
+          {data.map((row) => {
+            const rowKey = String(row[keyField])
+            const isSelected = selectedKey === rowKey
+            return (
             <tr
-              key={String(row[keyField])}
-              className="border-b border-gold/5 transition-colors last:border-0 hover:bg-ash/40"
+              key={rowKey}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              onDoubleClick={
+                onRowDoubleClick ? () => onRowDoubleClick(row) : undefined
+              }
+              className={`border-b border-gold/5 transition-colors last:border-0 ${
+                onRowClick ? 'cursor-pointer hover:bg-ash/40' : 'hover:bg-ash/40'
+              } ${isSelected ? 'bg-gold/10' : ''}`}
             >
               {columns.map((col) => (
                 <td
@@ -60,7 +75,7 @@ export function Table<T extends object>({
                 </td>
               ))}
             </tr>
-          ))}
+          )})}
         </tbody>
       </table>
     </div>

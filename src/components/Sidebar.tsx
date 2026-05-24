@@ -39,7 +39,7 @@ export function Sidebar() {
         </ul>
       </nav>
       <p className="border-t border-gold/10 px-5 py-4 text-[10px] uppercase tracking-widest text-fog/70">
-        Mock data only
+        Local console · 127.0.0.1
       </p>
     </aside>
   )

@@ -1,4 +1,4 @@
-export type PlayerStatus = 'online' | 'offline' | 'banned' | 'muted'
+export type PlayerStatus = 'online' | 'offline' | 'banned' | 'timed_out'
 
 export interface Player {
   id: string
@@ -7,42 +7,32 @@ export interface Player {
   level: number
   realm: string
   lastSeen: string
+  isOnline: boolean
+  activeAvatar?: string
+  /** ISO timestamp when timeout ends; null if not timed out */
+  timeoutUntil?: string | null
+  banReason?: string
+  avatarCount?: number
+  createdAt?: string
 }
 
-export type LogLevel = 'info' | 'warn' | 'error' | 'audit'
+export type ActivityImportance = 'low' | 'normal' | 'high'
 
-export interface LogEntry {
+export interface ActivityFeedItem {
   id: string
   timestamp: string
-  level: LogLevel
-  source: string
+  playerName: string
   message: string
-}
-
-export type ReportStatus = 'open' | 'reviewing' | 'resolved' | 'dismissed'
-
-export interface Report {
-  id: string
-  reporter: string
-  target: string
-  reason: string
-  status: ReportStatus
-  createdAt: string
+  importance: ActivityImportance
+  category: 'encounter' | 'moderation' | 'social' | 'system'
 }
 
 export interface DashboardStats {
   onlinePlayers: number
-  activeReports: number
+  timedOutPlayers: number
+  bannedPlayers: number
   eventsToday: number
   serverUptime: string
-}
-
-export interface WorldMetric {
-  id: string
-  label: string
-  value: string
-  trend: 'up' | 'down' | 'stable'
-  detail?: string
 }
 
 export interface ServerStatus {
@@ -51,3 +41,27 @@ export interface ServerStatus {
   version: string
   region: string
 }
+
+export interface TimeoutPlayerRequest {
+  playerId: string
+  durationMinutes: number
+  reason?: string
+}
+
+export interface BanPlayerRequest {
+  playerId: string
+  reason?: string
+}
+
+export interface ModerationResult {
+  ok: boolean
+  playerId: string
+  message: string
+}
+
+export type {
+  PlayerAchievement,
+  PlayerDetail,
+  PlayerDetailAvatar,
+  PlayerEncounterEvent,
+} from './playerDetail'

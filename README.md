@@ -1,14 +1,13 @@
 # Morkahja Admin
 
-Dark, minimal admin dashboard for the Morkahja realm — React, TypeScript, and Vite.
+Local-only admin console for Morkahja — online players, moderation, live activity, and game content.
 
-## Stack
+## Features
 
-- React + TypeScript (Vite)
-- React Router
-- TanStack Query (data fetching)
-- Zustand (UI state)
-- Tailwind CSS v4
+- **Dashboard** — online counts + live activity feed (5s refresh)
+- **Players** — online list (5s refresh), timeout, ban, unban
+- **Content** — browse/add encounters, solutions, expansions, frames, portraits
+- **Settings** — connection info for VPS + game data paths
 
 ## Development
 
@@ -17,17 +16,48 @@ npm install
 npm run dev
 ```
 
-## Structure
+Open http://127.0.0.1:5180 (local only). Override with `DEV_PORT` in `.env.local`.
 
-```
-src/
-  components/   # Shared UI (Table, layout chrome)
-  layouts/      # Admin shell
-  pages/        # Route views
-  services/     # API layer (mock data for now)
-  stores/       # Client UI state
-  types/        # Shared TypeScript types
-  utils/        # Helpers
+## `.env.local` example
+
+```env
+# VPS admin API (moderation + activity)
+VITE_USE_MOCK_DATA=false
+VITE_API_BASE_URL=/api
+API_PROXY_TARGET=https://YOUR_VPS:PORT
+ADMIN_API_KEY=your-key
+
+# Game JSON + images from MorkahjaWebApp (while client dev server runs)
+VITE_GAME_DATA_URL=/game
+GAME_DATA_PROXY=http://127.0.0.1:5174
 ```
 
-Mock data only — connect `src/services/adminApi.ts` to your backend when ready.
+Game files live under `MorkahjaWebApp/client/public/game/`:
+
+- `encountersdata.json`, `encounterimages/`
+- `solutiondata.json`, `solutionimages/`
+- `expansiondata.json`, `frames.json`, `portraits.json`
+
+## VPS admin API
+
+Live server path: `/game-data/admin` (matches existing nginx — set `VITE_API_BASE_URL=/game-data/admin`).
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/server` | Server status |
+| GET | `/dashboard` | Stats |
+| GET | `/players/online` | Online players |
+| GET | `/players` | All players |
+| GET | `/activity` | Live feed entries |
+| POST | `/players/timeout` | `{ playerId, durationMinutes, reason? }` |
+| POST | `/players/ban` | `{ playerId, reason? }` |
+| POST | `/players/unban` | `{ playerId }` |
+| GET/POST | `/content/encounters` | Game encounters |
+| GET/POST | `/content/solutions` | Game solutions |
+| GET/POST | `/content/expansions` | Expansions |
+| GET/POST | `/content/frames` | Avatar frames |
+| GET/POST | `/content/portraits` | Avatar portraits |
+
+Types: `src/types/index.ts`, `src/types/gameContent.ts`.
+
+Without VPS routes, use `VITE_USE_MOCK_DATA=true` to test moderation UI locally.
