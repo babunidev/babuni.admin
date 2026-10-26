@@ -1,5 +1,7 @@
 # Morkahja Admin
 
+**Author:** Babuni.dev
+
 Local-only admin console for Morkahja — online players, moderation, live activity, and game content.
 
 ## Features
