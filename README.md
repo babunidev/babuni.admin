@@ -63,3 +63,11 @@ Live server path: `/game-data/admin` (matches existing nginx — set `VITE_API_B
 Types: `src/types/index.ts`, `src/types/gameContent.ts`.
 
 Without VPS routes, use `VITE_USE_MOCK_DATA=true` to test moderation UI locally.
+
+## Development documentation
+
+- [Concept](CONCEPT.md) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md)
+- [Architecture](docs/ARCHITECTURE.md) · [Design evidence](docs/DECISIONS.md) · [Development journal](docs/DEVLOG.md)
+- [AI collaborator rules](AGENTS.md)
+
+The journal distinguishes source-based reconstruction, author direction, AI assistance, and independently verified behavior.
