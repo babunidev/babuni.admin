@@ -50,3 +50,14 @@
 - Which current P0 issues should be handled before any production connection?
 
 No code changes, infrastructure changes or tests were made during the Oct 26 documentation-only pass.
+
+## Audit #38 — documentation-only checkpoint (2026-10-28)
+
+- [x] Recheck core documentation against the current package and Vite configuration.
+- [x] Retain the comprehensive October 26 security and design audit instead of rewriting it.
+- [ ] Execute `npm run build` and `npm run lint` in a safe development checkout; record actual output, dependency versions and commit.
+- [ ] Test privileged middleware boundaries, browser-exposed settings and authentication with fixtures only, before any trusted connection.
+- [ ] Verify local game-data edits against an isolated copy, then decide on backup/versioning and rollback rules before production use.
+- [ ] Resolve the creator's still-open decisions on local-only operation, mock fallback, permissions and operator audit trails.
+
+The current `package.json` does not define a dedicated `test` script. Nothing in this checkpoint is an approval to connect to or modify real player data.
