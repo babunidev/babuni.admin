@@ -119,3 +119,9 @@ Morkahja Admin stores navigation/sidebar state in Zustand and uses TanStack Quer
 - [AI collaboration and provenance](docs/AI_COLLABORATION.md) · [Developer instructions](AGENTS.md)
 
 The creator's vision and the project's code history are documented separately from this AI-assisted analysis. Source features are marked **implemented**, not **tested** or **production approved**.
+
+## Documentation continuity check — audit #38 (2026-10-28)
+
+This repository already received a detailed eleven-file documentation audit on October 26. The present follow-up **does not replace that history**. It verifies the key project boundary against current source: the application is **Morkahja Admin**, while `arcanitebrothers` is the package/repository name; the interface is a privileged local development tool, not a public player portal. The package presently declares version `0.0.0` and exposes `dev`, `build`, `lint` and `preview` scripts, but no standalone automated test script.
+
+**Security remains open:** `vite.config.ts` unconditionally registers the local-content middleware; the local PostgreSQL admin middleware is registered when `VITE_DATABASE_URL` is configured. Neither browser-visible `VITE_` secrets nor the localhost binding should be treated as an access-control policy. No live service, content directory or database was accessed during audit #38.
