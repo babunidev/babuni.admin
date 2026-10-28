@@ -76,3 +76,9 @@ In remote mode, content API behavior is not fully reconciled: `fetchPortraits` a
 8. Server status labels and 5-second refreshes are not substitutes for successful connection/write tests.
 
 The actual environment, network binding beyond the checked Vite config, and backend authorization were not tested in the current audit.
+
+## Configuration recheck — audit #38 (2026-10-28)
+
+`vite.config.ts` currently binds development and preview hosts to `127.0.0.1`, with respective default ports 5180 and 4180. The local-content middleware is registered unconditionally, while `morkahjaLocalAdminPlugin` is added only if `VITE_DATABASE_URL` has a value. The remote proxy can inject `ADMIN_API_KEY` on server-side forwarded requests. These configurations **do not themselves establish operator authorization** for local content or database mutation endpoints.
+
+`package.json` exposes `dev`, `build`, `lint` and `preview` scripts with version `0.0.0`; no `test` script is defined. This review did not run any command or inspect actual environment values. Previously listed credential-exposure and file-write concerns remain open, rather than being newly discovered incidents.
