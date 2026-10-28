@@ -25,3 +25,9 @@ Commits `169a1af`, `99cdd36`, `93d0360`, `c9fc2b7` added author credit and short
 ## Verification convention
 
 Record client/server environment, fixture data, test commands, observed output, modified files and commit SHA for every later implementation. The current Git history establishes code and textual milestones, not that the app was deployed, tested with live accounts or approved for general access.
+
+## 2026-10-28 — Audit #38 documentation checkpoint
+
+- Revisited existing eleven-file documentation and rechecked package metadata and Vite middleware configuration against the October 26 assessment.
+- Preserved the original May implementation chronology, authorial direction and unresolved privileged-tool risks.
+- Added targeted clarifications only; no code, assets, credentials, external game files or databases changed. No build or live test executed.
