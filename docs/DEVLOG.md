@@ -58,3 +58,11 @@ On **2026-10-26**, commits `169a1af` and `99cdd36` added Babuni.dev credit in do
 Before Morkahja Admin is connected to sensitive live data as a trusted production console, how will secrets be isolated from the browser? Which backend enforces authorization? How will moderation decisions be audited and rolled back? How will content changes be reviewed and versioned across repositories? These are design and engineering questions for Babuni.dev to decide, not silent decisions made by the assistant.
 
 The portfolio can eventually show that the creation of a game includes its production tools, the experiments that got them working, the risks recognized along the way and the collaboration methods that made later changes reviewable.
+
+## 2026-10-28 — Audit #38: review without rewriting the past
+
+This checkpoint encountered a project whose documentation had already been meaningfully reconstructed two days earlier. The original audit had recorded the May 23 mock-dashboard scaffold, the May 24 expansion into player and content operations, and the uncomfortable boundary between a visually useful local workbench and a truly secure administrative interface. Repeating that narrative as if it were newly discovered would obscure rather than enrich the development record.
+
+Instead, the follow-up read the current package and Vite configuration. The app still declares a `0.0.0` package version and scripts for development, build, lint and preview, but no dedicated test command. Its local-content middleware is registered in the Vite plugins regardless of a UI-level content toggle; the database middleware is conditionally registered when a database URL exists. That is relevant source evidence, not a demonstrated security breach or proof of current deployment.
+
+**Babuni.dev direction:** Continue the numbered documentation audits while preserving creative decisions and Git evidence. **AI contribution:** Verify the existing narrative against selected configuration and append a limited checkpoint rather than manufacture fresh history. **Verification:** Static GitHub file inspection only. **Unchanged:** Code, external game content, credentials and all live player records.
