@@ -33,3 +33,7 @@ For every consequential decision or implementation, record:
 Distinguish documentation-only commits from frontend, backend, database and external game-data changes. Avoid publishing raw private conversations, real players' account information, database connection strings, API keys, operational hosts, or screenshots containing confidential moderation data.
 
 No code, secrets or real account data were changed or retrieved in the October 26 documentation pass.
+
+## Audit #38 — 28 October 2026
+
+**Creator request:** Continue to the next repository while following the established documentation-audit method. **AI action:** Revisit Morkahja Admin's previous detailed record, check selected current source and add a narrow evidence-based checkpoint. **Creative history:** The May scaffold-to-content-workbench transition and the dark, practical interface are preserved as previously documented; no old conversations or approvals are invented. **Changes:** Markdown documentation only. **Verification:** Repository configuration inspected; no frontend tests, backend requests, moderation actions, database access or game-content writes occurred.
