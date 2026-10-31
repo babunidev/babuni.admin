@@ -31,3 +31,7 @@ Record client/server environment, fixture data, test commands, observed output, 
 - Revisited existing eleven-file documentation and rechecked package metadata and Vite middleware configuration against the October 26 assessment.
 - Preserved the original May implementation chronology, authorial direction and unresolved privileged-tool risks.
 - Added targeted clarifications only; no code, assets, credentials, external game files or databases changed. No build or live test executed.
+
+## 2026-10-31 — Publication preparation
+
+Recorded Babuni.dev’s direction to publish the actual project after review and retire its separate documentation edition afterwards. Confirmed the existing standard document structure; added `docs/PUBLISHING.md`. No runtime or visibility changes.

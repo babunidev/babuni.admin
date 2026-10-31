@@ -1,8 +1,10 @@
-# Morkahja Admin — local game operations console
+# Babuni Admin — local game operations console
 
 **Creator / creative director:** Babuni.dev  
-**Repository / npm package:** `arcanitebrothers`  
-**App title:** **Morkahja Admin**  
+**Repository:** `babunidev/babuni.admin`
+**Historical npm package name:** `arcanitebrothers`
+**Current project name:** **Babuni Admin**
+**Existing application UI title:** **Morkahja Admin**
 **Stack:** React 19, TypeScript, Vite 8, React Router, TanStack Query, Zustand, Tailwind CSS 4  
 **Status:** Source-backed development tool; not independently executed or security-audited during the 2026-10-26 documentation review.
 
@@ -125,3 +127,7 @@ The creator's vision and the project's code history are documented separately fr
 This repository already received a detailed eleven-file documentation audit on October 26. The present follow-up **does not replace that history**. It verifies the key project boundary against current source: the application is **Morkahja Admin**, while `arcanitebrothers` is the package/repository name; the interface is a privileged local development tool, not a public player portal. The package presently declares version `0.0.0` and exposes `dev`, `build`, `lint` and `preview` scripts, but no standalone automated test script.
 
 **Security remains open:** `vite.config.ts` unconditionally registers the local-content middleware; the local PostgreSQL admin middleware is registered when `VITE_DATABASE_URL` is configured. Neither browser-visible `VITE_` secrets nor the localhost binding should be treated as an access-control policy. No live service, content directory or database was accessed during audit #38.
+
+## Public repository preparation — 31 October 2026
+
+The standard documentation is maintained in this actual project repository. See [publication preparation](docs/PUBLISHING.md) for the current review, remaining permissions and migration order. Visibility has not changed.

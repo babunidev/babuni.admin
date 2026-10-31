@@ -34,3 +34,7 @@ The repository ships mock player objects and activity examples for interface dev
 Before merging future changes, verify ID ranges, encounter-solution cross-references, required fields, external filenames and image types, duplicate key behavior, schema compatibility with MorkahjaWebApp, backup/rollback, and actual save tests. A TypeScript interface alone is not runtime schema validation.
 
 The 2026-10-26 documentation pass did not read or modify game content files, actual player data, or media assets.
+
+## 2026-10-31 — Publication boundaries
+
+The existing standard documentation is the project source for the future portfolio connection. See [publication preparation](PUBLISHING.md). Preserve contributor credits, canonical-source boundaries and original journals. No private findings, live records or secret values are copied into the portfolio.

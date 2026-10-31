@@ -44,3 +44,7 @@ These are static-review concerns and must not be described as confirmed breaches
 6. Which first security and deployment changes should be prioritized for an actual production workflow?
 
 Record human accept/reject/postpone decisions, implementation commits and test proof when they happen.
+
+## 2026-10-31 — Canonical repository publication direction
+
+Babuni.dev chose the actual project repository as the intended public source, replacing the earlier documentation-only edition once review and anonymous access succeed. Retain the current public edition during the transition. License and third-party redistribution decisions remain explicit author decisions.

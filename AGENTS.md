@@ -1,6 +1,6 @@
 # Morkahja Admin — instructions for future human and AI developers
 
-**Creative authority and project creator:** Babuni.dev. The repo is `arcanitebrothers`; the application is `Morkahja Admin`.
+**Creative authority and project creator:** Babuni.dev. The current repository is `babunidev/babuni.admin`, publicly named **Babuni Admin**. `arcanitebrothers` is the historical package/repository name; existing application UI may still say `Morkahja Admin`.
 
 ## Start with the actual architecture
 
