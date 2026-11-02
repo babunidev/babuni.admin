@@ -1,8 +1,8 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './layouts/AdminLayout'
-import { ContentPage } from './pages/ContentPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { PlayersPage } from './pages/PlayersPage'
+import { ContentPage } from './features/morkahja/pages/ContentPage'
+import { DashboardPage } from './features/morkahja/pages/DashboardPage'
+import { PlayersPage } from './features/morkahja/pages/PlayersPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {

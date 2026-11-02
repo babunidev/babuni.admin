@@ -1,24 +1,24 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ContentDetailPanel } from '../components/ContentDetailPanel'
+import { ContentDetailPanel } from '../../../components/ContentDetailPanel'
 import {
   ContentImageGrid,
   type ContentGridItem,
-} from '../components/ContentImageGrid'
-import { EncounterDetailPanel } from '../components/EncounterDetailPanel'
-import { EncounterEditorPanel } from '../components/EncounterEditorPanel'
-import { PageHeader } from '../components/PageHeader'
-import { SolutionDetailPanel } from '../components/SolutionDetailPanel'
-import { Table, type Column } from '../components/Table'
-import { buildEncounterDetail } from '../utils/encounterDetail'
-import { createDefaultEncounterDraft } from '../utils/gameDataReference'
+} from '../../../components/ContentImageGrid'
+import { EncounterDetailPanel } from '../../../components/EncounterDetailPanel'
+import { EncounterEditorPanel } from '../../../components/EncounterEditorPanel'
+import { PageHeader } from '../../../components/PageHeader'
+import { SolutionDetailPanel } from '../../../components/SolutionDetailPanel'
+import { Table, type Column } from '../../../components/Table'
+import { buildEncounterDetail } from '../../../utils/encounterDetail'
+import { createDefaultEncounterDraft } from '../../../utils/gameDataReference'
 import {
   formatGenderId,
   formatRaceId,
   formatRoleId,
-} from '../utils/contentLabels'
-import { ImageUploadField } from '../components/ImageUploadField'
+} from '../../../utils/contentLabels'
+import { ImageUploadField } from '../../../components/ImageUploadField'
 import {
   encounterImageUrl,
   expansionImageUrl,
@@ -27,7 +27,7 @@ import {
   portraitImageUrl,
   solutionImageUrl,
   useLocalContent,
-} from '../config/constants'
+} from '../../../config/constants'
 import {
   createEncounter,
   createExpansion,
@@ -41,14 +41,14 @@ import {
   fetchSolutions,
   uploadEncounterImageFromTitle,
   uploadSolutionImage,
-} from '../services/contentApi'
+} from '../../../services/contentApi'
 import type {
   EncounterData,
   ExpansionData,
   FrameData,
   PortraitData,
   SolutionData,
-} from '../types/gameContent'
+} from '../../../types/gameContent'
 
 type Tab = 'encounters' | 'solutions' | 'expansions' | 'frames' | 'portraits'
 
