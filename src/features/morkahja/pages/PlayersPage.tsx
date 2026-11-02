@@ -12,7 +12,7 @@ import {
   fetchPlayersWithMeta,
   formatPlayersLoadError,
 } from '../../../services/adminApi'
-import type { Player } from '../types'
+import type { Player } from '../../../types'
 import { formatDateTime, formatRelative } from '../../../utils/format'
 import { countOnlinePlayers, sortPlayersForList } from '../../../utils/players'
 
