@@ -4,9 +4,11 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'vite'
+import { createServer as createHttpServer } from 'node:http'
 
 let tempRoot
 let server
+let apiServer
 let base
 let failDb = false
 const players = new Map([['fixture-1', { id: 'fixture-1', name: 'Fixture Player', status: 'online' }]])
@@ -61,17 +63,33 @@ before(async () => {
   server = await createServer({
     configFile: false,
     logLevel: 'error',
-    server: { host: '127.0.0.1', port: 0, strictPort: false },
+    server: { middlewareMode: true },
   })
   const content = await server.ssrLoadModule('/vite/localContentPlugin.ts')
   const admin = await server.ssrLoadModule('/vite/localAdminPlugin.ts')
-  content.morkahjaLocalContentPlugin(tempRoot).configureServer(server)
-  admin.morkahjaLocalAdminPlugin('fixture-only-no-database', operations).configureServer(server)
-  await server.listen()
-  base = 'http://127.0.0.1:' + server.httpServer.address().port
+  const handlers = []
+  const harness = { middlewares: { use: handler => handlers.push(handler) } }
+  content.morkahjaLocalContentPlugin(tempRoot).configureServer(harness)
+  admin.morkahjaLocalAdminPlugin('fixture-only-no-database', operations).configureServer(harness)
+  apiServer = createHttpServer((req, res) => {
+    let index = 0
+    const next = () => {
+      const handler = handlers[index++]
+      if (handler) handler(req, res, next)
+      else {
+        res.statusCode = 404
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify({ error: 'NOT_FOUND' }))
+      }
+    }
+    next()
+  })
+  await new Promise(resolve => apiServer.listen(0, '127.0.0.1', resolve))
+  base = 'http://127.0.0.1:' + apiServer.address().port
 })
 
 after(async () => {
+  await new Promise(resolve => apiServer?.close(resolve) ?? resolve())
   await server?.close()
   if (tempRoot) await rm(tempRoot, { recursive: true, force: true })
 })
