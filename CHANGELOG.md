@@ -1,3 +1,22 @@
+# Babuni Admin — Changelog
+
+## 2026-11-03 — Multi-project workspace migration (source only)
+
+- Established `src/features/morkahja/`, `src/features/babuni-dev/`, `src/app/` and `src/shared/` as initial project boundaries.
+- Relocated Morkahja's Dashboard/Players/Content pages, domain components, service adapters, types and utilities under its workspace.
+- Updated the central router/imports; retained transitional re-export files for older paths and existing route URLs.
+- Added `docs/MULTI_PROJECT_ARCHITECTURE.md`; documented the phased migration.
+- Targeted relative-import checks were reported. A full TypeScript build, lint, functional regression test and production deployment were **not** performed or verified as part of these changes.
+
+## 2026-11-03 — Platform and content-management planning (documentation only)
+
+- Recorded Babuni's decision to expand the Morkahja workbench into one multi-project Babuni Admin.
+- Defined the proposed Babuni Dev workspace: GitHub document synchronization, Markdown editing/previews, revision comparison and targeted publication.
+- Documented proposed backend authentication, project isolation, auditing, AI operation boundaries and rollback.
+- Updated concept, roadmap, architecture, decisions and development history. No new editor, API, publishing operation or game-data change implemented by this documentation update.
+
+## Earlier source history
+
 # Morkahja Admin — Git-based changelog
 
 **Creator:** Babuni.dev. Dates are repository commit dates, not assertions of deployment or test success.
