@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, mkdir, readFile, readdir, rm, writeFile, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'vite'
@@ -263,7 +263,8 @@ test('client content adapter rejects HTTP 200 with explicit failed save acknowle
 test('filesystem write failures return non-success and preserve original fixture data', async () => {
   const path = join(tempRoot, 'game', 'encountersdata.json')
   const initial = await readFile(path, 'utf8')
-  await chmod(path, 0o444)
+  const directory = join(tempRoot, 'game')
+  await chmod(directory, 0o555)
   try {
     const result = await request(content('encounters'), {
       key: '00077', data: { mEncounterID: 77, mEncounterTitle: 'Should not persist' },
@@ -272,6 +273,56 @@ test('filesystem write failures return non-success and preserve original fixture
     assert.notEqual(result.body.ok, true)
     assert.equal(await readFile(path, 'utf8'), initial)
   } finally {
-    await chmod(path, 0o644)
+    await chmod(directory, 0o755)
+  }
+})
+
+test('all local admin and file endpoints refuse cross-origin requests', async () => {
+  for (const route of [admin('players'), content('encounters')]) {
+    const response = await fetch(base + route, {
+      headers: { Origin: 'http://external.example', 'Sec-Fetch-Site': 'cross-site' },
+    })
+    assert.equal(response.status, 403)
+    assert.equal((await response.json()).error, 'LOCAL_ONLY')
+  }
+})
+
+test('oversized request bodies fail without writing data', async () => {
+  const original = await readFile(join(tempRoot,'game','frames.json'),'utf8')
+  const payload = { frameID: 3, padding: 'A'.repeat(9 * 1024 * 1024) }
+  const response = await request(content('frames'), payload)
+  assert.equal(response.status, 413)
+  assert.equal(await readFile(join(tempRoot,'game','frames.json'),'utf8'), original)
+})
+
+test('successful updates preserve a versioned backup, and recovery restores it', async () => {
+  const file = join(tempRoot,'game','frames.json')
+  const before = await readFile(file)
+  const response = await request(content('frames'), {frameID:5,name:'Changed'})
+  assert.equal(response.status, 201)
+  const names = await readdir(join(tempRoot,'game'))
+  const backups = names.filter(name => name.startsWith('frames.json.bak-'))
+  assert.ok(backups.length > 0)
+  const latest = join(tempRoot,'game',backups[backups.length-1])
+  assert.deepEqual(await readFile(latest), before)
+  const writes = await server.ssrLoadModule('/vite/atomicGameWrites.ts')
+  writes.restoreBackup(file,latest)
+  assert.deepEqual(await readFile(file),before)
+})
+
+test('symlinked content targets cannot be overwritten through local API', async () => {
+  const victim = join(tempRoot,'game','safe-victim.json')
+  await writeFile(victim,'{"safe":true}')
+  const target = join(tempRoot,'game','portraits.json')
+  await rm(target)
+  await symlink(victim,target)
+  try {
+    const result = await request(content('portraits'),{avatarID:1,name:'Unsafe'})
+    assert.equal(result.status, 500)
+    assert.notEqual(result.body.ok,true)
+    assert.equal(await readFile(victim,'utf8'),'{"safe":true}')
+  } finally {
+    await rm(target)
+    await writeFile(target,JSON.stringify({Avatar:[]}))
   }
 })
