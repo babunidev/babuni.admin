@@ -1,3 +1,3 @@
-// Transitional import compatibility. Prefer the app/shared workspace path.
+// Transitional import compatibility for the shared application shell.
 // eslint-disable-next-line react-refresh/only-export-components
-export * from '../shared/components/Sidebar'
+export { Sidebar } from '../app/Sidebar'
