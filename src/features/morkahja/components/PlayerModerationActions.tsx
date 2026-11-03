@@ -44,7 +44,6 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
       invalidate()
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Moderation failed'),
-
   })
 
   const banMutation = useMutation({
@@ -60,7 +59,6 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
       invalidate()
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Moderation failed'),
-
   })
 
   const unbanMutation = useMutation({
@@ -70,7 +68,6 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
       invalidate()
     },
     onError: (error) => setMessage(error instanceof Error ? error.message : 'Moderation failed'),
-
   })
 
   const busy =
@@ -157,6 +154,12 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
               />
             </label>
 
+            {(timeoutMutation.isError || banMutation.isError) && message && (
+              <p className="mt-3 text-sm text-red-300" role="alert">
+                {message}
+              </p>
+            )}
+
             <div className="mt-5 flex justify-end gap-2">
               <button
                 type="button"
@@ -182,7 +185,7 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
         </div>
       )}
 
-      {message && (
+      {message && !open && (
         <span className="w-full text-xs text-fog" role={timeoutMutation.isError || banMutation.isError || unbanMutation.isError ? "alert" : "status"}>
           {message}
         </span>
