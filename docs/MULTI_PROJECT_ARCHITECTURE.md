@@ -29,3 +29,9 @@ Compatibility re-export files remain at the previous component and service paths
 AI moved the active layout, sidebar and UI state into `src/app/`, and placed generic heading, table, badge, connection-banner and formatting controls in `src/shared/`. Current Morkahja route definitions and server-status top bar were separated into `src/features/morkahja/`. Legacy module exports remain temporarily; page URLs and the visible game-specific header are intentionally unchanged. A sixth source-level regression check verifies the route/navigation composition and shared-component locations.
 
 The initial refactor produced a broken sidebar compatibility export. After correcting it, [run 41563231632](https://github.com/babunidev/babuni.admin/actions/runs/41563231632) passed `npm ci`, `npm run build`, `npm run lint` and six regression tests for source commit `3fd29b1`. Actual browser navigation, live backend and remote administration remain outside the current test evidence.
+
+## Workspace navigation — 2026-11-03
+
+At Babuni's direction, AI added URL-driven workspace switching and project-specific sidebar links. Morkahja still uses its original URLs; Babuni Dev uses `/babuni-dev` and exposes only an overview placeholder. The project header switches with the workspace, without mounting Morkahja's status-query header in Babuni Dev. This is frontend navigation, not project-based authentication or permissions.
+
+[CI run 41563642755](https://github.com/babunidev/babuni.admin/actions/runs/41563642755) passed the build, lint and eight source-level regression tests at source commit `4f9b2ed`. Live data, actual browser navigation and production deployment were not tested.

@@ -1,5 +1,15 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — Workspace selector and project navigation
+
+- Added a sidebar workspace selector driven by the browser URL with Morkahja and Babuni Dev options.
+- Added `/babuni-dev` as a non-editable overview and its own navigation definition.
+- Preserved original Morkahja route URLs, navigation links, and server-status header.
+- Gave Babuni Dev a separate header without Morkahja player/server queries.
+- Extended the test suite from six to eight tests covering workspace selection, route boundaries and placeholder isolation.
+- [CI run 41563642755](https://github.com/babunidev/babuni.admin/actions/runs/41563642755) passed `npm ci`, TypeScript/Vite build, ESLint and all eight regression tests for `4f9b2ed`.
+- No authenticated backend, GitHub editing, content publication, real browser test or deployment was performed.
+
 ## 2026-11-03 — Shared application boundaries
 
 - Relocated the layout, sidebar, Zustand UI store and app navigation composition to `src/app/`.

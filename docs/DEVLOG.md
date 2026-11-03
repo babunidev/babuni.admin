@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Moving between workspaces
+
+With the shared shell in place, the next step was to make the two project areas navigable without disturbing the Morkahja tools. At my direction, AI added a workspace selector to the sidebar, separated the navigation links by project, and gave Babuni Dev an overview page. The selection follows the URL, so direct links and browser history can identify the same workspace. Morkahja retains its established routes and server-status header; the Babuni Dev view explicitly says its content editor and publishing features are not available yet.
+
+AI also added two regression checks for the workspace resolution and routing structure. [GitHub Actions run 41563642755](https://github.com/babunidev/babuni.admin/actions/runs/41563642755) passed TypeScript/Vite, ESLint and all eight tests for source commit `4f9b2ed`. These results verify the code and source contracts, not user-driven browser navigation, server authorization or production publishing. No live website or game data was changed.
+
 ## 2026-11-03 — Separating the interface from the game
 
 A shared administration application needs boundaries that reflect what belongs to one project and what can be used by all of them. With Morkahja's domain already grouped together, I directed the next change toward the layout, reusable controls and navigation. AI moved the active layout, sidebar and UI state into `src/app/`, placed common tables, badges, headers, connection notices and formatting into `src/shared/`, and kept Morkahja's navigation entries and server-status display with the game workspace. Its existing routes and visible labels were deliberately preserved rather than presenting unfinished multi-project switching as available.

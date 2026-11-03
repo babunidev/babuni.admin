@@ -2,6 +2,14 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-03 — Workspace switching without premature backend access
+
+**Decided and implemented:** Use URL-derived frontend workspace selection rather than independent persisted selection state. Morkahja keeps its historical paths; Babuni Dev is available at `/babuni-dev` with an informational overview. Separate navigation sets and headers prevent Morkahja's game-server status panel from showing in Babuni Dev.
+
+**Deliberately excluded:** No GitHub editor, publishing button, portfolio data request or new privileged endpoint exists in Babuni Dev yet. Workspace selection is a user-interface concern, not server-enforced authorization. Future project permissions must be implemented and tested independently.
+
+**Verification:** [CI run 41563642755](https://github.com/babunidev/babuni.admin/actions/runs/41563642755) passed build, lint and eight automated tests for commit `4f9b2ed`; browser interaction and live administrative behavior remain unverified.
+
 ## 2026-11-03 — Shared shell, project-owned information
 
 **Implemented:** The layout, sidebar, navigation composition and sidebar state are application concerns. Generic tables, notices, badges, headings and formatting are shared resources. Morkahja-specific link definitions and server-health status display remain in its workspace. This avoids making the shared shell import game data directly, except for the explicit current-workspace top-bar composition, and does not pretend project switching exists.

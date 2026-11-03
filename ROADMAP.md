@@ -22,9 +22,10 @@ A GitHub Actions check on 2026-11-03 subsequently **passed** `npm ci` and `npm r
 - [x] Add initial automated regression tests for player ordering, encounter drafts/details, in-memory moderation and route declarations. Five tests passed in [CI run 41552579859](https://github.com/babunidev/babuni.admin/actions/runs/41552579859).
 - [ ] Expand coverage to rendered components, navigation, backend adapters and isolated game-data writes; verify complete Morkahja workflows.
 - [x] Separate the active application layout, sidebar, UI store, and navigation composition into `src/app/`; move generic controls and formatting to `src/shared/`, and Morkahja navigation/status to its feature folder. [CI verification](https://github.com/babunidev/babuni.admin/actions/runs/41563231632).
-- [ ] Introduce project workspaces and project-specific navigation, retaining old Morkahja URLs through a compatibility plan.
+- [x] Add URL-driven workspace selection, separate Morkahja/Babuni Dev navigation, and a non-operational Babuni Dev overview. Keep existing Morkahja URLs and status bar intact. [CI: 8 tests, build, lint passed](https://github.com/babunidev/babuni.admin/actions/runs/41563642755).
+- [ ] Add real workspace authorization/permissions and Babuni Dev content operations after the secure backend is implemented.
 - [ ] Replace transitional re-export imports with direct feature imports, then remove unused shims.
-- [ ] Keep the Babuni Dev workspace inactive until its content operations are designed and authorized.
+- [x] Keep Babuni Dev content operations inactive: the new overview is explicitly a placeholder and cannot edit or publish.
 - [ ] Update architecture/decisions/changelog/journal alongside actual verified changes.
 
 ## Phase 2 — Secure administration backend

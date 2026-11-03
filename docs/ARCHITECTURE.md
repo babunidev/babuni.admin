@@ -6,7 +6,7 @@ Babuni Admin remains a React 19, TypeScript and Vite 8 frontend with React Route
 
 ```text
 src/
-  App.tsx                     # existing router, routes not yet separated by project
+  App.tsx                     # legacy Morkahja routes + Babuni Dev overview
   layouts/                    # transitional compatibility export
   features/
     morkahja/
@@ -16,8 +16,11 @@ src/
       services/               # Morkahja domain data adapters
       types/                  # game and player types
       utils/                  # domain utilities
-    babuni-dev/               # reserved only; no editor implemented
-  app/                        # AdminLayout, Sidebar, navigation, uiStore
+    babuni-dev/
+      navigation.ts            # overview-only navigation
+      pages/OverviewPage.tsx  # static placeholder; no content API
+  app/                        # layout, URL-derived workspace switcher,
+                              # sidebar, project-aware header, uiStore
   shared/
     components/               # PageHeader, Table, StatusBadge, ConnectionBanner
     utils/                    # generic formatting
@@ -26,7 +29,13 @@ src/
 vite/                         # development-only privileged middleware
 ```
 
-Morkahja's historical pages and adapters are implemented in source, but the build, lint and six source-level tests passed in GitHub Actions for the shell extraction; browser and database verification are still missing. No production API, cross-project navigation or live content publisher exists yet.
+Morkahja's historical pages and adapters are implemented in source, but the build, lint and six source-level tests passed in GitHub Actions for the shell extraction; browser and database verification are still missing. Frontend-only workspace switching and separate navigation now exist; a secure production API, workspace authorization and live content publisher do not.
+
+## Workspace routing and current behavior
+
+The sidebar reads `useLocation().pathname` and selects the active workspace from `src/app/navigation.ts`; switching navigates to its canonical home. `/babuni-dev` renders the non-editable Babuni Dev overview with a separate non-querying header. The original `/`, `/players`, `/players/:playerId`, `/content`, `/content/:kind/:itemKey` and `/settings` still render Morkahja. The Morkahja header retains its existing server and database status queries; Babuni Dev does not mount that header. Current navigation is **not** an authorization mechanism.
+
+The eight source-level regression tests, TypeScript/Vite build and ESLint passed in [CI run 41563642755](https://github.com/babunidev/babuni.admin/actions/runs/41563642755) on commit `4f9b2ed`. No browser-driven end-to-end navigation, authenticated remote access, player mutation, or publishing was tested.
 
 ## Proposed platform design (not implemented)
 
