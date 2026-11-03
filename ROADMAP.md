@@ -2,9 +2,9 @@
 
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  
-**Status (2026-11-03):** Phase 1 is partially implemented; remaining phases are planned, not deployed or accepted as complete.
+**Status (2026-11-03):** Phase 1 modular restructuring and the initial automated verification milestone are complete. Production readiness and full Morkahja workflow verification remain open; later phases are planned.
 
-## Completed in source (not runtime-verified)
+## Initial restructuring completed (verification scope detailed below)
 
 - [x] Preserve the Morkahja Dashboard, Players, Content and Settings routes during the initial restructuring.
 - [x] Create `src/features/morkahja/`, `src/features/babuni-dev/`, `src/app/`, and `src/shared/` boundaries.
@@ -28,9 +28,19 @@ GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine reg
 - [ ] Add real workspace authorization/permissions and Babuni Dev content operations after the secure backend is implemented.
 - [x] Replace historical shim imports with direct feature/shared paths and remove all 33 obsolete re-export files. CI verified TypeScript/Vite build, lint and nine tests, including an import-integrity regression. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784).
 - [x] Keep Babuni Dev content operations inactive: the new overview is explicitly a placeholder and cannot edit or publish.
-- [ ] Update architecture/decisions/changelog/journal alongside actual verified changes.
+- [x] Complete the final Phase 1 source/CI verification review and record residual risks in the roadmap, changelog, development journal and architecture. See [Phase 1 verification report](docs/PHASE1_VERIFICATION.md) and [latest passing CI](https://github.com/babunidev/babuni.admin/actions/runs/41645348546).
 
-- [ ] Review and remediate dependency security advisories separately, then rerun all checks.
+- [ ] Audit and remediate dependency advisories (23 reported by latest `npm ci`: 8 high, 14 moderate, 1 low), then rerun all checks.
+
+### Final Phase 1 review — verified versus outstanding
+
+- [x] Confirm retained routes, workspace navigation, mock views, service error handling and isolated content saves via the automated test suites; **not** a blanket guarantee that all legacy functions remain intact.
+- [x] Review architecture and document specific security, data-integrity, dependency and test-coverage risks.
+- [x] Update roadmap, changelog and development journal with an evidence-linked review.
+- [ ] Verify real PostgreSQL queries, atomic moderation/session changes and the rendered content editors against disposable fixtures.
+- [ ] Close security and dependency release blockers before any remote/admin production access.
+
+Full findings: [docs/PHASE1_VERIFICATION.md](docs/PHASE1_VERIFICATION.md).
 
 ## Phase 2 — Secure administration backend
 

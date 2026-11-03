@@ -2,6 +2,14 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-03 — Phase 1 completion boundary
+
+**Review outcome:** The initial modular restructuring and source/mock verification milestone can be recorded as complete, as evidenced by [CI run 41645348546](https://github.com/babunidev/babuni.admin/actions/runs/41645348546). It is not an authorization to expose the administrator to remote access or real sensitive data.
+
+**Unresolved engineering decisions:** A secure authentication/permission boundary, server-only credentials, transaction and rollback strategy, compatibility with legacy game schemas, and a dependency remediation plan require implementation and verification. The proposed Phase 2 backend architecture is not yet an approved production design.
+
+**Documentation:** [Phase 1 verification report](PHASE1_VERIFICATION.md) separates the tested interface from the still-unverified administrative behaviors.
+
 ## 2026-11-03 — Isolated administration fixtures
 
 **Direction:** Verify existing Morkahja operations without touching live accounts, game files or the VPS. AI implemented a localhost HTTP harness around actual development middleware, injected in-memory player services, and temporary JSON/image files.

@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Closing the first structural milestone
+
+With the workspace migration, direct-import cleanup and isolated tests in place, I wanted a final check of what could actually be considered finished. AI reviewed the current repository, the latest successful build and test logs, and the remaining administrative boundaries. All 23 automated tests passed, alongside the build and lint checks, so the initial modular restructuring and mock-based verification can be recorded as complete.
+
+That result does not make the old Morkahja tools production-safe. The review found that development middleware can still write without an application-level authorization layer, PostgreSQL moderation and session revocation are not transactional, and game files are overwritten without recovery guarantees. Real database workflows, the full editor interface and dependency advisories remain open. Rather than calling Phase 1 fully verified, I am retaining those limitations as explicit work before a secure administration backend can be deployed. The findings are recorded in [the Phase 1 review](PHASE1_VERIFICATION.md), supported by [CI run 41645348546](https://github.com/babunidev/babuni.admin/actions/runs/41645348546).
+
 ## 2026-11-03 — Testing the work behind the buttons
 
 After the browser checks confirmed that navigation and the mock player table rendered, I wanted evidence that Morkahja's administrative actions also handled failures sensibly. AI built an isolated HTTP test harness around the existing local middleware, using temporary game files and injected player records instead of touching the actual database or game installation. The checks exercise moderation, the five content record types, WebP uploads and simulated failures.
