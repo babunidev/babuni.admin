@@ -39,7 +39,7 @@ test('encounter editor saves a new record into isolated legacy data', async () =
   await withPage(async page => {
     await page.getByRole('button',{name:'Add encounter',exact:true}).click()
     const dialog = page.getByRole('dialog',{name:'Add encounter'})
-    await dialog.getByLabel('Encounter ID').fill('49123')
+    await dialog.getByRole('spinbutton',{name:/^Encounter ID/}).fill('49123')
     await dialog.getByLabel('Title').fill('Browser fixture encounter')
     await dialog.getByRole('button',{name:'Save encounter'}).click()
     await page.getByRole('dialog',{name:'Add encounter'}).waitFor({state:'hidden'})
