@@ -61,8 +61,9 @@ export default defineConfig(({ mode }) => {
           '/local-connections-api': {
             target: 'http://127.0.0.1:' + (env.BABUNI_LOCAL_SERVICE_PORT || '5191'),
             changeOrigin: true,
-            configure: (proxyServer: { on: (event: string, cb: (proxyReq: { setHeader: (name: string, value: string) => void }) => void) => void }) => {
-              proxyServer.on('proxyReq', proxyReq => {
+            configure: (proxyServer: unknown) => {
+              const typedProxy = proxyServer as { on: (event: string, cb: (proxyReq: { setHeader: (name: string, value: string) => void }) => void) => void }
+              typedProxy.on('proxyReq', proxyReq => {
                 proxyReq.setHeader('X-Babuni-Service-Key', env.BABUNI_LOCAL_SERVICE_TOKEN)
               })
             },
