@@ -23,7 +23,7 @@ export function AdminLayout() {
       )}
       <div
         className={`fixed inset-y-0 left-0 z-50 transition-transform duration-200 lg:static lg:translate-x-0 ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+          sidebarOpen ? 'translate-x-0 visible' : '-translate-x-full invisible lg:visible'
         }`}
       >
         <Sidebar />
