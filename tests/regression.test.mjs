@@ -14,7 +14,7 @@ async function load(relativePath) {
       compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
       fileName: absolute,
     }).outputText
-    const matches = [...js.matchAll(/from ['"](\\.[^'"]+)['"]/g)]
+    const matches = [...js.matchAll(/from ['"](\.[^'"]+)['"]/g)]
     for (const match of matches) {
       const child = await compile(resolve(dirname(absolute), match[1] + '.ts'))
       js = js.replace(match[0], 'from ' + JSON.stringify(child))
