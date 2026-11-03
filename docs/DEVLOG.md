@@ -1,5 +1,13 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — First local view of Babuni Dev
+
+After pulling the updated repository to my computer, I launched the development server and opened the new Babuni Dev workspace in the browser. The workspace selector, dedicated header, overview navigation and informational placeholder all appeared as expected. The screenshot below records that first visible check; it was provided by me and added to the repository by AI as a reduced, cropped WebP for documentation.
+
+![Babuni Dev workspace open in the local administration interface](screenshots/babuni-dev-workspace-2026-11-03.webp)
+
+This verifies the appearance of one local page, not successful navigation back to Morkahja, full browser interaction tests, access controls or content publishing.
+
 ## 2026-11-03 — Moving between workspaces
 
 With the shared shell in place, the next step was to make the two project areas navigable without disturbing the Morkahja tools. At my direction, AI added a workspace selector to the sidebar, separated the navigation links by project, and gave Babuni Dev an overview page. The selection follows the URL, so direct links and browser history can identify the same workspace. Morkahja retains its established routes and server-status header; the Babuni Dev view explicitly says its content editor and publishing features are not available yet.
