@@ -13,11 +13,12 @@
 - [x] Perform targeted relative-import checks for the migrated files.
 - [x] Record the migration and known limits in `docs/MULTI_PROJECT_ARCHITECTURE.md`.
 
-These checks do **not** establish a successful TypeScript build, lint pass, browser regression or safe moderation/content writes.
+A GitHub Actions check on 2026-11-03 subsequently **passed** `npm ci` and `npm run build` (TypeScript project build and Vite production output). ESLint, browser regression and safe moderation/content writes remain unverified.
 
 ## Phase 1 — Finish modular architecture and verify existing behavior
 
-- [ ] Run `npm ci`, `npm run build` and `npm run lint` against the current `main` revision; fix issues without altering existing functionality.
+- [x] Run `npm ci` and `npm run build` against the corrected `main` revision in GitHub Actions; fix four TypeScript imports caused by the folder migration. [Successful run](https://github.com/babunidev/babuni.admin/actions/runs/41551602985).
+- [ ] Run `npm run lint` and resolve any lint issues.
 - [ ] Add automated route/component/service tests; verify existing Morkahja workflows against fixtures and isolated game data.
 - [ ] Establish explicit shared application shell and navigation boundaries.
 - [ ] Introduce project workspaces and project-specific navigation, retaining old Morkahja URLs through a compatibility plan.
