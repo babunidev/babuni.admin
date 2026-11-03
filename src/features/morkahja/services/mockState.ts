@@ -114,7 +114,7 @@ const initialPlayers: Player[] = [
   },
 ]
 
-let players = structuredClone(initialPlayers)
+const players = structuredClone(initialPlayers)
 
 export const mockServerStatus: ServerStatus = {
   label: 'Morkahja Prime',

@@ -84,7 +84,11 @@ export function ContentPage() {
     itemKey?: string
   }>()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<Tab>('encounters')
+  const [tab, setTab] = useState<Tab>(() =>
+    kindParam && tabs.some((entry) => entry.id === kindParam)
+      ? (kindParam as Tab)
+      : 'encounters',
+  )
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const queryClient = useQueryClient()
@@ -94,9 +98,7 @@ export function ContentPage() {
       ? (kindParam as Tab)
       : undefined
 
-  useEffect(() => {
-    if (detailKind) setTab(detailKind)
-  }, [detailKind])
+  const activeTab = detailKind ?? tab
 
   const closeDetail = () => navigate('/content')
   const openItem = (contentTab: Tab, key: string) => {
@@ -107,8 +109,8 @@ export function ContentPage() {
     queryKey: ['content', 'encounters'],
     queryFn: fetchEncounters,
     enabled:
-      tab === 'encounters' ||
-      tab === 'solutions' ||
+      activeTab === 'encounters' ||
+      activeTab === 'solutions' ||
       detailKind === 'encounters' ||
       detailKind === 'solutions',
   })
@@ -116,27 +118,27 @@ export function ContentPage() {
     queryKey: ['content', 'solutions'],
     queryFn: fetchSolutions,
     enabled:
-      tab === 'solutions' ||
-      tab === 'encounters' ||
+      activeTab === 'solutions' ||
+      activeTab === 'encounters' ||
       detailKind === 'solutions',
   })
   const expansionsQuery = useQuery({
     queryKey: ['content', 'expansions'],
     queryFn: fetchExpansions,
     enabled:
-      tab === 'expansions' ||
-      tab === 'encounters' ||
+      activeTab === 'expansions' ||
+      activeTab === 'encounters' ||
       detailKind === 'expansions',
   })
   const framesQuery = useQuery({
     queryKey: ['content', 'frames'],
     queryFn: fetchFrames,
-    enabled: tab === 'frames' || detailKind === 'frames',
+    enabled: activeTab === 'frames' || detailKind === 'frames',
   })
   const portraitsQuery = useQuery({
     queryKey: ['content', 'portraits'],
     queryFn: fetchPortraits,
-    enabled: tab === 'portraits' || detailKind === 'portraits',
+    enabled: activeTab === 'portraits' || detailKind === 'portraits',
   })
 
   const encounterRows = useMemo(() => {
@@ -345,7 +347,7 @@ export function ContentPage() {
               if (itemKey) closeDetail()
             }}
             className={`rounded border px-3 py-1.5 text-sm transition ${
-              tab === item.id
+              activeTab === item.id
                 ? 'border-gold/40 bg-gold/15 text-gold-bright'
                 : 'border-gold/15 text-fog hover:text-parchment'
             }`}
@@ -355,7 +357,7 @@ export function ContentPage() {
         ))}
       </div>
 
-      {tab === 'encounters' ? (
+      {activeTab === 'encounters' ? (
         <div className="mb-4 flex flex-wrap items-center gap-3">
           <input
             type="search"
@@ -381,7 +383,7 @@ export function ContentPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={
-            tab === 'frames' || tab === 'portraits'
+            activeTab === 'frames' || activeTab === 'portraits'
               ? 'Search by id, name, race, or role…'
               : 'Search by id, key, or title…'
           }
@@ -389,7 +391,7 @@ export function ContentPage() {
         />
       )}
 
-      {tab === 'encounters' && (
+      {activeTab === 'encounters' && (
         <div className="space-y-8">
           <p className="text-xs text-fog/80">
             Click a row for details, Edit (or double-click) to change text, image, and
@@ -447,7 +449,7 @@ export function ContentPage() {
         </div>
       )}
 
-      {tab === 'solutions' && (
+      {activeTab === 'solutions' && (
         <div className="space-y-8">
           <p className="text-xs text-fog/80">
             Click an icon to view full description and linked encounters.
@@ -568,7 +570,7 @@ export function ContentPage() {
         </div>
       )}
 
-      {tab === 'expansions' && (
+      {activeTab === 'expansions' && (
         <ExpansionPanel
           data={expansionsQuery.data?.expansions ?? {}}
           search={search}
@@ -580,7 +582,7 @@ export function ContentPage() {
         />
       )}
 
-      {tab === 'frames' && (
+      {activeTab === 'frames' && (
         <FramesPanel
           data={framesQuery.data?.Frames ?? []}
           search={search}
@@ -592,7 +594,7 @@ export function ContentPage() {
         />
       )}
 
-      {tab === 'portraits' && (
+      {activeTab === 'portraits' && (
         <PortraitsPanel
           data={portraitsQuery.data?.Avatar ?? []}
           search={search}
