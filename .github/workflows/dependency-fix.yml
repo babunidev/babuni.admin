@@ -1,0 +1,42 @@
+name: Apply compatible npm security fixes (hardening branch)
+on:
+  push:
+    branches:
+      - hardening/phase1-security-and-fixtures-2026-11-03
+permissions:
+  contents: write
+jobs:
+  compatible-lockfile-fixes:
+    if: "!contains(github.event.head_commit.message, 'chore: apply compatible npm audit fixes')"
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hardening/phase1-security-and-fixtures-2026-11-03
+          persist-credentials: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Generate compatible dependency updates without forced major changes
+        run: |
+          npm audit fix --package-lock-only --ignore-scripts || test "$?" -eq 1
+          git diff --stat -- package-lock.json
+      - name: Verify compatible dependency changes before committing
+        run: |
+          npm ci
+          npm run build
+          npm run lint
+          npm test
+          npm run test:integration
+      - name: Commit reviewed-branch lockfile updates only
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "No compatible lockfile fixes proposed."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "chore: apply compatible npm audit fixes"
+          git push origin HEAD:refs/heads/hardening/phase1-security-and-fixtures-2026-11-03
