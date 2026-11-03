@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Checking the code rules after the move
+
+After confirming TypeScript could build the reorganized application, I wanted its lint checks addressed as well. AI added ESLint to the GitHub Actions workflow and the first run identified twelve errors. Ten came from the temporary re-export files kept for compatibility, while two concerned content-tab state and a mock-data variable. Rather than disable linting across the project, AI marked the specific compatibility exports, adjusted the tab selection to derive its active value from the route without synchronously setting state in an effect, and corrected the declaration. A newly unused effect import also had to be removed after the first retest.
+
+[GitHub Actions run 41552146789](https://github.com/babunidev/babuni.admin/actions/runs/41552146789) passed dependency installation, the TypeScript/Vite build and ESLint for commit `72a3169`. This confirms the source checks, not the actual behavior of the Morkahja screens or privileged operations. The compatibility files and separate browser regression work remain.
+
 The administration workbench began with Morkahja, but the growing collection of projects has made a wider structure useful. These entries tell the story from my perspective: what I wanted, what I decided, what AI implemented, and what evidence exists. Earlier source-only history is retained below rather than silently presented as a personal recollection.
 
 ## 2026-11-03 — Checking that the reorganized project still builds
