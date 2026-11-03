@@ -43,6 +43,8 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
       setReason('')
       invalidate()
     },
+    onError: (error) => setMessage(error instanceof Error ? error.message : 'Moderation failed'),
+
   })
 
   const banMutation = useMutation({
@@ -57,6 +59,8 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
       setReason('')
       invalidate()
     },
+    onError: (error) => setMessage(error instanceof Error ? error.message : 'Moderation failed'),
+
   })
 
   const unbanMutation = useMutation({
@@ -65,6 +69,8 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
       setMessage(result.message)
       invalidate()
     },
+    onError: (error) => setMessage(error instanceof Error ? error.message : 'Moderation failed'),
+
   })
 
   const busy =
@@ -177,7 +183,7 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
       )}
 
       {message && (
-        <span className="w-full text-xs text-fog" role="status">
+        <span className="w-full text-xs text-fog" role={timeoutMutation.isError || banMutation.isError || unbanMutation.isError ? "alert" : "status"}>
           {message}
         </span>
       )}
