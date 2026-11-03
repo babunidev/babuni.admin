@@ -9,7 +9,7 @@ import type {
   ServerStatus,
   TimeoutPlayerRequest,
 } from '../../../types'
-import type { PlayerDetail } from '../../../types/playerDetail'
+import type { PlayerDetail } from '../types/playerDetail'
 import { getMockPlayerDetail } from './mockPlayerDetail'
 import { apiGet, apiPost } from '../../../services/http'
 import {

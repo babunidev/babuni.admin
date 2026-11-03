@@ -3,7 +3,7 @@ import {
   encounterImageUrl,
   solutionImageUrl,
 } from '../../../config/constants'
-import type { EncounterData, EncounterMap, SolutionData } from '../../../types/gameContent'
+import type { EncounterData, EncounterMap, SolutionData } from '../types/gameContent'
 import { ContentDetailPanel } from './ContentDetailPanel'
 
 interface SolutionDetailPanelProps {

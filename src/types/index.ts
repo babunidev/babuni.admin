@@ -64,4 +64,4 @@ export type {
   PlayerDetail,
   PlayerDetailAvatar,
   PlayerEncounterEvent,
-} from './playerDetail'
+} from '../features/morkahja/types/playerDetail'

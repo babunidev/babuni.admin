@@ -6,8 +6,8 @@ import type {
   FramesDataFile,
   PortraitsDataFile,
   SolutionMap,
-} from '../../../types/gameContent'
-import { imageFileToWebpBase64 } from '../../../utils/imageFileToWebpBase64'
+} from '../types/gameContent'
+import { imageFileToWebpBase64 } from '../utils/imageFileToWebpBase64'
 import { apiPost } from '../../../services/http'
 
 const LOCAL_API = '/local-content-api'

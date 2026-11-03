@@ -1,4 +1,4 @@
-import type { PlayerDetail } from '../../../types/playerDetail'
+import type { PlayerDetail } from '../types/playerDetail'
 import { getMockPlayers } from './mockState'
 
 export function getMockPlayerDetail(playerId: string): PlayerDetail | null {
