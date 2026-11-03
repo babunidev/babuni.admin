@@ -8,6 +8,7 @@ import {
 import { join, normalize, resolve } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
+import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard'
 import { resolveEncounterImageBase } from './encounterImageNaming'
 
 const JSON_FILES = {
@@ -47,15 +48,6 @@ function decodeWebp(value: unknown): Buffer | null {
       bytes.subarray(8, 12).toString() !== 'WEBP' ||
       bytes.readUInt32LE(4) + 8 !== bytes.length) return null
   return bytes
-}
-
-function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolvePromise, reject) => {
-    const chunks: Buffer[] = []
-    req.on('data', (chunk: Buffer) => chunks.push(chunk))
-    req.on('end', () => resolvePromise(Buffer.concat(chunks).toString('utf8')))
-    req.on('error', reject)
-  })
 }
 
 function sendJson(res: ServerResponse, status: number, data: unknown): void {
@@ -126,6 +118,8 @@ function localContentApi(
       return
     }
 
+    if (rejectNonLocalRequest(req, res)) return
+
     const route = url.slice(apiPrefix.length).split('?')[0] ?? ''
     const segment = route.replace(/^\//, '')
 
@@ -148,7 +142,7 @@ function localContentApi(
 
         if (req.method === 'POST' && segment in JSON_FILES) {
           const kind = segment as ContentKind
-          const body = JSON.parse(await readBody(req)) as Record<string, unknown>
+          const body = JSON.parse(await readLimitedBody(req)) as Record<string, unknown>
           if (!body || typeof body !== 'object' || Array.isArray(body)) {
             sendJson(res, 400, { error: 'INVALID_BODY' })
             return
@@ -221,7 +215,7 @@ function localContentApi(
         }
 
         if (req.method === 'POST' && segment === 'upload/encounter-image') {
-          const body = JSON.parse(await readBody(req)) as {
+          const body = JSON.parse(await readLimitedBody(req)) as {
             fileName?: string
             encounterTitle?: string
             encounterId?: number
@@ -267,7 +261,7 @@ function localContentApi(
         }
 
         if (req.method === 'POST' && segment === 'upload/solution-image') {
-          const body = JSON.parse(await readBody(req)) as {
+          const body = JSON.parse(await readLimitedBody(req)) as {
             fileName?: string
             dataBase64?: string
           }
@@ -288,7 +282,7 @@ function localContentApi(
         sendJson(res, 404, { error: 'NOT_FOUND' })
       } catch (error) {
         const message = error instanceof Error ? error.message : 'LOCAL_API_ERROR'
-        sendJson(res, 500, { error: message })
+        sendJson(res, error && typeof error === 'object' && 'status' in error && error.status === 413 ? 413 : 500, { error: message })
       }
     })()
   }

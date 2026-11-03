@@ -1,5 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
+import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard'
 
 import {
   banPlayerInPostgres,
@@ -12,15 +13,6 @@ import {
   timeoutPlayerInPostgres,
   unbanPlayerInPostgres,
 } from './postgresAdmin'
-
-function readBody(req: IncomingMessage): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const chunks: Buffer[] = []
-    req.on('data', (chunk: Buffer) => chunks.push(chunk))
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
-    req.on('error', reject)
-  })
-}
 
 function sendJson(res: ServerResponse, status: number, data: unknown): void {
   res.statusCode = status
@@ -67,6 +59,8 @@ export function morkahjaLocalAdminPlugin(
           next()
           return
         }
+
+        if (rejectNonLocalRequest(req, res)) return
 
         const route = url.slice(apiPrefix.length).split('?')[0] ?? ''
         const segment = route.replace(/^\//, '')
@@ -129,7 +123,7 @@ export function morkahjaLocalAdminPlugin(
             }
 
             if (req.method === 'POST' && segment === 'players/timeout') {
-              const body = JSON.parse(await readBody(req)) as {
+              const body = JSON.parse(await readLimitedBody(req)) as {
                 playerId?: string
                 durationMinutes?: number
                 reason?: string
@@ -153,7 +147,7 @@ export function morkahjaLocalAdminPlugin(
             }
 
             if (req.method === 'POST' && segment === 'players/ban') {
-              const body = JSON.parse(await readBody(req)) as {
+              const body = JSON.parse(await readLimitedBody(req)) as {
                 playerId?: string
                 reason?: string
               }
@@ -175,7 +169,7 @@ export function morkahjaLocalAdminPlugin(
             }
 
             if (req.method === 'POST' && segment === 'players/unban') {
-              const body = JSON.parse(await readBody(req)) as { playerId?: string }
+              const body = JSON.parse(await readLimitedBody(req)) as { playerId?: string }
               if (!body.playerId) {
                 sendJson(res, 400, { error: 'INVALID_BODY' })
                 return
@@ -196,7 +190,7 @@ export function morkahjaLocalAdminPlugin(
           } catch (error) {
             const message =
               error instanceof Error ? error.message : 'LOCAL_ADMIN_ERROR'
-            sendJson(res, 500, { error: message })
+            sendJson(res, error && typeof error === 'object' && 'status' in error && error.status === 413 ? 413 : 500, { error: message })
           }
         })()
       })
