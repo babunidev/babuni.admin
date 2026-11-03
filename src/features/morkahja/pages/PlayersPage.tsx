@@ -1,20 +1,20 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
-import { PlayerDetailPanel } from '../../../components/PlayerDetailPanel'
-import { ConnectionBanner } from '../../../components/ConnectionBanner'
-import { PageHeader } from '../../../components/PageHeader'
-import { PlayerModerationActions } from '../../../components/PlayerModerationActions'
-import { StatusBadge } from '../../../components/StatusBadge'
-import { Table, type Column } from '../../../components/Table'
+import { PlayerDetailPanel } from '../components/PlayerDetailPanel'
+import { ConnectionBanner } from '../../../shared/components/ConnectionBanner'
+import { PageHeader } from '../../../shared/components/PageHeader'
+import { PlayerModerationActions } from '../components/PlayerModerationActions'
+import { StatusBadge } from '../../../shared/components/StatusBadge'
+import { Table, type Column } from '../../../shared/components/Table'
 import { PLAYERS_POLL_MS, useLocalPostgres } from '../../../config/constants'
 import {
   fetchPlayersWithMeta,
   formatPlayersLoadError,
-} from '../../../services/adminApi'
+} from '../services/adminApi'
 import type { Player } from '../../../types'
-import { formatDateTime, formatRelative } from '../../../utils/format'
-import { countOnlinePlayers, sortPlayersForList } from '../../../utils/players'
+import { formatDateTime, formatRelative } from '../../../shared/utils/format'
+import { countOnlinePlayers, sortPlayersForList } from '../utils/players'
 
 const columns: Column<Player>[] = [
   {

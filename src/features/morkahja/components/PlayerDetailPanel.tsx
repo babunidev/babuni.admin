@@ -1,11 +1,11 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { fetchPlayerDetail } from '../../../services/adminApi'
-import type { PlayerDetail, PlayerDetailAvatar } from '../../../types/playerDetail'
-import { formatAchievementId } from '../../../utils/achievementLabels'
-import { formatDateTime, formatRelative } from '../../../utils/format'
+import { fetchPlayerDetail } from '../services/adminApi'
+import type { PlayerDetail, PlayerDetailAvatar } from '../types/playerDetail'
+import { formatAchievementId } from '../utils/achievementLabels'
+import { formatDateTime, formatRelative } from '../../../shared/utils/format'
 import { PlayerModerationActions } from './PlayerModerationActions'
-import { StatusBadge } from '../../../components/StatusBadge'
+import { StatusBadge } from '../../../shared/components/StatusBadge'
 
 interface PlayerDetailPanelProps {
   playerId: string

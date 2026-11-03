@@ -4,13 +4,13 @@ import {
   encounterImageUrl,
   solutionImageUrl,
 } from '../../../config/constants'
-import type { EncounterDetail, EncounterSolutionSlotDetail } from '../../../types/encounterDetail'
-import type { SolutionData } from '../../../types/gameContent'
+import type { EncounterDetail, EncounterSolutionSlotDetail } from '../types/encounterDetail'
+import type { SolutionData } from '../types/gameContent'
 import {
   formatEncounterType,
   formatRewardType,
   formatSolutionTypeLabel,
-} from '../../../utils/encounterDetail'
+} from '../utils/encounterDetail'
 
 interface EncounterDetailPanelProps {
   detail: EncounterDetail

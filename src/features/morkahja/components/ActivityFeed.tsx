@@ -1,9 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
 import { ACTIVITY_POLL_MS } from '../../../config/constants'
-import { fetchActivityFeed } from '../../../services/adminApi'
+import { fetchActivityFeed } from '../services/adminApi'
 import type { ActivityFeedItem } from '../../../types'
-import { formatDateTime } from '../../../utils/format'
-import { StatusBadge } from '../../../components/StatusBadge'
+import { formatDateTime } from '../../../shared/utils/format'
+import { StatusBadge } from '../../../shared/components/StatusBadge'
 
 function importanceTone(item: ActivityFeedItem): string {
   if (item.importance === 'high') return 'border-gold/25 bg-gold/5'

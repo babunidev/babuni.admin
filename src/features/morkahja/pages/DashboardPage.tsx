@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
-import { ActivityFeed } from '../../../components/ActivityFeed'
-import { PageHeader } from '../../../components/PageHeader'
-import { StatCard } from '../../../components/StatCard'
+import { ActivityFeed } from '../components/ActivityFeed'
+import { PageHeader } from '../../../shared/components/PageHeader'
+import { StatCard } from '../components/StatCard'
 import { PLAYERS_POLL_MS } from '../../../config/constants'
 import {
   fetchDashboardStats,
   fetchOnlinePlayers,
-} from '../../../services/adminApi'
+} from '../services/adminApi'
 
 export function DashboardPage() {
   const { data: stats } = useQuery({

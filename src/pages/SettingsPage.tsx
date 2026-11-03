@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
-import { ConnectionBanner } from '../components/ConnectionBanner'
-import { PageHeader } from '../components/PageHeader'
+import { ConnectionBanner } from '../shared/components/ConnectionBanner'
+import { PageHeader } from '../shared/components/PageHeader'
 import {
   apiBaseUrl,
   apiPrefix,
@@ -14,7 +14,7 @@ import {
   useLocalContent,
   useLocalPostgres,
 } from '../config/constants'
-import { formatPlayersLoadError } from '../services/adminApi'
+import { formatPlayersLoadError } from '../features/morkahja/services/adminApi'
 
 export function SettingsPage() {
   const dbHealth = useQuery({

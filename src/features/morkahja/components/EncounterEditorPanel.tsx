@@ -6,7 +6,7 @@ import {
   REWARD_TYPES,
   SOLUTION_TYPE_GROUPS,
 } from '../utils/gameDataReference'
-import { ImageUploadField } from '../../../components/ImageUploadField'
+import { ImageUploadField } from './ImageUploadField'
 
 const inputClass =
   'w-full rounded border border-gold/20 bg-ash px-3 py-2 text-sm text-parchment'
