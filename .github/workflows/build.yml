@@ -52,3 +52,42 @@ jobs:
           cat /tmp/babuni-preview.log
           exit 1
       - run: npm run test:browser
+
+  audit:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Audit all locked dependencies
+        run: npm audit --json > "$RUNNER_TEMP/npm-audit-all.json" || test $? -eq 1
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --json > "$RUNNER_TEMP/npm-audit-prod.json" || test $? -eq 1
+      - name: Summarize advisories and suggested fixes
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs'
+          for (const [scope, path] of [
+            ['all', process.env.RUNNER_TEMP + '/npm-audit-all.json'],
+            ['production', process.env.RUNNER_TEMP + '/npm-audit-prod.json'],
+          ]) {
+            const audit = JSON.parse(readFileSync(path, 'utf8'))
+            console.log('AUDIT_SCOPE', scope, 'COUNTS', JSON.stringify(audit.metadata?.vulnerabilities ?? {}))
+            for (const [name, entry] of Object.entries(audit.vulnerabilities ?? {}).sort((a,b) => a[0].localeCompare(b[0]))) {
+              console.log('AUDIT_PACKAGE', JSON.stringify({
+                scope, name, severity: entry.severity, isDirect: entry.isDirect,
+                range: entry.range, via: entry.via.map(v => typeof v === 'string'
+                  ? v : { title: v.title, url: v.url, range: v.range, severity: v.severity, name: v.name }),
+                effects: entry.effects, fixAvailable: entry.fixAvailable,
+              }))
+            }
+            if (audit.error) {
+              console.error('AUDIT_ERROR', scope, JSON.stringify(audit.error))
+              process.exitCode = 1
+            }
+          }
+          NODE
