@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — ESLint and migration cleanup
+
+- Added `npm run lint` to the GitHub Actions build workflow.
+- Resolved twelve reported lint errors: ten transitional React component re-export shims, one synchronous state update in the Morkahja content tab effect, and one mutable declaration in mock state.
+- Removed the now-unused React `useEffect` import after the tab-state correction.
+- Verified installation, TypeScript/Vite build and ESLint all passed in [run 41552146789](https://github.com/babunidev/babuni.admin/actions/runs/41552146789) for source commit `72a3169`.
+- No browser regression, moderation/database test or production deployment was performed.
+
 ## 2026-11-03 — CI build verification and import fixes
 
 - Added a GitHub Actions workflow to install dependencies and run the production TypeScript/Vite build on pushes.
