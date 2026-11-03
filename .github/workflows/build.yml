@@ -18,3 +18,36 @@ jobs:
       - run: npm run build
       - run: npm run lint
       - run: npm test
+
+  browser:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      VITE_USE_MOCK_DATA: 'true'
+      VITE_USE_LOCAL_CONTENT: 'false'
+      VITE_DATABASE_URL: ''
+      VITE_API_BASE_URL: ''
+      API_PROXY_TARGET: ''
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      # Install browser tooling only in this isolated CI job; no lockfile changes.
+      - run: npm install --no-save --package-lock=false playwright@1.56.1
+      - run: npx playwright install --with-deps chromium
+      - name: Start production preview
+        run: |
+          npm run preview -- --host 127.0.0.1 --port 4180 > /tmp/babuni-preview.log 2>&1 &
+          echo $! > /tmp/babuni-preview.pid
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4180/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/babuni-preview.log
+          exit 1
+      - run: npm run test:browser
