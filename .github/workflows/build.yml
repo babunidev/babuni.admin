@@ -56,6 +56,11 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/morkahja-fixture/game" "$RUNNER_TEMP/morkahja-fixture/UI"
           cp tests/fixtures/legacy/*.json "$RUNNER_TEMP/morkahja-fixture/game/"
+          mkdir -p "$RUNNER_TEMP/morkahja-fixture/game/solutionimages"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://raw.githubusercontent.com/babunidev/Morkahja/239cf21ed759cf12137e68ae41a85a0a26382fb9/client/public/game/solutionimages/skill_aevis_levitation.webp \
+            --output "$RUNNER_TEMP/morkahja-fixture/game/solutionimages/legacy_sample.webp"
+
           MORKAHJA_PUBLIC="$RUNNER_TEMP/morkahja-fixture" \
           VITE_USE_LOCAL_CONTENT=true LOCAL_CONTENT_WRITES=true \
           VITE_USE_MOCK_DATA=true DATABASE_URL='' \

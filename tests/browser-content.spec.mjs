@@ -116,3 +116,18 @@ test('failed editor save displays error and preserves fixture file', async () =>
     assert.equal(JSON.stringify(await read('frames')),original)
   })
 })
+
+test('a pinned legacy Morkahja WebP asset decodes in Chromium', async () => {
+  await withPage(async page => {
+    const result = await page.evaluate(async () => {
+      const response = await fetch('/game/solutionimages/legacy_sample.webp')
+      if (!response.ok) return { ok:false, status:response.status }
+      const bitmap = await createImageBitmap(await response.blob())
+      const dimensions = {ok:true, width:bitmap.width, height:bitmap.height}
+      bitmap.close()
+      return dimensions
+    })
+    assert.equal(result.ok, true)
+    assert.ok(result.width > 0 && result.height > 0)
+  })
+})
