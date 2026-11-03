@@ -28,7 +28,33 @@ function sendJson(res: ServerResponse, status: number, data: unknown): void {
   res.end(JSON.stringify(data))
 }
 
-export function morkahjaLocalAdminPlugin(connectionString: string): Plugin {
+// Optional injected operations allow isolated HTTP tests without a PostgreSQL connection.
+// Production defaults remain the existing PostgreSQL adapter functions.
+export interface AdminOperations {
+  listPlayers: typeof listPlayersFromPostgres
+  listOnlinePlayers: typeof listOnlinePlayersFromPostgres
+  getPlayerDetail: typeof getPlayerDetailFromPostgres
+  getDashboard: typeof getDashboardFromPostgres
+  getActivity: typeof listActivityFromPostgres
+  timeout: typeof timeoutPlayerInPostgres
+  ban: typeof banPlayerInPostgres
+  unban: typeof unbanPlayerInPostgres
+}
+const postgresOperations: AdminOperations = {
+  listPlayers: listPlayersFromPostgres,
+  listOnlinePlayers: listOnlinePlayersFromPostgres,
+  getPlayerDetail: getPlayerDetailFromPostgres,
+  getDashboard: getDashboardFromPostgres,
+  getActivity: listActivityFromPostgres,
+  timeout: timeoutPlayerInPostgres,
+  ban: banPlayerInPostgres,
+  unban: unbanPlayerInPostgres,
+}
+
+export function morkahjaLocalAdminPlugin(
+  connectionString: string,
+  operations: AdminOperations = postgresOperations,
+): Plugin {
   const apiPrefix = '/local-admin-api'
 
   return {
@@ -49,8 +75,7 @@ export function morkahjaLocalAdminPlugin(connectionString: string): Plugin {
           try {
             if (req.method === 'GET' && segment === 'health') {
               try {
-                const { listPlayersFromPostgres } = await import('./postgresAdmin')
-                await listPlayersFromPostgres(connectionString)
+                await operations.listPlayers(connectionString)
                 sendJson(res, 200, { ok: true })
               } catch (error) {
                 const message =
@@ -66,17 +91,17 @@ export function morkahjaLocalAdminPlugin(connectionString: string): Plugin {
             }
 
             if (req.method === 'GET' && segment === 'dashboard') {
-              sendJson(res, 200, await getDashboardFromPostgres(connectionString))
+              sendJson(res, 200, await operations.getDashboard(connectionString))
               return
             }
 
             if (req.method === 'GET' && segment === 'players') {
-              sendJson(res, 200, await listPlayersFromPostgres(connectionString))
+              sendJson(res, 200, await operations.listPlayers(connectionString))
               return
             }
 
             if (req.method === 'GET' && segment === 'players/online') {
-              sendJson(res, 200, await listOnlinePlayersFromPostgres(connectionString))
+              sendJson(res, 200, await operations.listOnlinePlayers(connectionString))
               return
             }
 
@@ -86,7 +111,7 @@ export function morkahjaLocalAdminPlugin(connectionString: string): Plugin {
               segment !== 'players/online'
             ) {
               const playerId = decodeURIComponent(segment.slice('players/'.length))
-              const detail = await getPlayerDetailFromPostgres(
+              const detail = await operations.getPlayerDetail(
                 connectionString,
                 playerId,
               )
@@ -99,7 +124,7 @@ export function morkahjaLocalAdminPlugin(connectionString: string): Plugin {
             }
 
             if (req.method === 'GET' && segment === 'activity') {
-              sendJson(res, 200, await listActivityFromPostgres(connectionString))
+              sendJson(res, 200, await operations.getActivity(connectionString))
               return
             }
 
@@ -113,13 +138,13 @@ export function morkahjaLocalAdminPlugin(connectionString: string): Plugin {
                 sendJson(res, 400, { error: 'INVALID_BODY' })
                 return
               }
-              const result = await timeoutPlayerInPostgres(
+              const result = await operations.timeout(
                 connectionString,
                 body.playerId,
                 body.durationMinutes,
                 body.reason,
               )
-              sendJson(res, 200, {
+              sendJson(res, result.ok ? 200 : 404, {
                 ok: result.ok,
                 playerId: body.playerId,
                 message: result.message,
@@ -136,12 +161,12 @@ export function morkahjaLocalAdminPlugin(connectionString: string): Plugin {
                 sendJson(res, 400, { error: 'INVALID_BODY' })
                 return
               }
-              const result = await banPlayerInPostgres(
+              const result = await operations.ban(
                 connectionString,
                 body.playerId,
                 body.reason,
               )
-              sendJson(res, 200, {
+              sendJson(res, result.ok ? 200 : 404, {
                 ok: result.ok,
                 playerId: body.playerId,
                 message: result.message,
@@ -155,11 +180,11 @@ export function morkahjaLocalAdminPlugin(connectionString: string): Plugin {
                 sendJson(res, 400, { error: 'INVALID_BODY' })
                 return
               }
-              const result = await unbanPlayerInPostgres(
+              const result = await operations.unban(
                 connectionString,
                 body.playerId,
               )
-              sendJson(res, 200, {
+              sendJson(res, result.ok ? 200 : 404, {
                 ok: result.ok,
                 playerId: body.playerId,
                 message: result.message,
