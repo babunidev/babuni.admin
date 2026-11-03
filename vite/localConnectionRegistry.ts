@@ -50,9 +50,11 @@ function validate(input: unknown): ProfileInput {
 
 export class LocalConnectionRegistry {
   private profiles: ConnectionProfile[] = []
-  constructor(private readonly filePath: string = join(
+  private readonly filePath: string
+  constructor(filePath: string = join(
     process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'babuni-admin', 'connections.json',
   )) {
+    this.filePath = filePath
     if (existsSync(filePath)) {
       const loaded: unknown = JSON.parse(readFileSync(filePath, 'utf8'))
       if (!Array.isArray(loaded)) throw new Error('INVALID_REGISTRY')
