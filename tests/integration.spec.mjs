@@ -192,6 +192,8 @@ test('invalid content inputs and missing files are rejected without reporting su
   const writeFailure = await request(content('solutions'), { key: '00099', data: {} })
   assert.equal(writeFailure.status, 500)
   assert.notEqual(writeFailure.body.ok, true)
+  await writeFile(join(tempRoot, 'game', 'solutiondata.json'),
+    await readFile(new URL('./fixtures/legacy/solutiondata.json', import.meta.url)))
 })
 
 test('WebP image uploads validate names, data and paths inside fixture directories', async () => {
