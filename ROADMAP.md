@@ -30,7 +30,8 @@ GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine reg
 - [x] Keep Babuni Dev content operations inactive: the new overview is explicitly a placeholder and cannot edit or publish.
 - [x] Complete the final Phase 1 source/CI verification review and record residual risks in the roadmap, changelog, development journal and architecture. See [Phase 1 verification report](docs/PHASE1_VERIFICATION.md) and [latest passing CI](https://github.com/babunidev/babuni.admin/actions/runs/41645348546).
 
-- [ ] Audit and remediate dependency advisories (23 reported by latest `npm ci`: 8 high, 14 moderate, 1 low), then rerun all checks.
+- [x] Audit the 23 npm affected package records, compare full and production-scoped results, and document prioritized remediation. [Audit report](docs/DEPENDENCY_AUDIT_2026-11-03.md), [CI evidence](https://github.com/babunidev/babuni.admin/actions/runs/41654264717).
+- [ ] Remediate dependency advisories in reviewable, compatibility-tested changes and rerun build, lint, source, integration, browser and npm audits. No dependency versions changed during this audit.
 
 ### Final Phase 1 review — verified versus outstanding
 

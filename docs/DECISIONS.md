@@ -2,6 +2,14 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-03 — Audit before dependency upgrades
+
+**Implemented:** A nonmutating npm security audit runs in CI, comparing all locked dependencies with `--omit=dev`, and summarizes affected packages and fix availability. The review is documented in [the dependency audit](DEPENDENCY_AUDIT_2026-11-03.md).
+
+**Reasoning:** npm's 23 affected-package records combine real advisories, inherited parent warnings, development tooling and potentially incompatible automatic upgrades. Vite and React Router warrant priority. Replacing the ESLint/TypeScript-ESLint toolchain with npm-suggested major-version changes without a separate compatibility check was not approved.
+
+**Status:** Audit complete; remediation not attempted. No assumption of production safety follows from the audit. [Evidence](https://github.com/babunidev/babuni.admin/actions/runs/41654264717).
+
 ## 2026-11-03 — Phase 1 completion boundary
 
 **Review outcome:** The initial modular restructuring and source/mock verification milestone can be recorded as complete, as evidenced by [CI run 41645348546](https://github.com/babunidev/babuni.admin/actions/runs/41645348546). It is not an authorization to expose the administrator to remote access or real sensitive data.

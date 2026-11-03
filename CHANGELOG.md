@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — Dependency security audit (no upgrades)
+
+- Added a GitHub Actions audit job for `npm audit --json` and `npm audit --omit=dev --json`, with a nonmutating package-level summary for review.
+- Reproduced 23 affected packages (8 high, 14 moderate, 1 low), including six classified under `--omit=dev` (5 high, 1 moderate). Identified affected direct dependencies, transitive packages, fix indications and applicability limits.
+- Prioritized Vite's development-server exposure and React Router upgrades, with separate handling for the interconnected ESLint/TypeScript-ESLint toolchain.
+- Added [full dependency audit](docs/DEPENDENCY_AUDIT_2026-11-03.md). **No package upgrade or lockfile change** was made; remediation remains open.
+- Evidence: [GitHub Actions run 41654264717](https://github.com/babunidev/babuni.admin/actions/runs/41654264717).
+
 ## 2026-11-03 — Final Phase 1 verification review
 
 - Reviewed the existing application boundaries, Morkahja routes, service integrations, mock/fixture tests, browser navigation and CI evidence; no application code changed in this documentation review.

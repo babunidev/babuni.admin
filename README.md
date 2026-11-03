@@ -19,6 +19,7 @@ The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Q
 - [Changelog](CHANGELOG.md)
 - [Testing guide](docs/TESTING.md)
 - [Phase 1 verification and risks](docs/PHASE1_VERIFICATION.md)
+- [Dependency vulnerability audit](docs/DEPENDENCY_AUDIT_2026-11-03.md)
 
 ## Safety and verification
 

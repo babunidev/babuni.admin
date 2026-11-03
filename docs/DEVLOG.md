@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Looking beyond the green tests
+
+With the structural milestone verified, the dependency installer was still reporting 23 vulnerabilities. A passing build could not answer how serious they were or which ones mattered for this administration tool, so I wanted the packages audited before changing versions. AI added a nonmutating audit to GitHub Actions and compared the full dependency tree against npm's production classification. Six affected packages appeared in the latter, including Vite and React Router.
+
+The distinction matters: the tool is not a public web application yet, but Vite currently hosts local administrative endpoints capable of changing game data. That makes its development-server advisories more relevant than many conventional build-tool warnings. AI documented the package inventory, available fixes and the complicated ESLint compatibility cluster. No packages were updated during this audit; the next work remains the careful remediation and regression testing of those changes. [Audit evidence](https://github.com/babunidev/babuni.admin/actions/runs/41654264717) · [Findings](DEPENDENCY_AUDIT_2026-11-03.md).
+
 ## 2026-11-03 — Closing the first structural milestone
 
 With the workspace migration, direct-import cleanup and isolated tests in place, I wanted a final check of what could actually be considered finished. AI reviewed the current repository, the latest successful build and test logs, and the remaining administrative boundaries. All 23 automated tests passed, alongside the build and lint checks, so the initial modular restructuring and mock-based verification can be recorded as complete.
