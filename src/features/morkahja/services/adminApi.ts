@@ -194,11 +194,16 @@ export async function fetchActivityFeed(): Promise<ActivityFeedItem[]> {
   return apiGet('/activity')
 }
 
+function ensureModerationSuccess(result: ModerationResult): ModerationResult {
+  if (!result?.ok) throw new Error(result?.message || 'Moderation operation failed')
+  return result
+}
+
 export async function timeoutPlayer(
   request: TimeoutPlayerRequest,
 ): Promise<ModerationResult> {
   if (useLocalPostgres) {
-    return localPost('/players/timeout', request)
+    return ensureModerationSuccess(await localPost<ModerationResult>('/players/timeout', request))
   }
   if (useMockData) {
     const player = mockTimeoutPlayer(
@@ -206,45 +211,45 @@ export async function timeoutPlayer(
       request.durationMinutes,
       request.reason,
     )
-    return {
+    return ensureModerationSuccess({
       ok: Boolean(player),
       playerId: request.playerId,
       message: player
         ? `${player.name} timed out for ${request.durationMinutes}m`
         : 'Player not found',
-    }
+    })
   }
-  return apiPost('/players/timeout', request)
+  return ensureModerationSuccess(await apiPost<ModerationResult>('/players/timeout', request))
 }
 
 export async function banPlayer(request: BanPlayerRequest): Promise<ModerationResult> {
   if (useLocalPostgres) {
-    return localPost('/players/ban', request)
+    return ensureModerationSuccess(await localPost<ModerationResult>('/players/ban', request))
   }
   if (useMockData) {
     const player = mockBanPlayer(request.playerId, request.reason)
-    return {
+    return ensureModerationSuccess({
       ok: Boolean(player),
       playerId: request.playerId,
       message: player ? `${player.name} banned` : 'Player not found',
-    }
+    })
   }
-  return apiPost('/players/ban', request)
+  return ensureModerationSuccess(await apiPost<ModerationResult>('/players/ban', request))
 }
 
 export async function unbanPlayer(playerId: string): Promise<ModerationResult> {
   if (useLocalPostgres) {
-    return localPost('/players/unban', { playerId })
+    return ensureModerationSuccess(await localPost<ModerationResult>('/players/unban', { playerId }))
   }
   if (useMockData) {
     const player = mockUnbanPlayer(playerId)
-    return {
+    return ensureModerationSuccess({
       ok: Boolean(player),
       playerId,
       message: player ? `${player.name} unbanned` : 'Player not found',
-    }
+    })
   }
-  return apiPost('/players/unban', { playerId })
+  return ensureModerationSuccess(await apiPost<ModerationResult>('/players/unban', { playerId }))
 }
 
 export async function pingPlayersApi(): Promise<boolean> {
