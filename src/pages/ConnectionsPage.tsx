@@ -51,7 +51,14 @@ export function ConnectionsPage() {
       setStatus('Local connection profiles are unavailable in this mode. Run npm run dev on this PC.')
     }
   }
-  useEffect(() => { void reload() }, [])
+  useEffect(() => {
+    void api().then(data => {
+      setProfiles(data.profiles || [])
+      setStatus('Profiles stored on this PC. Connection adapters are not active yet.')
+    }).catch(() => {
+      setStatus('Local connection profiles are unavailable in this mode. Run npm run dev on this PC.')
+    })
+  }, [])
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setBusy(true)
