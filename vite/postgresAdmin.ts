@@ -11,7 +11,7 @@ import type {
   PlayerDetail,
   PlayerDetailAvatar,
   PlayerEncounterEvent,
-} from '../src/types/playerDetail'
+} from '../src/features/morkahja/types/playerDetail'
 
 const { Pool } = pg
 
