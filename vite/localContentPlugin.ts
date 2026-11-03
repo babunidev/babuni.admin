@@ -20,6 +20,35 @@ const JSON_FILES = {
 
 type ContentKind = keyof typeof JSON_FILES
 
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024
+const MAX_RECORD_INDEX = 10_000
+
+function validKey(key: unknown): key is string {
+  return typeof key === 'string' && /^[a-zA-Z0-9_-]{1,100}$/.test(key)
+}
+
+function validIndex(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) &&
+    value >= 0 && value <= MAX_RECORD_INDEX
+}
+
+function validImageName(value: unknown): value is string {
+  return typeof value === 'string' &&
+    /^[a-zA-Z0-9_-]{1,100}(?:\\.webp)?$/i.test(value)
+}
+
+function decodeWebp(value: unknown): Buffer | null {
+  if (typeof value !== 'string' ||
+      value.length < 16 || value.length > Math.ceil(MAX_IMAGE_BYTES * 4 / 3) + 8 ||
+      !/^[a-zA-Z0-9+/]+={0,2}$/.test(value)) return null
+  const bytes = Buffer.from(value, 'base64')
+  if (bytes.length < 12 || bytes.length > MAX_IMAGE_BYTES ||
+      bytes.subarray(0, 4).toString() !== 'RIFF' ||
+      bytes.subarray(8, 12).toString() !== 'WEBP' ||
+      bytes.readUInt32LE(4) + 8 !== bytes.length) return null
+  return bytes
+}
+
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolvePromise, reject) => {
     const chunks: Buffer[] = []
@@ -120,11 +149,15 @@ function localContentApi(
         if (req.method === 'POST' && segment in JSON_FILES) {
           const kind = segment as ContentKind
           const body = JSON.parse(await readBody(req)) as Record<string, unknown>
+          if (!body || typeof body !== 'object' || Array.isArray(body)) {
+            sendJson(res, 400, { error: 'INVALID_BODY' })
+            return
+          }
 
           if (kind === 'encounters' || kind === 'solutions') {
             const key = body.key
             const data = body.data
-            if (typeof key !== 'string' || !data || typeof data !== 'object') {
+            if (!validKey(key) || !data || typeof data !== 'object' || Array.isArray(data)) {
               sendJson(res, 400, { error: 'INVALID_BODY' })
               return
             }
@@ -138,7 +171,7 @@ function localContentApi(
           if (kind === 'expansions') {
             const key = body.key
             const data = body.data
-            if (typeof key !== 'string' || !data || typeof data !== 'object') {
+            if (!validKey(key) || !data || typeof data !== 'object' || Array.isArray(data)) {
               sendJson(res, 400, { error: 'INVALID_BODY' })
               return
             }
@@ -154,7 +187,7 @@ function localContentApi(
 
           if (kind === 'frames') {
             const data = body as { frameID?: number }
-            if (typeof data.frameID !== 'number') {
+            if (!validIndex(data.frameID)) {
               sendJson(res, 400, { error: 'INVALID_BODY' })
               return
             }
@@ -171,7 +204,7 @@ function localContentApi(
 
           if (kind === 'portraits') {
             const data = body as { avatarID?: number }
-            if (typeof data.avatarID !== 'number') {
+            if (!validIndex(data.avatarID)) {
               sendJson(res, 400, { error: 'INVALID_BODY' })
               return
             }
@@ -194,7 +227,9 @@ function localContentApi(
             encounterId?: number
             dataBase64?: string
           }
-          if (!body.dataBase64) {
+          const imageBytes = decodeWebp(body?.dataBase64)
+          const title = body?.encounterTitle?.trim()
+          if (!imageBytes || (!title && !validImageName(body?.fileName))) {
             sendJson(res, 400, { error: 'INVALID_BODY' })
             return
           }
@@ -203,7 +238,6 @@ function localContentApi(
           mkdirSync(dir, { recursive: true })
 
           let imageName: string
-          const title = body.encounterTitle?.trim()
           if (title) {
             const fallback =
               typeof body.encounterId === 'number' && body.encounterId > 0
@@ -222,7 +256,7 @@ function localContentApi(
           const baseFile = `${imageName}.webp`
           writeFileSync(
             join(dir, baseFile),
-            Buffer.from(body.dataBase64, 'base64'),
+            imageBytes,
           )
           sendJson(res, 201, {
             ok: true,
@@ -238,14 +272,15 @@ function localContentApi(
             dataBase64?: string
           }
           const fileName = body.fileName?.trim()
-          if (!fileName || !body.dataBase64) {
+          const imageBytes = decodeWebp(body?.dataBase64)
+          if (!validImageName(fileName) || !imageBytes) {
             sendJson(res, 400, { error: 'INVALID_BODY' })
             return
           }
           const base = fileName.endsWith('.webp') ? fileName : `${fileName}.webp`
           const dir = join(gameDir, 'solutionimages')
           mkdirSync(dir, { recursive: true })
-          writeFileSync(join(dir, base), Buffer.from(body.dataBase64, 'base64'))
+          writeFileSync(join(dir, base), imageBytes)
           sendJson(res, 201, { ok: true, path: `solutionimages/${base}` })
           return
         }
