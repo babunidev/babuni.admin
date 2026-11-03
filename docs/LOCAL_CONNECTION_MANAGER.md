@@ -93,3 +93,12 @@ These adapter implementations are milestones, not functionality present today. O
 - [Roadmap](../ROADMAP.md)
 - [Decisions](DECISIONS.md)
 - [Phase 1 hardening](PHASE1_HARDENING_2026-11-03.md)
+
+## 2026-11-04 — First connection-profile implementation
+
+A **local-only development slice** of the shared connection manager now exists. The `/connections` page can add, list and remove non-secret project profiles using `/local-connections-api`, implemented by a localhost-only Vite middleware adapter backed by `LocalConnectionRegistry`. Profiles are stored at `$XDG_CONFIG_HOME/babuni-admin/connections.json` (or `~/.config/babuni-admin/connections.json`) with private file permissions. They are disabled by default and always reported as **not connected**.
+
+This does **not** implement outbound SSH, PostgreSQL, GitHub, publishing, live health probes, keyring-based credentials or a standalone service. The code makes no connections to project servers. A reusable registry is separated from the Vite transport so it can be reused by a future dedicated local service. The local middleware retains the existing loopback/origin guard and requires an additional request header for mutations; these guards are not equivalent to per-user authentication.
+
+The test `tests/connections.test.mjs` verifies persistence, deletion and rejection of mismatched adapters and credential-like or extraneous fields with a temporary config directory. Actual GUI/browser interaction remains to be verified. No live project data was changed.
+

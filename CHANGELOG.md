@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Local connection profile foundation
+
+- Implemented a reusable local registry for non-secret, disabled-by-default per-project connection profiles.
+- Added a shared Connections page and local-only Vite development adapter to add/list/remove profiles.
+- Stored non-secret profiles under the PC user's private XDG configuration directory with restricted file permissions; rejected credential-like targets and unexpected fields.
+- Added isolated persistence/validation tests. No SSH tunnel, remote API, live credential management or project connection was implemented.
+
 ## 2026-11-04 — Local-only architecture and connection manager design
 
 - Recorded the confirmed permanent deployment model: Babuni Admin runs on the operator's PC; it is not published or hosted on the VPS.
