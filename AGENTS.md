@@ -19,7 +19,7 @@ Preserve the original constraints recorded in editor rules: **strict TypeScript,
 
 ## Engineering and review procedure
 
-1. Identify the creator's concrete requirement. Record assumptions, alternatives and changes of direction before implementation.
+1. Identify the creative's concrete requirement. Record assumptions, alternatives and changes of direction before implementation.
 2. Make narrowly scoped, reviewable edits; avoid automatic broad rewrites of routes or JSON schemas.
 3. Keep service/HTTP operations separate from components. Test actual DB/API behavior with fixtures and enforce authorization server-side.
 4. For every content write, verify schema, ownership, file safety and rollback.
@@ -29,7 +29,7 @@ Preserve the original constraints recorded in editor rules: **strict TypeScript,
 
 ## Portfolio provenance
 
-Credit original product direction to Babuni.dev; credit AI only for assistance it demonstrably supplied. Preserve narrative development history, revisions, technical debt and verification gaps. Never publish credentials or raw private user data.
+Credit original product direction to Babuni; credit AI only for assistance it demonstrably supplied. Preserve narrative development history, revisions, technical debt and verification gaps. Never publish credentials or raw private user data.
 
 The 2026-10-26 audit made **documentation changes only**, with no code or live-data operations.
 
