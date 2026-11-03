@@ -35,7 +35,18 @@ async function localPostJson<T>(path: string, body: unknown): Promise<T> {
     const text = await response.text().catch(() => '')
     throw new Error(text || `Save failed (${response.status})`)
   }
-  return response.json() as Promise<T>
+  const result = (await response.json()) as T & { ok?: boolean; error?: string; message?: string }
+  if (result && typeof result === 'object' && result.ok === false) {
+    throw new Error(result.message || result.error || 'Content save failed')
+  }
+  return result
+}
+
+async function confirmedRemotePost(path: string, body: unknown): Promise<void> {
+  const result = await apiPost<{ ok?: boolean; message?: string; error?: string }>(path, body)
+  if (result && typeof result === 'object' && result.ok === false) {
+    throw new Error(result.message || result.error || 'Content save failed')
+  }
 }
 
 async function fetchGameJson<T>(fileName: string): Promise<T> {
@@ -79,7 +90,7 @@ export async function createEncounter(
     await localPost('/encounters', { key, data })
     return
   }
-  await apiPost('/content/encounters', { key, data })
+  await confirmedRemotePost('/content/encounters', { key, data })
 }
 
 export async function createSolution(
@@ -90,7 +101,7 @@ export async function createSolution(
     await localPost('/solutions', { key, data })
     return
   }
-  await apiPost('/content/solutions', { key, data })
+  await confirmedRemotePost('/content/solutions', { key, data })
 }
 
 export async function createExpansion(
@@ -101,7 +112,7 @@ export async function createExpansion(
     await localPost('/expansions', { key, data })
     return
   }
-  await apiPost('/content/expansions', { key, data })
+  await confirmedRemotePost('/content/expansions', { key, data })
 }
 
 export async function createFrame(
@@ -111,7 +122,7 @@ export async function createFrame(
     await localPost('/frames', data)
     return
   }
-  await apiPost('/content/frames', data)
+  await confirmedRemotePost('/content/frames', data)
 }
 
 export async function createPortrait(
@@ -121,7 +132,7 @@ export async function createPortrait(
     await localPost('/portraits', data)
     return
   }
-  await apiPost('/content/portraits', data)
+  await confirmedRemotePost('/content/portraits', data)
 }
 
 export async function uploadEncounterImage(
@@ -132,7 +143,7 @@ export async function uploadEncounterImage(
     throw new Error('Image upload only available with local content enabled')
   }
 
-  const dataBase64 = await fileToBase64(file)
+  const dataBase64 = await imageFileToWebpBase64(file)
   await localPost('/upload/encounter-image', { fileName, dataBase64 })
 }
 
@@ -169,29 +180,8 @@ export async function uploadSolutionImage(
     throw new Error('Image upload only available with local content enabled')
   }
 
-  const dataBase64 = await fileToBase64(file)
+  const dataBase64 = await imageFileToWebpBase64(file)
   await localPost('/upload/solution-image', { fileName, dataBase64 })
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result
-      if (typeof result !== 'string') {
-        reject(new Error('Failed to read file'))
-        return
-      }
-      const base64 = result.split(',')[1]
-      if (!base64) {
-        reject(new Error('Failed to encode file'))
-        return
-      }
-      resolve(base64)
-    }
-    reader.onerror = () => reject(reader.error ?? new Error('Failed to read file'))
-    reader.readAsDataURL(file)
-  })
 }
 
 export async function fetchLocalContentStatus(): Promise<{
