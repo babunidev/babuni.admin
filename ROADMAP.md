@@ -19,7 +19,8 @@ A GitHub Actions check on 2026-11-03 subsequently **passed** `npm ci` and `npm r
 
 - [x] Run `npm ci` and `npm run build` against the corrected `main` revision in GitHub Actions; fix four TypeScript imports caused by the folder migration. [Successful run](https://github.com/babunidev/babuni.admin/actions/runs/41551602985).
 - [x] Run `npm run lint` and resolve reported lint errors. GitHub Actions [run 41552146789](https://github.com/babunidev/babuni.admin/actions/runs/41552146789) passed `npm ci`, `npm run build` and `npm run lint` on commit `72a3169`.
-- [ ] Add automated route/component/service tests; verify existing Morkahja workflows against fixtures and isolated game data.
+- [x] Add initial automated regression tests for player ordering, encounter drafts/details, in-memory moderation and route declarations. Five tests passed in [CI run 41552579859](https://github.com/babunidev/babuni.admin/actions/runs/41552579859).
+- [ ] Expand coverage to rendered components, navigation, backend adapters and isolated game-data writes; verify complete Morkahja workflows.
 - [ ] Establish explicit shared application shell and navigation boundaries.
 - [ ] Introduce project workspaces and project-specific navigation, retaining old Morkahja URLs through a compatibility plan.
 - [ ] Replace transitional re-export imports with direct feature imports, then remove unused shims.
