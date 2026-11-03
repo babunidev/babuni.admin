@@ -1,3 +1,33 @@
+# Babuni Admin — Decisions and Alternatives
+
+**Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
+
+## 2026-11-03 — Shared administration platform
+
+**Decided:** Expand the existing Morkahja administration tool into Babuni Admin, with project-specific workspaces for Morkahja, Babuni Dev and future needs. Keep the existing React/TypeScript/Vite frontend instead of replacing it with another web framework.
+
+**Alternative considered:** Make a separate admin tool for every project or rewrite the application. Neither is the preferred architectural direction at this stage.
+
+**Implemented in source:** Morkahja-specific pages, components, services, types and utilities are being grouped in `src/features/morkahja/`; Babuni Dev and shared workspace folders exist. The existing Morkahja routes remain in source. Runtime preservation is not yet verified by build or browser tests.
+
+## 2026-11-03 — Portfolio source and publishing model
+
+**Direction established:** GitHub should remain authoritative for repository-backed documentation. The admin should be able to pull, compare, edit and publish individual documents/modules, not force a full website rebuild for ordinary content changes.
+
+**Proposed implementation:** Separate protected content API, server-side GitHub integration, targeted static-asset/page regeneration, atomic publication, history and rollback. Neither the exact API framework nor publishing strategy is a final implementation decision. A successful source commit and a successfully published live revision are distinct events.
+
+## 2026-11-03 — Security and AI boundaries
+
+**Requirement:** Privileged operations must be authenticated, project-scoped and auditable before any remote administration. Secrets cannot be kept in browser-exposed `VITE_` values. An AI agent must use restricted content operations and publication authorization rather than arbitrary shell/file access.
+
+**Open choices:** Backend framework (Fastify was suggested), login/remote-access mechanism, draft approval rules, update triggers, publication storage and content rollback implementation. None is currently production-deployed by this work.
+
+## Verification boundary
+
+The structural GitHub commits and targeted relative-import inspection are evidence of source changes only. Build/lint, regression testing, isolated moderation/content tests and full deployment security review remain outstanding.
+
+## Earlier Morkahja decisions
+
 # Morkahja Admin — implemented choices and unresolved design decisions
 
 **Decision authority:** Babuni.dev. This is an **evidence register**, not an invented design meeting.
