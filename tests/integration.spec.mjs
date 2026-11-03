@@ -321,7 +321,7 @@ test('symlinked content targets cannot be overwritten through local API', async 
     assert.equal(await readFile(victim,'utf8'),'{"safe":true}')
   } finally {
     await rm(target)
-    await writeFile(target,JSON.stringify({Avatar:[]}))
+    await writeFile(target,await readFile(new URL('./fixtures/legacy/portraits.json',import.meta.url)))
   }
 })
 
