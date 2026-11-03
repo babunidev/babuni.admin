@@ -2,6 +2,14 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-04 — Babuni Admin remains local, by design
+
+**Creative decision:** Babuni Admin is a personal tool on my own PC. It is not intended to run as a public website, a VPS-hosted console or a remotely exposed administration UI. The PC instead makes protected outbound connections to the separate project authorities.
+
+**Clarification:** Previous Phase 2 language about deploying a production administration backend could imply the wrong architecture. It now means a possible *local privileged service* on the PC, distinct from remote project APIs. A remote project may still need its own scoped endpoint or SSH access, but Babuni Admin itself must not move onto that server.
+
+**Design recorded, not implementation:** AI documented a shared connection manager with project-owned profiles, local credential references, connection states, adapter contracts, error behavior and verification requirements. The precise implementation technologies and credential workflow remain engineering proposals, not accepted implementation details. [Design](LOCAL_CONNECTION_MANAGER.md).
+
 ## 2026-11-03 — Safe, local-first hardening
 
 **Direction:** Verify all seven remaining Phase 1 hardening areas with disposable data and reviewable changes rather than interacting with live player records, game files or the VPS.

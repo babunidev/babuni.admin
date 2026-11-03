@@ -4,6 +4,8 @@
 **Repository:** `babunidev/babuni.admin`  
 **Current focus:** Structural transition from a local Morkahja administration console into a multi-project administration platform.
 
+**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The shared connection manager is designed but not implemented.
+
 Babuni Admin is planned as one private workbench for maintaining multiple projects. **Morkahja** is the existing functional domain: its dashboard, player moderation, activity views and game-content editors remain in source. **Babuni Dev** is the next proposed workspace, intended to manage GitHub-backed portfolio documents and publish individual content updates without rebuilding the whole website. Additional project workspaces may be introduced later.
 
 The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Query, Zustand and Tailwind CSS 4. Morkahja-specific code now lives in `src/features/morkahja/`, shared controls in `src/shared/`, and the application shell in `src/app/`. The transitional re-export files have been removed and direct imports verified in CI. The Babuni Dev workspace has a navigable overview but no editor or publishing capability. There is **no deployed unified backend or working Babuni Dev content manager yet**.
@@ -14,6 +16,7 @@ The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Q
 - [Roadmap and verification status](ROADMAP.md)
 - [Development journal](docs/DEVLOG.md)
 - [Architecture](docs/ARCHITECTURE.md)
+- [Local connection manager — design](docs/LOCAL_CONNECTION_MANAGER.md)
 - [Decisions](docs/DECISIONS.md)
 - [Multi-project migration record](docs/MULTI_PROJECT_ARCHITECTURE.md)
 - [Changelog](CHANGELOG.md)

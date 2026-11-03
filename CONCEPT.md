@@ -5,6 +5,12 @@
 **Repository:** `babunidev/babuni.admin`  
 **Origin:** The Morkahja administration workbench; its existing interface remains Morkahja-specific while the larger platform evolves.
 
+## Permanent local-only purpose
+
+Babuni Admin is my private workbench, run on my own Nobara Linux PC. It does **not** belong on a publicly accessible website or hosted administration dashboard. The browser interface and its privileged local service should be accessible only on the same computer; from there, the tool initiates authenticated outbound connections to Morkahja, babuni.dev, GitHub and whichever projects require administration. Remote servers continue to enforce their own credentials and permissions.
+
+The separation between a local interface and remote project access is a deliberate design boundary, not a temporary deployment limitation. [Connection manager design](docs/LOCAL_CONNECTION_MANAGER.md).
+
 ## One administration workbench
 
 A separate administration application for every project would scatter my work across unrelated tools. Babuni Admin should instead provide one place to manage the projects that actually require administration, with each project retaining its own workspace, data boundaries, permissions and operating vocabulary.
@@ -30,7 +36,7 @@ The creative direction, requirements, corrections and publication choices remain
 - One interface does not mean one shared database permission or unrestricted backend.
 - Public portfolio data must not grant access to player moderation or game files.
 - GitHub is the source of truth for repository-backed documentation.
-- Sensitive credentials stay server-side; Vite development middleware is not the production administration API.
+- Sensitive credentials stay outside the browser, protected by a local service/OS keyring or remote authority; Vite development middleware is not the permanent privileged interface.
 - Morkahja's existing functionality remains available while the code is progressively organized.
 - No production publishing or privileged remote access is implied by frontend folder restructuring.
 

@@ -8,6 +8,10 @@ Review `README.md`, `CONCEPT.md`, `ROADMAP.md`, `docs/ARCHITECTURE.md`, `docs/DE
 
 Preserve the original constraints recorded in editor rules: **strict TypeScript, functional React, readable modularity, dark minimal atmospheric design, backend as authority, API/UI separation, reusable panels, no overengineering, sensitive data out of the browser**. Do not substitute a generic dashboard aesthetic for the author's choices.
 
+## Permanent local-only deployment requirement
+
+Babuni Admin is operated on the human creative's **own PC only**. Do not propose hosting the UI, a generalized admin API or an admin dashboard on the VPS or under a public URL. Its intended future local privileged service must bind to loopback, and the PC must initiate authenticated **outbound** connections to project-owned services over SSH or HTTPS. Preserve independent remote service authorization, project scopes, local origin protections and keyring-backed secret handling. See [connection-manager design](docs/LOCAL_CONNECTION_MANAGER.md). The design is not implemented.
+
 ## This is privileged software
 
 - **No credentials in Git, frontend bundles, README examples or public logs.** Vite `VITE_` env vars are browser-facing. Existing `VITE_DATABASE_URL` and `VITE_API_TOKEN` references need security review before real credentials are used.

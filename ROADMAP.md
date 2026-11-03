@@ -2,7 +2,7 @@
 
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  
-**Status (2026-11-03):** Phase 1 modular restructuring and the initial automated verification milestone are complete. Production readiness and full Morkahja workflow verification remain open; later phases are planned.
+**Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Connection manager implementation and verified live project access remain planned.
 
 ## Initial restructuring completed (verification scope detailed below)
 
@@ -46,17 +46,23 @@ Full findings: [docs/PHASE1_VERIFICATION.md](docs/PHASE1_VERIFICATION.md).
 
 Additional scope and remaining production blockers: [Phase 1 hardening report](docs/PHASE1_HARDENING_2026-11-03.md).
 
-## Phase 2 — Secure administration backend
+## Phase 2 — Local connection infrastructure (permanent local-only architecture)
 
-- [ ] Separate privileged operations from Vite development plugins into a production backend, with server-only secrets.
-- [x] Remove browser-side reads of `VITE_DATABASE_URL` and `VITE_API_TOKEN`; use server-only `DATABASE_URL`, with explicit local mode opt-in. This does not implement admin authentication.
-- [ ] Add authenticated sessions, server-enforced project permissions, CSRF protections where applicable, request validation and limits.
-- [ ] Add action attribution, audit logging, backup/rollback controls, and safe file path/type/size constraints.
-- [ ] Keep game moderation and portfolio publication privileges isolated.
-- [ ] Build security and API regression tests before any remote exposure.
-- [ ] Plan private remote access and independent deployment; no public Vite development server.
+- [x] Document Babuni Admin as a single-user application running only on the creative's own PC, with secure **outbound** project connections and no hosted/public administration interface. [Concept](CONCEPT.md) · [Architecture](docs/ARCHITECTURE.md).
+- [x] Design a shared local connection manager: profile contracts, non-browser credential references, status lifecycle, scoped adapter boundaries, UI and test acceptance criteria. **Design only, not implementation.** [Design](docs/LOCAL_CONNECTION_MANAGER.md).
+- [ ] Implement a separately testable **local** privileged service; do not publish Vite middleware or deploy a hosted admin dashboard.
+- [x] Remove browser-side reads of `VITE_DATABASE_URL` and `VITE_API_TOKEN`; use server-only `DATABASE_URL` in the current development adapter. This does not implement a credential vault.
+- [ ] Add per-project connection profiles, create/edit/remove flows and adapter registry.
+- [ ] Integrate OS-user secret storage and keep credentials outside the browser, logs, Git and readable config.
+- [ ] Add connection tests, verified statuses, safe disconnect/reconnect and clear mock-vs-live indicators.
+- [ ] Connect Morkahja PostgreSQL through a protected outbound tunnel with least privilege.
+- [ ] Connect Morkahja content to allowlisted local files or a scoped remote transport.
+- [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
+- [ ] Enforce origin/session validation, project-scoped operations, read-only defaults, action attribution, and recovery before real mutations.
+- [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.
+- [ ] Fix Vite config import-extension warnings as an independent maintenance task.
 
-**Technology candidate:** A separate TypeScript API (Fastify was discussed) is a proposal, not an approved dependency or implemented service.
+**Scope:** Remote project servers may require authentication or limited APIs, but **Babuni Admin itself remains on the PC**. A separate lightweight local TypeScript/Node service is a proposed design, not a chosen framework or implemented service.
 
 ## Phase 3 — Babuni Dev content manager
 
@@ -92,7 +98,7 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 
 ## Release gate
 
-No production admin rollout before successful build, lint, meaningful regression tests, authenticated backend review and non-production end-to-end verification. No production database operation or website deployment was performed as part of the 2026-11-03 documentation planning.
+No live project writes through the planned connection manager before successful build, lint, fixture regression tests, local-service security review and non-production end-to-end verification. The application is permanently local-only; there is no hosted administration rollout. No production database operation or website deployment was performed as part of the 2026-11-03 documentation planning.
 
 ## Historical roadmap
 

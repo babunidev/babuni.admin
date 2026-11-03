@@ -55,26 +55,40 @@ The nine tests cover content reads/writes, player inspection/moderation response
 
 These are not permission, backend, data-write, or real-world deployment tests. The Vite dev-only content middleware is not exercised by the production preview.
 
-## Proposed platform design (not implemented)
+## Permanent deployment and trust boundary — clarified 2026-11-04
+
+**Babuni Admin runs on the creative's own Nobara Linux PC.** The UI is an on-device browser page, currently at `127.0.0.1:5180`; the proposed privileged connection service is also a local-only process. Neither should be served through the VPS, a public hostname, a LAN-bound Vite server or a remote browser session.
+
+The PC initiates **outbound** connections to remote project authorities: SSH-tunneled Morkahja PostgreSQL, GitHub HTTPS API, and scoped project/site publication endpoints where needed. The VPS and GitHub still enforce their own remote authentication. A local UI does not remove the need to protect credentials, local endpoints, file paths, origin checks and action permissions.
 
 ```text
-Authenticated Babuni Admin UI
-  |-- Morkahja workspace      -> scoped game operations service
-  |-- Babuni Dev workspace    -> scoped GitHub/content publishing service
-  |-- Future workspaces       -> isolated project capabilities
-  |
-Protected administration API
-  |-- identity / sessions / project authorization
-  |-- validation / audit / revision comparisons
-  |-- GitHub connector / publication jobs
-  |-- isolated game DB and file adapters
+Babuni's PC only
+  React UI (loopback browser)
+      ↓ local API (planned)
+  Local connection manager / privileged service (planned)
+      ├── OS keyring secret references
+      ├── project-owned profiles and adapters
+      ├── local Morkahja files
+      └── authenticated outbound SSH / HTTPS
+               ↓
+       Morkahja VPS / GitHub / babuni.dev project services
 ```
 
-For Babuni Dev, a targeted document publish would fetch an allowlisted GitHub path, compare revisions, validate and prepare affected Markdown and preview/index assets, regenerate any dependent readable HTML/search artifacts, and publish the coherent set atomically. Server-side publication status and rollback must be visible to the operator. Editing through the admin must commit back to GitHub under an authorized identity rather than silently diverging from the repository.
+The [shared connection-manager design](LOCAL_CONNECTION_MANAGER.md) specifies profile metadata, status lifecycle, candidate adapters, credential handling, UI states, and acceptance criteria. That document is **a design**, not a claim that the manager or new local service has been implemented.
 
-## Security boundary
+### Existing code versus planned work
 
-The currently present Vite plugins `vite/localAdminPlugin.ts` and `vite/localContentPlugin.ts` are local-development facilities, **not** authenticated production services. `VITE_DATABASE_URL` and `VITE_API_TOKEN` appear in browser-side configuration and are unsafe for secret credentials. Morkahja moderation/database permissions must never be inherited by a portfolio-content capability. External filesystem writes, file uploads and moderation operations need validation, audit and safe recovery before deployment.
+The existing React/Vite interface, Morkahja routes, local development middleware and browser fixtures are implemented and tested. `vite/localAdminPlugin.ts` and `vite/localContentPlugin.ts` remain local-development adapters; they are not the future reusable credential store or permanent connection manager. `DATABASE_URL` is read server-side in development and local game-file writes require opt-in. No general-purpose profile registry, keyring integration, SSH lifecycle manager or GitHub content/publishing connection has been implemented.
+
+The planned local service must validate the browser origin and local session, enforce project-specific and operation-specific capabilities and connect to remote services with credentials inaccessible to the frontend. Loopback alone is not an authorization or CSRF defense. A connected endpoint, successful GitHub commit or started SSH tunnel must not be reported as a completed privileged operation without the remote result being verified.
+
+### Publication semantics
+
+For Babuni Dev, a future targeted document publish would fetch an allowlisted GitHub path, compare source revisions, validate and prepare the affected Markdown, preview/index and readable HTML/search assets, and publish those dependencies consistently. The local manager would initiate the process; remote publication permissions remain scoped. Actual website state must be checked rather than assuming a GitHub commit equals deployment.
+
+### Historical security notes
+
+The architecture material below is retained as a record of the earlier Morkahja console. Earlier suggestions to host a unified administration backend are **not** the selected Babuni Admin deployment model, and mentions of `VITE_DATABASE_URL` or `VITE_API_TOKEN` refer to superseded source. The permanent requirement is a private on-PC interface with outbound authenticated project connections.
 
 ## Historical architecture audit
 

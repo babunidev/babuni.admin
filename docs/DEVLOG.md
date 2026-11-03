@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Keeping the administration tool at home
+
+The earlier roadmap could be read as a plan to host an administration backend somewhere on the internet. That was not what I wanted: Babuni Admin belongs on my own PC, with connections going *out* to the projects that need maintaining. After confirming that the updated application built, passed its local tests and opened in the browser, I clarified this boundary before moving into Phase 2.
+
+AI revised the concept, architecture and roadmap around permanent local-only operation, and prepared a shared connection-manager design covering profiles, credentials, connection states and project-specific adapters. This work is documentation and design; no remote service, credential manager or connection interface was built or tested in this step.
+
 ## 2026-11-03 — Hardening the old tools without touching the live game
 
 The next set of concerns came from what the earlier tests could not prove: PostgreSQL really deleting sessions safely, the editors really saving through their forms, and game files surviving interrupted writes. To tackle them without risking anyone's account or content, I asked AI to work with a disposable database and isolated copies of the Morkahja assets, while also addressing the npm audit findings.

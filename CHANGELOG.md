@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Local-only architecture and connection manager design
+
+- Recorded the confirmed permanent deployment model: Babuni Admin runs on the operator's PC; it is not published or hosted on the VPS.
+- Revised the Phase 2 roadmap and architecture to define a planned local privileged connection service with outbound project connections.
+- Added [shared local connection manager design](docs/LOCAL_CONNECTION_MANAGER.md): profile metadata, credential boundary, adapters, status lifecycle, interaction model and acceptance tests.
+- Updated concept, decisions, development journal, README and agent rules to keep this requirement consistent.
+- Documentation and architecture only; no live credentials, connections, runtime components or project data were changed.
+
 ## 2026-11-03 — Phase 1 security and data-integrity hardening
 
 - Updated the lockfile with compatible npm security fixes on a review branch; audit findings dropped from 23 to 12 moderate-only, with zero under `--omit=dev`. No forced major-version downgrade/upgrade was applied; 12 tooling advisories remain.
