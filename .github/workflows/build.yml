@@ -52,6 +52,24 @@ jobs:
           cat /tmp/babuni-preview.log
           exit 1
       - run: npm run test:browser
+      - name: Start isolated Morkahja content fixture server
+        run: |
+          mkdir -p "$RUNNER_TEMP/morkahja-fixture/game" "$RUNNER_TEMP/morkahja-fixture/UI"
+          cp tests/fixtures/legacy/*.json "$RUNNER_TEMP/morkahja-fixture/game/"
+          VITE_MORKAHJA_PUBLIC="$RUNNER_TEMP/morkahja-fixture" \
+          VITE_USE_LOCAL_CONTENT=true LOCAL_CONTENT_WRITES=true \
+          VITE_USE_MOCK_DATA=true DATABASE_URL='' \
+          npm run dev -- --host 127.0.0.1 --port 5182 > /tmp/babuni-fixture.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5182/local-content-api/status >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/babuni-fixture.log
+          exit 1
+      - name: Test rendered Morkahja content editors
+        env:
+          BROWSER_TEST_BASE_URL: http://127.0.0.1:5182
+        run: npm run test:browser:content
 
   audit:
     runs-on: ubuntu-24.04
