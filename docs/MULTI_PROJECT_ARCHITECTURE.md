@@ -39,3 +39,7 @@ At Babuni's direction, AI added URL-driven workspace switching and project-speci
 ## Compatibility imports retired — 2026-11-03
 
 The migration previously kept 33 re-export files at historical paths. AI replaced all remaining consumer imports with direct Morkahja, shared and application paths, including the PostgreSQL adapter, then deleted the obsolete shims. Foundational `src/types/index.ts` and generic `src/services/http.ts` remain as real source modules rather than shims. [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784) passed `npm ci`, TypeScript/Vite build, lint and nine regression tests (including import-path integrity). The result does not establish live browser or production backend behavior.
+
+## Isolated Morkahja middleware verification — 2026-11-03
+
+AI added nine localhost HTTP integration tests using temporary game JSON/image fixtures and injected in-memory moderation operations. This exercises the actual local middleware without accessing production databases or game folders. The tests uncovered and drove fixes for invalid portrait indices, unsafe upload filenames, malformed WebP payloads and unsuccessful moderation acknowledgements. The client now rejects failed responses, and the moderation UI displays mutation errors. [CI run 41644848938](https://github.com/babunidev/babuni.admin/actions/runs/41644848938) passed build, lint, nine source, nine integration and five browser checks. Real PostgreSQL SQL, session revocation, interactive content editing and production security remain unverified.

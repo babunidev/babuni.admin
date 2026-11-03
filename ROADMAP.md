@@ -13,7 +13,7 @@
 - [x] Perform targeted relative-import checks for the migrated files.
 - [x] Record the migration and known limits in `docs/MULTI_PROJECT_ARCHITECTURE.md`.
 
-GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine regression tests following shim removal. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784). Five rendered-browser smoke scenarios now pass on Chromium, in addition to nine source-level tests. [CI run 41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405). Safe moderation/content writes remain unverified.
+GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine regression tests following shim removal. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784). Five rendered-browser smoke scenarios now pass on Chromium, in addition to nine source-level tests. [CI run 41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405). Nine isolated HTTP/fixture integration tests now cover mock-admin operations, record writes, image uploads and negative cases. [CI run 41644848938](https://github.com/babunidev/babuni.admin/actions/runs/41644848938). Real PostgreSQL SQL, full content-editor interactions and production writes remain unverified.
 
 ## Phase 1 — Finish modular architecture and verify existing behavior
 
@@ -21,13 +21,16 @@ GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine reg
 - [x] Run `npm run lint` and resolve reported lint errors. GitHub Actions [run 41552146789](https://github.com/babunidev/babuni.admin/actions/runs/41552146789) passed `npm ci`, `npm run build` and `npm run lint` on commit `72a3169`.
 - [x] Add initial automated regression tests for player ordering, encounter drafts/details, in-memory moderation and route declarations. Five tests passed in [CI run 41552579859](https://github.com/babunidev/babuni.admin/actions/runs/41552579859).
 - [x] Add an initial Chromium browser smoke suite for rendered UI, workspace selection/history, legacy Morkahja routes, mock player table and mobile sidebar. [5/5 passed in CI](https://github.com/babunidev/babuni.admin/actions/runs/41639215405).
-- [ ] Expand to backend adapters and isolated game-data writes; verify full Morkahja workflows with fixture data.
+- [x] Add isolated Morkahja HTTP tests: player inspection, timeout/ban/unban with injected database operations; encounter/solution/expansion/frame/portrait saves on temporary game JSON; WebP upload validation; simulated database read/write failures, missing files and rejected acknowledgements. [9/9 integration tests passed](https://github.com/babunidev/babuni.admin/actions/runs/41644848938).
+- [ ] Test real PostgreSQL query, session-revocation and moderation transactions against a disposable database; exercise full rendered content-editor workflows against isolated game assets.
 - [x] Separate the active application layout, sidebar, UI store, and navigation composition into `src/app/`; move generic controls and formatting to `src/shared/`, and Morkahja navigation/status to its feature folder. [CI verification](https://github.com/babunidev/babuni.admin/actions/runs/41563231632).
 - [x] Add URL-driven workspace selection, separate Morkahja/Babuni Dev navigation, and a non-operational Babuni Dev overview. Keep existing Morkahja URLs and status bar intact. [CI: 8 tests, build, lint passed](https://github.com/babunidev/babuni.admin/actions/runs/41563642755).
 - [ ] Add real workspace authorization/permissions and Babuni Dev content operations after the secure backend is implemented.
 - [x] Replace historical shim imports with direct feature/shared paths and remove all 33 obsolete re-export files. CI verified TypeScript/Vite build, lint and nine tests, including an import-integrity regression. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784).
 - [x] Keep Babuni Dev content operations inactive: the new overview is explicitly a placeholder and cannot edit or publish.
 - [ ] Update architecture/decisions/changelog/journal alongside actual verified changes.
+
+- [ ] Review and remediate dependency security advisories separately, then rerun all checks.
 
 ## Phase 2 — Secure administration backend
 
@@ -65,8 +68,10 @@ GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine reg
 
 ## Existing Morkahja work to preserve and harden
 
-- [ ] Confirm player inspection and moderation using an isolated test backend.
-- [ ] Verify encounter, solution, expansion, portrait, frame and image editors against isolated fixtures.
+- [x] Verify player inspection, timeout, ban, unban and HTTP error responses with an injected in-memory database fixture (not PostgreSQL). [CI](https://github.com/babunidev/babuni.admin/actions/runs/41644848938).
+- [ ] Verify the actual PostgreSQL adapter against a disposable database, including session revocation and partially failed writes.
+- [x] Verify server-side create/update routes for encounters, solutions, expansions, portraits and frames, plus WebP upload paths, using temporary filesystem fixtures. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41644848938).
+- [ ] Exercise the actual rendered editor forms and image conversion against an isolated content fixture.
 - [ ] Resolve local and remote content API inconsistencies before remote use.
 - [ ] Ensure mock fallbacks cannot be mistaken for successful live writes.
 - [ ] Audit file uploads, database transactions, authorization and recovery procedures.

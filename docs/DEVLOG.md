@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Testing the work behind the buttons
+
+After the browser checks confirmed that navigation and the mock player table rendered, I wanted evidence that Morkahja's administrative actions also handled failures sensibly. AI built an isolated HTTP test harness around the existing local middleware, using temporary game files and injected player records instead of touching the actual database or game installation. The checks exercise moderation, the five content record types, WebP uploads and simulated failures.
+
+Early attempts revealed that the testing router was returning HTML instead of API responses; switching to a dedicated fixture server corrected that. The first meaningful failures then exposed unsafe image filenames and acceptance of a negative portrait ID. AI tightened validation and changed client mutation handling so explicit failures cannot be shown as successes. [CI run 41644848938](https://github.com/babunidev/babuni.admin/actions/runs/41644848938) passed nine integration tests alongside the previous nine source checks, five browser checks, build and lint. The actual PostgreSQL queries, session revocation, and interactive editor forms still need separate verification before production use.
+
 ## 2026-11-03 — Testing what the browser actually displays
 
 The earlier checks had covered the TypeScript code and mock-data functions, but not whether the workspace selector really behaved as intended on screen. With that interface now available locally, I asked AI to add automated browser checks for the actual pages and navigation. AI created a Chromium test suite against a production preview forced into mock mode, covering Babuni Dev, the original Morkahja routes, workspace switching, browser history and the mobile sidebar.

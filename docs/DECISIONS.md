@@ -2,6 +2,16 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-03 — Isolated administration fixtures
+
+**Direction:** Verify existing Morkahja operations without touching live accounts, game files or the VPS. AI implemented a localhost HTTP harness around actual development middleware, injected in-memory player services, and temporary JSON/image files.
+
+**Corrections found by tests:** Invalid portrait indices and path-bearing upload filenames were accepted. Explicit `ok: false` results could also be mistaken for successful client mutations. AI added input/payload checks, non-success HTTP statuses for rejected moderation operations, and surfaced mutation errors in the confirmation interface.
+
+**Provisional technical constraints:** Record keys accept alphanumeric, underscore and hyphen characters; numeric frame/portrait indices are bounded; images must be validly framed WebP data under a 5 MiB limit. These are implementation safeguards introduced by AI, not a separate creative approval of a final content schema. Compatibility with actual legacy game files remains unverified.
+
+**Verification:** [CI run 41644848938](https://github.com/babunidev/babuni.admin/actions/runs/41644848938) passed nine integration, nine source and five browser tests, build and lint. Actual SQL transactions, session revocation and rendered content-editor interaction remain outstanding.
+
 ## 2026-11-03 — Browser verification in mock mode
 
 **Implemented:** Add a separate Playwright/Chromium browser suite in CI to exercise the rendered application after a production build, with mock data and no database/API configuration. Keep it separate from source-level tests and run on Ubuntu 24.04 for the pinned browser tooling.

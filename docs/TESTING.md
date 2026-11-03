@@ -2,7 +2,7 @@
 
 ## Verified CI checks
 
-GitHub Actions runs the TypeScript/Vite build, ESLint and nine source-level regression checks on every push to `main` and pull request. A separate Ubuntu 24.04 job builds a mock-only preview and runs five Chromium browser scenarios. The first passing browser run is [41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405).
+GitHub Actions runs the TypeScript/Vite build, ESLint, nine source-level regression checks and nine isolated Morkahja integration tests on every push to `main` and pull request. A separate Ubuntu 24.04 job builds a mock-only preview and runs five Chromium browser scenarios. The first passing browser run is [41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405).
 
 The browser suite covers:
 - Babuni Dev overview and project-specific header/navigation
@@ -11,7 +11,7 @@ The browser suite covers:
 - Mobile navigation opening and closing, including hidden controls
 - Mock player table and shared page-header rendering
 
-This is **not** a test of real moderation, game-file mutations, authentication, production APIs or remote content publication.
+The isolated integration suite verifies simulated moderation and HTTP writes only. This is **not** a test of real PostgreSQL operations, production game files, authentication, production APIs or remote content publication.
 
 ## Local source-level checks
 
@@ -21,6 +21,7 @@ npm ci
 npm run build
 npm run lint
 npm test
+npm run test:integration
 ```
 
 ## Local Chromium browser tests
@@ -46,3 +47,11 @@ npm run test:browser
 Browser tests default to `http://127.0.0.1:4180`. Override with `BROWSER_TEST_BASE_URL` only when pointing to a controlled **mock-only** preview. Do not run this test suite against a live administration backend or an instance with privileged development middleware enabled.
 
 The source-level `npm test` command does not require Chromium and remains independent of the browser suite.
+
+## Isolated game-content and moderation integration tests
+
+Run `npm run test:integration` after `npm ci`. This test needs no browser installation, SSH tunnel, remote API, real game folder or database. It uses a temporary directory under the OS temp location and removes it afterwards; fake player operations are injected into the same local admin middleware handlers used by the Vite workbench.
+
+It checks player lookup and timeout/ban/unban, invalid inputs and database exceptions, create/read of encounter/solution/expansion/frame/portrait fixtures, WebP uploads and unsafe filenames, missing files and write permission failures. It also checks client rejection of HTTP 200 responses that explicitly report `ok: false`.
+
+**Limits:** The injected database service does not execute PostgreSQL SQL or revoke real sessions. These tests do not click the rendered game-content editor or verify production authentication, rollback or atomic transaction guarantees. Never point this suite at real player/game data.

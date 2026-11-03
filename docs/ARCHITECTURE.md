@@ -37,6 +37,14 @@ The sidebar reads `useLocation().pathname` and selects the active workspace from
 
 The eight source-level regression tests, TypeScript/Vite build and ESLint passed in [CI run 41563642755](https://github.com/babunidev/babuni.admin/actions/runs/41563642755) on commit `4f9b2ed`. No browser-driven end-to-end navigation, authenticated remote access, player mutation, or publishing was tested.
 
+## Isolated Morkahja integration boundary
+
+`tests/integration.spec.mjs` creates a unique directory under the operating system's temporary path, writes isolated copies of the five game-data JSON shapes, and exposes the actual Vite content/admin middleware through a localhost-only HTTP harness. The admin plugin's optional `AdminOperations` parameter injects in-memory fixture operations for tests; the default production-path behavior still uses `vite/postgresAdmin.ts`. No real PostgreSQL connection or project game directory is accessed.
+
+The nine tests cover content reads/writes, player inspection/moderation responses, malformed bodies, WebP upload paths, missing data files, simulated read-only files, injected database faults, and explicit unsuccessful client acknowledgements. The content middleware now validates IDs, filenames, encoded WebP container shape and payload size (5 MiB limit). The administrative HTTP middleware maps `ok: false` to a non-success HTTP response. The client adapters reject explicit failure acknowledgements, and the moderation dialog shows mutation errors. [CI run 41644848938](https://github.com/babunidev/babuni.admin/actions/runs/41644848938) verified these changes.
+
+**Not verified:** Actual PostgreSQL SQL queries, session invalidation consistency, complete transactional integrity, user-driven editor forms, safe rollback of disk writes, authentication, authorization or production deployment. The local Vite middleware must not be exposed as an authenticated production backend.
+
 ## Browser regression boundary
 
 `tests/browser.spec.mjs` uses Playwright/Chromium against a `vite preview` build with `VITE_USE_MOCK_DATA=true`, `VITE_USE_LOCAL_CONTENT=false`, no remote API base, and no database URL. The five tests cover rendered navigation and headers, switching between project workspaces, direct Morkahja routes, browser back/forward, mobile sidebar visibility, and mock player table rendering. `tests/regression.test.mjs` remains the separate nine-test source and mock-data suite. GitHub Actions executes both. The UI visibility defect found by Chromium was fixed in `src/app/AdminLayout.tsx`.

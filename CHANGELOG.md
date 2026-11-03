@@ -1,5 +1,15 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — Isolated Morkahja integration tests and failure handling
+
+- Added nine integration tests under `tests/integration.spec.mjs`, run via `npm run test:integration` in CI. They execute the real Vite-local middleware over a dedicated localhost HTTP harness, with temporary game JSON/image directories and injected in-memory administrative operations; no external database, production assets or live service is contacted.
+- Verified player lookup, timeout/ban/unban results, unknown IDs, invalid bodies and injected database exceptions; tested writes and reads for encounters, solutions, expansions, frames and portraits.
+- Tested WebP image saving, generated title-based names, filename/path rejection, malformed data, missing game files, read-only file errors and client-side rejection of explicit unsuccessful responses.
+- Corrected local admin routes to return non-2xx for `ok: false`, and client moderation actions to reject failed acknowledgements and display errors inside confirmation dialogs.
+- Added bounded record ID and image name validation, WebP signature/length and size checks, and browser-side WebP conversion before upload. These bounds require later compatibility review against real game content.
+- [CI run 41644848938](https://github.com/babunidev/babuni.admin/actions/runs/41644848938) passed build, lint, 9 source-level tests, 9 isolated integration tests and 5 Chromium tests at commit `5370391`.
+- This does not test real PostgreSQL SQL, session-revocation transactions, actual editor-form interactions or production filesystem operations.
+
 ## 2026-11-03 — Rendered browser regression coverage
 
 - Added five headless Chromium browser tests exercising Babuni Dev overview, two-way workspace switching and browser history, direct Morkahja routes, mobile sidebar controls, and a mock player table.
