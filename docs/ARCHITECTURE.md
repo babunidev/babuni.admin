@@ -1,3 +1,53 @@
+# Babuni Admin — Architecture
+
+## Current state (2026-11-03)
+
+Babuni Admin remains a React 19, TypeScript and Vite 8 frontend with React Router, TanStack Query, Zustand and Tailwind CSS 4. The Morkahja domain has been partly isolated under `src/features/morkahja/`. Existing shared controls, app routing and configuration still use their previous paths. Transitional re-export files retain imports during the migration.
+
+```text
+src/
+  App.tsx                     # existing router, routes not yet separated by project
+  layouts/                    # current shared app layout
+  features/
+    morkahja/
+      pages/                  # dashboard, players, content
+      components/             # Morkahja domain UI
+      services/               # Morkahja domain data adapters
+      types/                  # game and player types
+      utils/                  # domain utilities
+    babuni-dev/               # reserved only; no editor implemented
+  app/                        # future shell boundary, currently README
+  shared/                     # future shared boundary, currently README
+  components/, services/,
+  types/, utils/              # existing shared files and transition exports
+vite/                         # development-only privileged middleware
+```
+
+Morkahja's historical pages and adapters are implemented in source, but **no build, lint, browser or database verification has yet been recorded for this migration**. No production API, cross-project navigation or live content publisher exists yet.
+
+## Proposed platform design (not implemented)
+
+```text
+Authenticated Babuni Admin UI
+  |-- Morkahja workspace      -> scoped game operations service
+  |-- Babuni Dev workspace    -> scoped GitHub/content publishing service
+  |-- Future workspaces       -> isolated project capabilities
+  |
+Protected administration API
+  |-- identity / sessions / project authorization
+  |-- validation / audit / revision comparisons
+  |-- GitHub connector / publication jobs
+  |-- isolated game DB and file adapters
+```
+
+For Babuni Dev, a targeted document publish would fetch an allowlisted GitHub path, compare revisions, validate and prepare affected Markdown and preview/index assets, regenerate any dependent readable HTML/search artifacts, and publish the coherent set atomically. Server-side publication status and rollback must be visible to the operator. Editing through the admin must commit back to GitHub under an authorized identity rather than silently diverging from the repository.
+
+## Security boundary
+
+The currently present Vite plugins `vite/localAdminPlugin.ts` and `vite/localContentPlugin.ts` are local-development facilities, **not** authenticated production services. `VITE_DATABASE_URL` and `VITE_API_TOKEN` appear in browser-side configuration and are unsafe for secret credentials. Morkahja moderation/database permissions must never be inherited by a portfolio-content capability. External filesystem writes, file uploads and moderation operations need validation, audit and safe recovery before deployment.
+
+## Historical architecture audit
+
 # Morkahja Admin — system architecture and trust boundaries
 
 **Source:** Actual `src/`, `vite/`, `vite.config.ts`, `package.json` inspected on 2026-10-26. **Static inspection, not deployment verification.**
