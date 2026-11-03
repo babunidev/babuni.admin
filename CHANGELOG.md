@@ -1,5 +1,14 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — Rendered browser regression coverage
+
+- Added five headless Chromium browser tests exercising Babuni Dev overview, two-way workspace switching and browser history, direct Morkahja routes, mobile sidebar controls, and a mock player table.
+- Added a separate `test:browser` CI job against a mock-only production Vite preview; kept the existing nine source-level tests independent of Playwright. Browser tooling is installed temporarily in the CI job, without changing `package-lock.json`.
+- The first real browser run identified a mobile sidebar visibility issue. Added hidden/visible responsive classes so closing the sidebar also hides its controls from keyboard and accessibility visibility checks.
+- Pinned the CI browser runner to Ubuntu 24.04 after an unsupported-runner Playwright installation failure.
+- [CI run 41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405) passed TypeScript/Vite build, ESLint, 9 source-level tests and 5 Chromium browser tests at source commit `3a94ff9`.
+- No live database, external game files, remote administrator API or production website was accessed by the browser tests.
+
 ## 2026-11-03 — Retire temporary import compatibility files
 
 - Replaced old component, service, utility and domain-type re-export imports with direct `src/features/morkahja/` and `src/shared/` imports. The active shared shell continues to live under `src/app/`.

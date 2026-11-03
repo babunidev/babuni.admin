@@ -17,10 +17,11 @@ The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Q
 - [Decisions](docs/DECISIONS.md)
 - [Multi-project migration record](docs/MULTI_PROJECT_ARCHITECTURE.md)
 - [Changelog](CHANGELOG.md)
+- [Testing guide](docs/TESTING.md)
 
 ## Safety and verification
 
-This application can interact with sensitive Morkahja player data and game files when configured. Its existing Vite-local APIs are **not** a secure public administration backend; browser-visible `VITE_` configuration must not contain secrets. Do not deploy privileged Vite middleware publicly. The current source passed TypeScript/Vite build, ESLint and nine automated tests in [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784); browser-level and privileged integration tests have not been run. No live database operation, game-file mutation or deployment was performed by the latest documentation work.
+This application can interact with sensitive Morkahja player data and game files when configured. Its existing Vite-local APIs are **not** a secure public administration backend; browser-visible `VITE_` configuration must not contain secrets. Do not deploy privileged Vite middleware publicly. The current source passed TypeScript/Vite build, ESLint, nine source-level tests and five Chromium browser tests in [CI run 41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405); privileged backend integration tests have not been run. No live database operation, game-file mutation or deployment was performed by the latest documentation work.
 
 ## Earlier Morkahja-specific documentation
 

@@ -13,14 +13,15 @@
 - [x] Perform targeted relative-import checks for the migrated files.
 - [x] Record the migration and known limits in `docs/MULTI_PROJECT_ARCHITECTURE.md`.
 
-GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine regression tests following shim removal. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784). Browser regression and safe moderation/content writes remain unverified.
+GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine regression tests following shim removal. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784). Five rendered-browser smoke scenarios now pass on Chromium, in addition to nine source-level tests. [CI run 41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405). Safe moderation/content writes remain unverified.
 
 ## Phase 1 — Finish modular architecture and verify existing behavior
 
 - [x] Run `npm ci` and `npm run build` against the corrected `main` revision in GitHub Actions; fix four TypeScript imports caused by the folder migration. [Successful run](https://github.com/babunidev/babuni.admin/actions/runs/41551602985).
 - [x] Run `npm run lint` and resolve reported lint errors. GitHub Actions [run 41552146789](https://github.com/babunidev/babuni.admin/actions/runs/41552146789) passed `npm ci`, `npm run build` and `npm run lint` on commit `72a3169`.
 - [x] Add initial automated regression tests for player ordering, encounter drafts/details, in-memory moderation and route declarations. Five tests passed in [CI run 41552579859](https://github.com/babunidev/babuni.admin/actions/runs/41552579859).
-- [ ] Expand coverage to rendered components, navigation, backend adapters and isolated game-data writes; verify complete Morkahja workflows.
+- [x] Add an initial Chromium browser smoke suite for rendered UI, workspace selection/history, legacy Morkahja routes, mock player table and mobile sidebar. [5/5 passed in CI](https://github.com/babunidev/babuni.admin/actions/runs/41639215405).
+- [ ] Expand to backend adapters and isolated game-data writes; verify full Morkahja workflows with fixture data.
 - [x] Separate the active application layout, sidebar, UI store, and navigation composition into `src/app/`; move generic controls and formatting to `src/shared/`, and Morkahja navigation/status to its feature folder. [CI verification](https://github.com/babunidev/babuni.admin/actions/runs/41563231632).
 - [x] Add URL-driven workspace selection, separate Morkahja/Babuni Dev navigation, and a non-operational Babuni Dev overview. Keep existing Morkahja URLs and status bar intact. [CI: 8 tests, build, lint passed](https://github.com/babunidev/babuni.admin/actions/runs/41563642755).
 - [ ] Add real workspace authorization/permissions and Babuni Dev content operations after the secure backend is implemented.

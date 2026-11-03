@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Testing what the browser actually displays
+
+The earlier checks had covered the TypeScript code and mock-data functions, but not whether the workspace selector really behaved as intended on screen. With that interface now available locally, I asked AI to add automated browser checks for the actual pages and navigation. AI created a Chromium test suite against a production preview forced into mock mode, covering Babuni Dev, the original Morkahja routes, workspace switching, browser history and the mobile sidebar.
+
+The first attempt needed adjustments to the test setup and Ubuntu runner. When Chromium finally exercised the interface, four tests passed but the mobile sidebar failed: its close button shifted the menu offscreen without making it truly hidden to accessibility checks. AI corrected the responsive visibility classes rather than weakening that assertion. [CI run 41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405) then passed all five browser scenarios, all nine existing tests, the build and lint. The work verifies rendered navigation and mock data only; it does not validate player moderation, game-file writes or production authentication.
+
 ## 2026-11-03 — Retiring the temporary bridges
 
 Moving the components into their own workspaces had left temporary exports behind so existing imports would continue working. With the layout and workspace switcher now in place, I wanted to finish that transitional work instead of carrying two paths to every feature. AI traced the old imports through the Morkahja pages, components, services and PostgreSQL adapter, redirected them to their real locations, and removed 33 redundant compatibility files. The underlying shared type definitions and HTTP service stayed where they belonged.

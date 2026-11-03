@@ -29,13 +29,19 @@ src/
 vite/                         # development-only privileged middleware
 ```
 
-Morkahja's historical pages and adapters are implemented in source, but the build, lint and nine regression tests (including import resolution) passed after compatibility cleanup in [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784); browser and database verification are still missing. Frontend-only workspace switching and separate navigation now exist; a secure production API, workspace authorization and live content publisher do not.
+Morkahja's historical pages and adapters are implemented in source, but the build, lint and nine regression tests (including import resolution) passed after compatibility cleanup in [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784); five Chromium rendered-browser smoke tests now pass in [CI run 41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405). Database and game-file integration verification remain missing. Frontend-only workspace switching and separate navigation now exist; a secure production API, workspace authorization and live content publisher do not.
 
 ## Workspace routing and current behavior
 
 The sidebar reads `useLocation().pathname` and selects the active workspace from `src/app/navigation.ts`; switching navigates to its canonical home. `/babuni-dev` renders the non-editable Babuni Dev overview with a separate non-querying header. The original `/`, `/players`, `/players/:playerId`, `/content`, `/content/:kind/:itemKey` and `/settings` still render Morkahja. The Morkahja header retains its existing server and database status queries; Babuni Dev does not mount that header. Current navigation is **not** an authorization mechanism.
 
 The eight source-level regression tests, TypeScript/Vite build and ESLint passed in [CI run 41563642755](https://github.com/babunidev/babuni.admin/actions/runs/41563642755) on commit `4f9b2ed`. No browser-driven end-to-end navigation, authenticated remote access, player mutation, or publishing was tested.
+
+## Browser regression boundary
+
+`tests/browser.spec.mjs` uses Playwright/Chromium against a `vite preview` build with `VITE_USE_MOCK_DATA=true`, `VITE_USE_LOCAL_CONTENT=false`, no remote API base, and no database URL. The five tests cover rendered navigation and headers, switching between project workspaces, direct Morkahja routes, browser back/forward, mobile sidebar visibility, and mock player table rendering. `tests/regression.test.mjs` remains the separate nine-test source and mock-data suite. GitHub Actions executes both. The UI visibility defect found by Chromium was fixed in `src/app/AdminLayout.tsx`.
+
+These are not permission, backend, data-write, or real-world deployment tests. The Vite dev-only content middleware is not exercised by the production preview.
 
 ## Proposed platform design (not implemented)
 

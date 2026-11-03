@@ -2,6 +2,14 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-03 — Browser verification in mock mode
+
+**Implemented:** Add a separate Playwright/Chromium browser suite in CI to exercise the rendered application after a production build, with mock data and no database/API configuration. Keep it separate from source-level tests and run on Ubuntu 24.04 for the pinned browser tooling.
+
+**Correction:** The first complete browser run showed the mobile sidebar was merely translated offscreen, leaving its controls exposed as visible to accessibility checks. AI changed the closed state to be hidden at mobile widths while remaining visible on desktop. The assertion was retained.
+
+**Verification:** [CI run 41639215405](https://github.com/babunidev/babuni.admin/actions/runs/41639215405) passed five browser scenarios and all existing checks. Tests do not authorize live moderation, database access, content writes or production deployment.
+
 ## 2026-11-03 — Retiring compatibility imports
 
 **Implemented:** Once feature boundaries and navigation were established, AI replaced imports through transitional root re-export files with direct references to `src/features/morkahja/`, `src/shared/` and `src/app/`. The 33 redundant shims were removed, while real shared contracts and the HTTP client remained in place.
