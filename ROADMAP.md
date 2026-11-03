@@ -18,7 +18,7 @@ A GitHub Actions check on 2026-11-03 subsequently **passed** `npm ci` and `npm r
 ## Phase 1 — Finish modular architecture and verify existing behavior
 
 - [x] Run `npm ci` and `npm run build` against the corrected `main` revision in GitHub Actions; fix four TypeScript imports caused by the folder migration. [Successful run](https://github.com/babunidev/babuni.admin/actions/runs/41551602985).
-- [ ] Run `npm run lint` and resolve any lint issues.
+- [x] Run `npm run lint` and resolve reported lint errors. GitHub Actions [run 41552146789](https://github.com/babunidev/babuni.admin/actions/runs/41552146789) passed `npm ci`, `npm run build` and `npm run lint` on commit `72a3169`.
 - [ ] Add automated route/component/service tests; verify existing Morkahja workflows against fixtures and isolated game data.
 - [ ] Establish explicit shared application shell and navigation boundaries.
 - [ ] Introduce project workspaces and project-specific navigation, retaining old Morkahja URLs through a compatibility plan.
