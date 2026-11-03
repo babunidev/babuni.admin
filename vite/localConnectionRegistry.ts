@@ -42,7 +42,7 @@ function validate(input: unknown): ProfileInput {
       typeof kind !== 'string' || !projectKinds[projectId].includes(kind as ConnectionKind) ||
       typeof name !== 'string' || name.trim().length < 1 || name.length > 80 ||
       typeof target !== 'string' || target.length > 250 ||
-      forbidden.test(target) || !targetPatterns[kind as ConnectionKind].test(target)) {
+      forbidden.test(name) || forbidden.test(target) || !targetPatterns[kind as ConnectionKind].test(target)) {
     throw new Error('INVALID_PROFILE')
   }
   return { projectId, kind: kind as ConnectionKind, displayName: name.trim(), target }

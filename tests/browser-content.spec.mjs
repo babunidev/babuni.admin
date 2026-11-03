@@ -131,3 +131,17 @@ test('a pinned legacy Morkahja WebP asset decodes in Chromium', async () => {
     assert.ok(result.width > 0 && result.height > 0)
   })
 })
+
+test('local Connections screen can save and remove a non-secret project profile', async () => {
+  await withPage(async page => {
+    await page.goto(base + '/connections')
+    await page.getByRole('heading', { name: 'Connections', exact: true }).waitFor()
+    await page.getByLabel('Profile name').fill('Browser fixture connection')
+    await page.getByLabel('Target (no credentials)').fill('/tmp/babuni-browser-fixture')
+    await page.getByRole('button', { name: 'Save profile' }).click()
+    await page.getByRole('heading', { name: 'Browser fixture connection' }).waitFor()
+    await page.getByText('Not connected — profile only.').waitFor()
+    await page.getByRole('button', { name: 'Remove' }).click()
+    await page.getByText('No profiles configured.').waitFor()
+  })
+})
