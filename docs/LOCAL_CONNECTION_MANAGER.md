@@ -102,3 +102,12 @@ This does **not** implement outbound SSH, PostgreSQL, GitHub, publishing, live h
 
 The test `tests/connections.test.mjs` verifies persistence, deletion and rejection of mismatched adapters and credential-like or extraneous fields with a temporary config directory. Actual GUI/browser interaction remains to be verified. No live project data was changed.
 
+
+## 2026-11-04 — Standalone local service and read-only first adapter
+
+The next implementation introduces `local-service/server.mjs`, a separate Node process launched alongside Vite by `scripts/dev-local.mjs` when `npm run dev` is used. It listens only on `127.0.0.1:5191`. The launcher generates a new random service token for that run and passes it via environment variables, without exposing it to the browser. Vite proxies only `/local-connections-api` requests to the local service and attaches that token server-side. The service rejects requests without the token and the expected local request header; it validates browser-origin metadata and limits JSON request size.
+
+The profile registry retains its existing XDG location and format. The first actual **read-only connection test** checks whether an allowlisted local-files profile points to a readable directory using `realpath`/`stat`. The UI displays `available` or `error`, not a false claim of a connected remote service. SSH, PostgreSQL tunnels, GitHub, publishing, credentials and remote connections remain unimplemented. Other profile types return `not-configured` when tested.
+
+Run `npm run dev` to start both components on the PC. Tests use a temporary profile file, disposable local directories, and an ephemeral port; no live Morkahja data or remote services are contacted. This is a first process boundary, **not** a credential vault, desktop packaging or hardened OS-user isolation. The old development-only Vite profile plugin remains in source for compatibility tests but is no longer registered by the main Vite config.
+

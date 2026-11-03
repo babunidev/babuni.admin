@@ -4,11 +4,15 @@
 **Repository:** `babunidev/babuni.admin`  
 **Current focus:** Structural transition from a local Morkahja administration console into a multi-project administration platform.
 
-**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The local connection manager now has a **non-secret profile registry and Connections screen** in the development UI. Remote adapters, secrets, real connection checks and standalone local service remain unimplemented.
+**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Only read-only local directory checks are available. SSH, GitHub, remote project access and credential storage remain unimplemented.
 
 Babuni Admin is planned as one private workbench for maintaining multiple projects. **Morkahja** is the existing functional domain: its dashboard, player moderation, activity views and game-content editors remain in source. **Babuni Dev** is the next proposed workspace, intended to manage GitHub-backed portfolio documents and publish individual content updates without rebuilding the whole website. Additional project workspaces may be introduced later.
 
 The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Query, Zustand and Tailwind CSS 4. Morkahja-specific code now lives in `src/features/morkahja/`, shared controls in `src/shared/`, and the application shell in `src/app/`. The transitional re-export files have been removed and direct imports verified in CI. The Babuni Dev workspace has a navigable overview but no editor or publishing capability. There is **no deployed unified backend or working Babuni Dev content manager yet**.
+
+## Local development
+
+Use `npm run dev` on your PC. It launches Vite on `127.0.0.1:5180` and the separate profile service on `127.0.0.1:5191`. The service requires a randomized per-run key attached by the server-side Vite proxy. The browser does not receive that key. Stop both with Ctrl+C. Profiles remain in the local XDG config directory. `npm run dev:ui` starts only Vite and cannot manage the profiles.
 
 ## Project documentation
 

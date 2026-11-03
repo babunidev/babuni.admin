@@ -11,6 +11,7 @@ interface Profile {
   target: string
   state: string
   detail: string
+  checkedAt?: string
 }
 const kinds: Record<ProjectId, { value: Kind; label: string }[]> = {
   morkahja: [
@@ -46,7 +47,7 @@ export function ConnectionsPage() {
     try {
       const data = await api()
       setProfiles(data.profiles || [])
-      setStatus('Profiles stored on this PC. Connection adapters are not active yet.')
+      setStatus('Profiles are stored on this PC. Only local directory checks are available.')
     } catch {
       setStatus('Local connection profiles are unavailable in this mode. Run npm run dev on this PC.')
     }
@@ -70,6 +71,12 @@ export function ConnectionsPage() {
     } catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to save') }
     finally { setBusy(false) }
   }
+  async function testProfile(id: string) {
+    setBusy(true)
+    try { await api('POST', '/' + id + '/test'); await reload() }
+    catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to test connection') }
+    finally { setBusy(false) }
+  }
   async function remove(id: string) {
     setBusy(true)
     try { await api('DELETE', '/' + id); await reload() }
@@ -79,7 +86,7 @@ export function ConnectionsPage() {
 
   const field = 'w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
   return <div className="max-w-4xl space-y-6">
-    <PageHeader title="Connections" description="Private connection profiles for this PC; no live remote access yet." />
+    <PageHeader title="Connections" description="Private project profiles and read-only local directory checks. No remote access yet." />
     <p role="status" className="text-sm text-fog">{status}</p>
     <section className="rounded-lg border border-gold/20 bg-slate/50 p-5">
       <h2 className="mb-4 text-sm font-medium uppercase tracking-widest text-gold-bright">Add connection profile</h2>
@@ -115,8 +122,10 @@ export function ConnectionsPage() {
       {profiles.map(p => <article key={p.id} className="rounded-lg border border-gold/15 bg-slate/50 p-4">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div><h3 className="text-parchment">{p.displayName}</h3><p className="mt-1 text-xs text-fog">{p.projectId} · {p.kind} · {p.target}</p>
-            <p className="mt-2 text-xs text-fog">Not connected — profile only. No remote operation has been attempted.</p></div>
-          <button type="button" disabled={busy} onClick={()=>{ void remove(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-fog disabled:opacity-50">Remove</button>
+            <p className="mt-2 text-xs text-fog">{p.state === 'available' ? 'Directory available (read-only check)' : p.state === 'error' ? 'Connection check failed' : 'Not connected — profile only.'} {p.detail}</p></div>
+          <div className="flex gap-2">
+          <button type="button" disabled={busy} onClick={()=>{ void testProfile(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Test</button>
+          <button type="button" disabled={busy} onClick={()=>{ void remove(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-fog disabled:opacity-50">Remove</button></div>
         </div>
       </article>)}
     </section>
