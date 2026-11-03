@@ -175,9 +175,9 @@ test('source imports resolve without historical compatibility exports', async ()
       const file = directory + '/' + entry.name
       if (entry.isDirectory()) {
         await checkDirectory(file)
-      } else if (/\\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) {
+      } else if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) {
         const content = await readFile(file, 'utf8')
-        for (const match of content.matchAll(/(?:from\\s*|import\\s*)['"](\\.[^'"]+)['"]/g)) {
+        for (const match of content.matchAll(/(?:from\s*|import\s*)['"](\.[^'"]+)['"]/g)) {
           const target = resolve(dirname(file), match[1])
           const candidates = [target, target + '.ts', target + '.tsx', target + '.js',
             target + '/index.ts', target + '/index.tsx']
