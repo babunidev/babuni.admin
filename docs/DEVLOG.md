@@ -1,4 +1,29 @@
-# Morkahja Admin — creative and technical development journal
+# Babuni Admin — Development Journal
+
+The administration workbench began with Morkahja, but the growing collection of projects has made a wider structure useful. These entries tell the story from my perspective: what I wanted, what I decided, what AI implemented, and what evidence exists. Earlier source-only history is retained below rather than silently presented as a personal recollection.
+
+## 2026-11-03 — A shared home for administration
+
+Managing Morkahja gave the admin tool its original purpose: player activity, moderation and game content in one interface. With babuni.dev now needing a simpler way to maintain its project documentation, I wanted to expand that tool instead of creating another separate administrator. Morkahja would become one workspace, Babuni Dev another, and future projects could have their own spaces when needed.
+
+The assistant reviewed the existing React and Vite code and recommended keeping the frontend while separating project-specific features from the application shell. It identified a more serious boundary beneath the interface: privileged database and filesystem operations still depend on local development middleware, and browser-visible environment variables are unsuitable for credentials. A separate authenticated production API was proposed, not implemented or approved as a particular framework.
+
+## 2026-11-03 — Giving Morkahja its own workspace
+
+Once the direction was clear, I authorized changes to the existing repository and explained that a local backup was available. The assistant first moved the Morkahja pages, then their domain types, helpers, editor components and services into `src/features/morkahja/`. Empty areas for Babuni Dev, the shared application layer and future shell organization were also established.
+
+Temporary re-export files preserve older import paths while the migration continues. This is useful transitional architecture rather than a second copy of the original logic. GitHub commits confirm the refactor was written, and targeted import-path checks found no missing local references in the files examined. A complete build, lint pass, browser regression, player-database test or live content-editing test was **not** run, so the reorganization cannot yet be called runtime-verified.
+
+## 2026-11-03 — Planning editing without rebuilding the portfolio
+
+The development journal on the public portfolio illustrated why content publishing deserves its own workbench: GitHub text could be corrected while the VPS still served an older build. The approach I want is to select a particular project module, pull its latest document, edit or review it, and publish only the content that changed. That should work for AI-assisted revisions as well, without giving agents unrestricted file or production access.
+
+The assistant proposed keeping GitHub as the authoritative record and adding a content-publishing service that updates module metadata and search-readable pages together. The first proposed milestone is refreshing one Development Journal source file without rebuilding the entire Astro website. No editor, publishing API, automation or live-site change was implemented in this planning session.
+
+## Earlier development history
+
+The previous journal recorded the Morkahja-specific origin, early dashboard work, content editing, repository publication and October audits. Those historical entries follow below as originally documented; their older third-person voice and labels are archival material, not the standard for new Babuni Admin entries.
+
 
 **Creator and creative director:** Babuni.dev  
 **Retrospective recorded:** 2026-10-26, based on the GitHub tree, source files, initial README and historical commit diffs. This is not a raw personal chat transcript.
