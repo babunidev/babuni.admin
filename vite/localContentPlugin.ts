@@ -3,13 +3,13 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
-  writeFileSync,
 } from 'node:fs'
 import { join, normalize, resolve } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard'
 import { resolveEncounterImageBase } from './encounterImageNaming'
+import { writeFileWithBackup } from './atomicGameWrites'
 
 const JSON_FILES = {
   encounters: 'encountersdata.json',
@@ -103,7 +103,7 @@ function readJsonFile<T>(gameDir: string, kind: ContentKind): T {
 
 function writeJsonFile(gameDir: string, kind: ContentKind, data: unknown): void {
   const filePath = join(gameDir, JSON_FILES[kind])
-  writeFileSync(filePath, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
+  writeFileWithBackup(filePath, `${JSON.stringify(data, null, 2)}\n`)
 }
 
 function localContentApi(
@@ -248,10 +248,7 @@ function localContentApi(
           }
 
           const baseFile = `${imageName}.webp`
-          writeFileSync(
-            join(dir, baseFile),
-            imageBytes,
-          )
+          writeFileWithBackup(join(dir, baseFile), imageBytes)
           sendJson(res, 201, {
             ok: true,
             path: `encounterimages/${baseFile}`,
@@ -274,7 +271,7 @@ function localContentApi(
           const base = fileName.endsWith('.webp') ? fileName : `${fileName}.webp`
           const dir = join(gameDir, 'solutionimages')
           mkdirSync(dir, { recursive: true })
-          writeFileSync(join(dir, base), imageBytes)
+          writeFileWithBackup(join(dir, base), imageBytes)
           sendJson(res, 201, { ok: true, path: `solutionimages/${base}` })
           return
         }
