@@ -7,3 +7,11 @@
 **Unresolved security boundaries.** Vite `VITE_` secrets and local content/PostgreSQL write endpoints must not be treated as safe remote administrative APIs. Production operation needs independent authentication, authorization, validation, audit trails and separation between project permissions before exposing any privileged service.
 
 **Verification.** GitHub commit and import-path review only. No npm build/lint, database operation or browser regression test was run here. Testing must precede deployment.
+
+## Incremental domain extraction — 2026-11-03
+
+AI moved the Morkahja-specific `EncounterEditorPanel` and `StatCard` components, all three dedicated domain type files (`gameContent`, `encounterDetail`, `playerDetail`), and the domain utilities `contentLabels`, `encounterDetail`, `gameDataReference`, `achievementLabels`, `imageFileToWebpBase64`, and `players` under `src/features/morkahja/`.
+
+The original import paths currently contain thin re-export compatibility shims so other screens and adapters retain their imports during staged migration. Those shims are intentional transitional code, not duplicate sources of truth. A repository check resolved the relative imports in all 14 migrated TypeScript/TSX files; no unresolved relative paths were found in that targeted check. This is **not** a TypeScript build, lint pass, runtime verification or security review.
+
+**Remaining Phase 1 work:** relocate the other Morkahja-specific components and services; update consumers to import from the feature workspace; retire compatibility shims; distinguish shared controls and app shell; and validate build, lint, UI and privileged operations before production use. The Babuni Dev workspace remains a placeholder.
