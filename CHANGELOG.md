@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — CI build verification and import fixes
+
+- Added a GitHub Actions workflow to install dependencies and run the production TypeScript/Vite build on pushes.
+- Corrected four broken type-import paths introduced when moving Morkahja components/services.
+- Verified `npm ci`, `tsc -b`, and `vite build` passed in [run 41551602985](https://github.com/babunidev/babuni.admin/actions/runs/41551602985) for commit `b2062fe`.
+- The dependency install reported 23 security advisories. Lint, browser regression, live admin operations and deployment were not performed.
+
 ## 2026-11-03 — Multi-project workspace migration (source only)
 
 - Established `src/features/morkahja/`, `src/features/babuni-dev/`, `src/app/` and `src/shared/` as initial project boundaries.
