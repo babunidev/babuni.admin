@@ -23,7 +23,7 @@ export default defineConfig(({ mode }) => {
   const devPort = Number(env.DEV_PORT) || 5180
   const previewPort = Number(env.PREVIEW_PORT) || 4180
 
-  const useApiProxy = apiBase.startsWith('/') && proxyTarget.length > 0
+  const useApiProxy = env.LOCAL_ADMIN_PROXY_ENABLED === 'true' && apiBase.startsWith('/') && proxyTarget.length > 0
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const proxy: Record<string, any> = {}
@@ -61,7 +61,7 @@ export default defineConfig(({ mode }) => {
       strictPort: true,
       fs: {
         // Project root (index.html, src/) + Morkahja public assets outside the repo
-        allow: [projectRoot, resolve(morkahjaPublic)],
+        allow: [projectRoot, ...(enableLocalContent ? [resolve(morkahjaPublic)] : [])],
       },
       proxy: Object.keys(proxy).length > 0 ? proxy : undefined,
     },

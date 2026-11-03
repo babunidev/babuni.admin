@@ -10,12 +10,6 @@ export class ApiError extends Error {
   }
 }
 
-function authHeaders(): HeadersInit {
-  const token = import.meta.env.VITE_API_TOKEN?.trim()
-  if (!token) return {}
-  return { Authorization: `Bearer ${token}` }
-}
-
 async function apiRequest<T>(
   path: string,
   init: RequestInit,
@@ -25,7 +19,6 @@ async function apiRequest<T>(
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
-      ...authHeaders(),
       ...init.headers,
     },
     credentials: apiCredentials,

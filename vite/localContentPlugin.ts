@@ -301,7 +301,7 @@ export function morkahjaLocalContentPlugin(publicRoot: string): Plugin {
 }
 
 export function resolveMorkahjaPublicRoot(env: Record<string, string>): string {
-  const configured = env.VITE_MORKAHJA_PUBLIC?.trim()
+  const configured = env.MORKAHJA_PUBLIC?.trim()
   if (configured) return resolve(configured)
 
   return resolve('C:/Users/Babun/Documents/Morkahja/MorkahjaWebApp/client/public')
