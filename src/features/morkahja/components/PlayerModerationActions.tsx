@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { banPlayer, timeoutPlayer, unbanPlayer } from '../../../services/adminApi'
-import type { Player } from '../types'
+import type { Player } from '../../../types'
 import { StatusBadge } from '../../../components/StatusBadge'
 
 const timeoutOptions = [
