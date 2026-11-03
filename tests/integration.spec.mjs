@@ -52,15 +52,11 @@ before(async () => {
   const game = join(tempRoot, 'game')
   await mkdir(game, { recursive: true })
   await mkdir(join(tempRoot, 'UI'), { recursive: true })
-  const initial = {
-    'encountersdata.json': {},
-    'solutiondata.json': {},
-    'expansiondata.json': { expansions: {} },
-    'frames.json': { Frames: [] },
-    'portraits.json': { Avatar: [] },
-  }
-  for (const [name, data] of Object.entries(initial)) {
-    await writeFile(join(game, name), JSON.stringify(data))
+  // Compact snapshots of actual Morkahja content (see fixture provenance).
+  for (const fileName of ['encountersdata.json','solutiondata.json','expansiondata.json',
+    'frames.json','portraits.json']) {
+    const original = await readFile(new URL('./fixtures/legacy/' + fileName, import.meta.url))
+    await writeFile(join(game, fileName), original)
   }
   server = await createServer({
     configFile: false,
@@ -325,4 +321,23 @@ test('symlinked content targets cannot be overwritten through local API', async 
     await rm(target)
     await writeFile(target,JSON.stringify({Avatar:[]}))
   }
+})
+
+test('legacy game data fields and metadata survive isolated updates', async () => {
+  const encounters = await onDisk('encountersdata.json')
+  assert.equal(encounters['19001'].mEncounterID,19001)
+  assert.ok(Object.hasOwn(encounters['19001'],'mEncounterSolutiuonB'))
+  const solutions = await onDisk('solutiondata.json')
+  assert.equal(solutions['10001'].mSolutionID,10001)
+  const expansions = await onDisk('expansiondata.json')
+  assert.ok(expansions._meta)
+  assert.equal(expansions.expansions['1001'].mExtensioID,1001)
+  const frames = await onDisk('frames.json')
+  assert.equal(frames.Frames[1].frameID,1)
+  const portraits = await onDisk('portraits.json')
+  assert.equal(portraits.Avatar[1].avatarID,1)
+  await request(content('expansions'),{key:'1003',data:{mExtensioID:1003,mExtensioName:'New fixture'}})
+  const rewritten = await onDisk('expansiondata.json')
+  assert.deepEqual(rewritten._meta,expansions._meta)
+  assert.deepEqual(rewritten.expansions['1001'],expansions.expansions['1001'])
 })
