@@ -4,17 +4,17 @@ export const ACTIVITY_POLL_MS = 5_000
 /** Online players list poll interval (ms) */
 export const PLAYERS_POLL_MS = 5_000
 
-const databaseUrl = (import.meta.env.VITE_DATABASE_URL ?? '').trim()
+const localPostgresEnabled = import.meta.env.VITE_USE_LOCAL_POSTGRES === 'true'
 
 /** Query players directly from PostgreSQL in dev (VPS tunnel or local DB). */
 export const useLocalPostgres =
-  import.meta.env.DEV && databaseUrl.length > 0
+  import.meta.env.DEV && localPostgresEnabled
 
 export const localAdminApiBase = '/local-admin-api'
 
 /** Read/write game JSON + images on disk via Vite dev server */
 export const useLocalContent =
-  import.meta.env.VITE_USE_LOCAL_CONTENT !== 'false' && import.meta.env.DEV
+  import.meta.env.VITE_USE_LOCAL_CONTENT === 'true' && import.meta.env.DEV
 
 /** Static URLs served from MorkahjaWebApp `client/public` (dev) */
 export const gameDataBaseUrl = useLocalContent
