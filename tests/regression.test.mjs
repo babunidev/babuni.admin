@@ -104,3 +104,25 @@ test('original Morkahja routes remain declared in app router', async () => {
   }
   assert.match(app, /<Route index element=/)
 })
+
+test('shared shell uses project-owned navigation and reusable controls', async () => {
+  const app = await readFile('src/App.tsx', 'utf8')
+  const layout = await readFile('src/app/AdminLayout.tsx', 'utf8')
+  const sidebar = await readFile('src/app/Sidebar.tsx', 'utf8')
+  const navigation = await readFile('src/app/navigation.ts', 'utf8')
+  const morkahjaNavigation = await readFile('src/features/morkahja/navigation.ts', 'utf8')
+  const topBar = await readFile('src/features/morkahja/components/MorkahjaTopBar.tsx', 'utf8')
+  assert.match(app, /\.\/app\/AdminLayout/)
+  assert.match(layout, /\.\/Sidebar/)
+  assert.match(layout, /features\/morkahja\/components\/MorkahjaTopBar/)
+  assert.match(sidebar, /\.\/navigation/)
+  assert.match(navigation, /features\/morkahja\/navigation/)
+  for (const route of ['/', '/players', '/content', '/settings']) {
+    assert.ok(morkahjaNavigation.includes("to: '" + route + "'"))
+  }
+  assert.match(topBar, /services\/adminApi/)
+  for (const component of ['PageHeader', 'Table', 'StatusBadge', 'ConnectionBanner']) {
+    const shared = await readFile('src/shared/components/' + component + '.tsx', 'utf8')
+    assert.match(shared, new RegExp('export (?:function|interface) ' + component + '\\b|export interface Column'))
+  }
+})
