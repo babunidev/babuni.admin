@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'vite'
@@ -10,6 +10,8 @@ let tempRoot
 let server
 let apiServer
 let base
+let mockAdminClient
+let mockContentClient
 let failDb = false
 const players = new Map([['fixture-1', { id: 'fixture-1', name: 'Fixture Player', status: 'online' }]])
 const operations = {
@@ -67,6 +69,8 @@ before(async () => {
   })
   const content = await server.ssrLoadModule('/vite/localContentPlugin.ts')
   const admin = await server.ssrLoadModule('/vite/localAdminPlugin.ts')
+  mockAdminClient = await server.ssrLoadModule('/src/features/morkahja/services/adminApi.ts')
+  mockContentClient = await server.ssrLoadModule('/src/features/morkahja/services/contentApi.ts')
   const handlers = []
   const harness = { middlewares: { use: handler => handlers.push(handler) } }
   content.morkahjaLocalContentPlugin(tempRoot).configureServer(harness)
@@ -222,4 +226,52 @@ test('WebP image uploads validate names, data and paths inside fixture directori
   })
   assert.equal(titled.status, 201)
   assert.equal(titled.body.imageName, 'golden_forest')
+})
+
+test('client-side mock moderation and player inspection reject missing accounts', async () => {
+  const detail = await mockAdminClient.fetchPlayerDetail('p-001')
+  assert.equal(detail.playerId, 'p-001')
+  await assert.rejects(() => mockAdminClient.fetchPlayerDetail('missing'), /PLAYER_NOT_FOUND/)
+  for (const [method, value] of [
+    ['timeoutPlayer', { playerId: 'missing', durationMinutes: 15 }],
+    ['banPlayer', { playerId: 'missing', reason: 'fixture' }],
+    ['unbanPlayer', 'missing'],
+  ]) {
+    await assert.rejects(() => mockAdminClient[method](value), /Player not found/)
+  }
+})
+
+test('client content adapter rejects HTTP 200 with explicit failed save acknowledgement', async () => {
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response(JSON.stringify({
+    ok: false, message: 'Fixture save was rejected',
+  }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+  try {
+    await assert.rejects(
+      () => mockContentClient.createEncounter('00021', { mEncounterID: 21 }),
+      /Fixture save was rejected/,
+    )
+    await assert.rejects(
+      () => mockContentClient.createFrame({ frameID: 21 }),
+      /Fixture save was rejected/,
+    )
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('filesystem write failures return non-success and preserve original fixture data', async () => {
+  const path = join(tempRoot, 'game', 'encountersdata.json')
+  const initial = await readFile(path, 'utf8')
+  await chmod(path, 0o444)
+  try {
+    const result = await request(content('encounters'), {
+      key: '00077', data: { mEncounterID: 77, mEncounterTitle: 'Should not persist' },
+    })
+    assert.equal(result.status, 500)
+    assert.notEqual(result.body.ok, true)
+    assert.equal(await readFile(path, 'utf8'), initial)
+  } finally {
+    await chmod(path, 0o644)
+  }
 })
