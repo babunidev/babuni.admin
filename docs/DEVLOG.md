@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Protecting the existing Morkahja behavior
+
+With the TypeScript build and lint checks working, I wanted some protection against changing the existing Morkahja features while Babuni Admin grows into a multi-project tool. AI introduced a small regression suite for player ordering, encounter drafts and relationships, in-memory moderation and the established routes. The tests deliberately use local fixtures rather than connecting to player accounts or changing game files.
+
+The first CI runs revealed test-loader issues rather than application failures. AI corrected the loader to use the project's declared TypeScript dependency and fixed its relative-import handling. [Run 41552579859](https://github.com/babunidev/babuni.admin/actions/runs/41552579859) then passed all five tests, the build and lint for commit `ba014ea`. This is the first automated regression baseline; full rendered-screen interaction, remote services and privileged writes remain outside its coverage.
+
 ## 2026-11-03 — Checking the code rules after the move
 
 After confirming TypeScript could build the reorganized application, I wanted its lint checks addressed as well. AI added ESLint to the GitHub Actions workflow and the first run identified twelve errors. Ten came from the temporary re-export files kept for compatibility, while two concerned content-tab state and a mock-data variable. Rather than disable linting across the project, AI marked the specific compatibility exports, adjusted the tab selection to derive its active value from the route without synchronously setting state in an effect, and corrected the declaration. A newly unused effect import also had to be removed after the first retest.
