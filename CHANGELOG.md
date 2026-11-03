@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Standalone local profile service
+
+- Added separate loopback Node process and per-run service key, launched with Vite through `npm run dev`.
+- Moved live connection-profile CRUD to that service through a server-side authenticated Vite proxy.
+- Added read-only local-directory checks; other adapters remain explicitly unavailable.
+- Added isolated process/API tests for authentication, origin denial, local-directory success/failure and non-operational remote adapters.
+- No actual remote credentials, remote project connections or game changes.
+
 ## 2026-11-04 — Local connection profile foundation
 
 - Implemented a reusable local registry for non-secret, disabled-by-default per-project connection profiles.

@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Checking the first connection without opening a remote one
+
+After confirming the Connections screen could save and remove a profile on my PC, the next task was to give it a proper local service instead of keeping profile operations inside Vite. AI added a second loopback-bound process with a temporary per-run service key and a small proxy from the development UI. Its first check only confirms that a selected local directory exists, without writing to it or reaching Morkahja's server. Remote connections and credential storage remain future work; they were deliberately not introduced as part of this first transport boundary.
+
 ## 2026-11-04 — The first local connections screen
 
 With the local-only architecture settled, I wanted the administration tool to begin recognizing distinct projects without prematurely reaching the actual servers. AI implemented a shared Connections screen and a small registry that saves non-secret connection descriptions on my PC. A profile can be created or removed, but stays explicitly disconnected; no SSH, GitHub or database access is attempted yet. Fixture tests cover persistence and rejection of credential-like configuration. This first slice still uses the Vite development server and needs a separate local service before real privileged connections can be enabled.

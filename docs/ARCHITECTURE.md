@@ -74,6 +74,8 @@ Babuni's PC only
        Morkahja VPS / GitHub / babuni.dev project services
 ```
 
+The first independent local service now lives in `local-service/server.mjs`, started by `scripts/dev-local.mjs` with an ephemeral per-run key and bound to `127.0.0.1:5191`. Vite is its same-PC UI proxy, not the profile service itself. It currently provides only profile CRUD and local directory read-only checks; it is not a credential vault, SSH tunnel manager or production-grade multi-user authorization service.
+
 The [shared connection-manager design](LOCAL_CONNECTION_MANAGER.md) specifies profile metadata, status lifecycle, candidate adapters, credential handling, UI states, and acceptance criteria. That document is **a design**, not a claim that the manager or new local service has been implemented.
 
 ### Existing code versus planned work

@@ -50,13 +50,14 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 
 - [x] Document Babuni Admin as a single-user application running only on the creative's own PC, with secure **outbound** project connections and no hosted/public administration interface. [Concept](CONCEPT.md) · [Architecture](docs/ARCHITECTURE.md).
 - [x] Design a shared local connection manager: profile contracts, non-browser credential references, status lifecycle, scoped adapter boundaries, UI and test acceptance criteria. **Design only, not implementation.** [Design](docs/LOCAL_CONNECTION_MANAGER.md).
-- [ ] Implement a separately testable **local** privileged service; do not publish Vite middleware or deploy a hosted admin dashboard. A reusable non-secret profile registry and development-only Vite adapter are now in source; this is **not** the standalone service.
+- [x] Introduce a standalone loopback-only local Node service with an ephemeral service token; use Vite as the developer UI/proxy rather than as the connection-profile authority. This is the first local process boundary, not a full privilege/isolation review.
 - [x] Add local, non-secret connection profile creation/listing/removal with disabled-by-default status and isolated persistence tests.
 - [ ] Add browser tests for the rendered connection profile interface.
 - [x] Remove browser-side reads of `VITE_DATABASE_URL` and `VITE_API_TOKEN`; use server-only `DATABASE_URL` in the current development adapter. This does not implement a credential vault.
 - [ ] Complete per-project connection profiles with edit flow, validated adapter registry and credentials; add/list/remove non-secret profile metadata is implemented.
 - [ ] Integrate OS-user secret storage and keep credentials outside the browser, logs, Git and readable config.
-- [ ] Add connection tests, verified statuses, safe disconnect/reconnect and clear mock-vs-live indicators.
+- [x] Add a read-only local directory test with verified available/error status; non-local adapters explicitly remain unconfigured.
+- [ ] Add SSH/GitHub checks, keyring storage, safe connect/disconnect, reconnection and project capability authorization.
 - [ ] Connect Morkahja PostgreSQL through a protected outbound tunnel with least privilege.
 - [ ] Connect Morkahja content to allowlisted local files or a scoped remote transport.
 - [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
