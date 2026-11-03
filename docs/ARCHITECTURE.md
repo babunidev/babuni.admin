@@ -2,6 +2,8 @@
 
 ## Current state (2026-11-03)
 
+**Hardening update:** [Phase 1 hardening review](PHASE1_HARDENING_2026-11-03.md), validated by [CI run 41659550592](https://github.com/babunidev/babuni.admin/actions/runs/41659550592), adds server-only database configuration, locally guarded opt-in development endpoints, transactional moderation and session revocation, atomic file replacement/backups, representative legacy fixtures and browser-form verification. It does not provide authenticated production administration.
+
 The [Phase 1 verification report](PHASE1_VERIFICATION.md) records the current architecture review and its production-release blockers; [CI run 41645348546](https://github.com/babunidev/babuni.admin/actions/runs/41645348546) verifies build, lint, nine source tests, nine isolated integrations and five browser tests. Source/mock verification does **not** establish safe production operations.
 
 Babuni Admin remains a React 19, TypeScript and Vite 8 frontend with React Router, TanStack Query, Zustand and Tailwind CSS 4. The Morkahja domain has been partly isolated under `src/features/morkahja/`. The active layout, sidebar, UI state and navigation composition now live in `src/app/`. Reusable controls and formatting live in `src/shared/`, while Morkahja navigation and server-status display remain owned by `src/features/morkahja/`. App routing and configuration retain their established entry points. The temporary re-export files have been deleted, with imports now targeting feature and shared modules directly.

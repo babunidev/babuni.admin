@@ -1,5 +1,13 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Hardening the old tools without touching the live game
+
+The next set of concerns came from what the earlier tests could not prove: PostgreSQL really deleting sessions safely, the editors really saving through their forms, and game files surviving interrupted writes. To tackle them without risking anyone's account or content, I asked AI to work with a disposable database and isolated copies of the Morkahja assets, while also addressing the npm audit findings.
+
+AI put the changes on a review branch, added real PostgreSQL integration tests and changed moderation to use transactions. The tests deliberately made session deletion fail and verified that the player's previous state was preserved. Temporary files and retained backups replaced direct content overwrites. For the editors, small snapshots from the Morkahja repository let Chromium exercise all five forms, PNG-to-WebP conversion and a real legacy WebP image. The first runs exposed test setup and selector issues, which AI corrected before the full suite passed.
+
+Compatible dependency updates removed all high-severity findings and all npm production-scope findings; twelve moderate tooling reports still remain. Browser-visible database credentials and client API-token handling were removed, and local development endpoints gained explicit opt-ins and request guards. The [passing CI run](https://github.com/babunidev/babuni.admin/actions/runs/41659550592) verifies 37 tests, but none of this is a substitute for production authentication or a full recovery policy. Those limits remain visible in [the hardening report](PHASE1_HARDENING_2026-11-03.md).
+
 ## 2026-11-03 — Looking beyond the green tests
 
 With the structural milestone verified, the dependency installer was still reporting 23 vulnerabilities. A passing build could not answer how serious they were or which ones mattered for this administration tool, so I wanted the packages audited before changing versions. AI added a nonmutating audit to GitHub Actions and compared the full dependency tree against npm's production classification. Six affected packages appeared in the latter, including Vite and React Router.

@@ -16,3 +16,7 @@
 5. **P1 — Dependencies and maintainability:** Latest `npm ci` reported **23 advisories (8 high, 14 moderate, 1 low)**. The advisory list, exploitability and safe upgrade path are not yet audited. `src/pages/SettingsPage.tsx` remains outside `features/morkahja`; shared `src/types/index.ts` still includes Morkahja-oriented contracts; these boundaries can be revisited without blocking the existing UI.
 
 **Disposition:** Phase 1's initial modular restructuring and automated source/mock verification are complete. **Phase 1 is not certified for production, and the legacy application has not been comprehensively regression-tested against live-like infrastructure.** Keep the outstanding PostgreSQL, editor, security, filesystem recovery and dependency work open. This is a review of documented repository state and CI evidence, not a new runtime test.
+
+## Subsequent Phase 1 hardening — 2026-11-03
+
+This report is a historical baseline, recorded before the later hardening implementation. The updated [Phase 1 hardening report](PHASE1_HARDENING_2026-11-03.md) and [CI run 41659550592](https://github.com/babunidev/babuni.admin/actions/runs/41659550592) supersede its *unverified PostgreSQL transaction, editor-form and file-backup* findings for the **isolated fixture scope**. Production authentication, live-system compatibility, recovery policy and remaining tooling advisories are still outstanding.

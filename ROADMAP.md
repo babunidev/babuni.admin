@@ -22,7 +22,7 @@ GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine reg
 - [x] Add initial automated regression tests for player ordering, encounter drafts/details, in-memory moderation and route declarations. Five tests passed in [CI run 41552579859](https://github.com/babunidev/babuni.admin/actions/runs/41552579859).
 - [x] Add an initial Chromium browser smoke suite for rendered UI, workspace selection/history, legacy Morkahja routes, mock player table and mobile sidebar. [5/5 passed in CI](https://github.com/babunidev/babuni.admin/actions/runs/41639215405).
 - [x] Add isolated Morkahja HTTP tests: player inspection, timeout/ban/unban with injected database operations; encounter/solution/expansion/frame/portrait saves on temporary game JSON; WebP upload validation; simulated database read/write failures, missing files and rejected acknowledgements. [9/9 integration tests passed](https://github.com/babunidev/babuni.admin/actions/runs/41644848938).
-- [ ] Test real PostgreSQL query, session-revocation and moderation transactions against a disposable database; exercise full rendered content-editor workflows against isolated game assets.
+- [x] Verify PostgreSQL queries, session-revocation and moderation rollback against a disposable PostgreSQL 16 CI service; exercise all five rendered content editor forms and image conversion against isolated assets. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41659550592).
 - [x] Separate the active application layout, sidebar, UI store, and navigation composition into `src/app/`; move generic controls and formatting to `src/shared/`, and Morkahja navigation/status to its feature folder. [CI verification](https://github.com/babunidev/babuni.admin/actions/runs/41563231632).
 - [x] Add URL-driven workspace selection, separate Morkahja/Babuni Dev navigation, and a non-operational Babuni Dev overview. Keep existing Morkahja URLs and status bar intact. [CI: 8 tests, build, lint passed](https://github.com/babunidev/babuni.admin/actions/runs/41563642755).
 - [ ] Add real workspace authorization/permissions and Babuni Dev content operations after the secure backend is implemented.
@@ -31,22 +31,25 @@ GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine reg
 - [x] Complete the final Phase 1 source/CI verification review and record residual risks in the roadmap, changelog, development journal and architecture. See [Phase 1 verification report](docs/PHASE1_VERIFICATION.md) and [latest passing CI](https://github.com/babunidev/babuni.admin/actions/runs/41645348546).
 
 - [x] Audit the 23 npm affected package records, compare full and production-scoped results, and document prioritized remediation. [Audit report](docs/DEPENDENCY_AUDIT_2026-11-03.md), [CI evidence](https://github.com/babunidev/babuni.admin/actions/runs/41654264717).
-- [ ] Remediate dependency advisories in reviewable, compatibility-tested changes and rerun build, lint, source, integration, browser and npm audits. No dependency versions changed during this audit.
+- [x] Apply semver-compatible lockfile security fixes and rerun the full suite: 23 → 12 affected packages (all 12 moderate), zero under `--omit=dev`. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41659550592).
+- [ ] Resolve the 12 remaining moderate lint/tooling advisories in a separate compatibility review; audit report linked below.
 
 ### Final Phase 1 review — verified versus outstanding
 
 - [x] Confirm retained routes, workspace navigation, mock views, service error handling and isolated content saves via the automated test suites; **not** a blanket guarantee that all legacy functions remain intact.
 - [x] Review architecture and document specific security, data-integrity, dependency and test-coverage risks.
 - [x] Update roadmap, changelog and development journal with an evidence-linked review.
-- [ ] Verify real PostgreSQL queries, atomic moderation/session changes and the rendered content editors against disposable fixtures.
+- [x] Verify actual PostgreSQL queries, atomic moderation/session changes and all five rendered content-editor forms against disposable fixtures. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41659550592).
 - [ ] Close security and dependency release blockers before any remote/admin production access.
 
 Full findings: [docs/PHASE1_VERIFICATION.md](docs/PHASE1_VERIFICATION.md).
 
+Additional scope and remaining production blockers: [Phase 1 hardening report](docs/PHASE1_HARDENING_2026-11-03.md).
+
 ## Phase 2 — Secure administration backend
 
 - [ ] Separate privileged operations from Vite development plugins into a production backend, with server-only secrets.
-- [ ] Remove dependence on `VITE_DATABASE_URL` and `VITE_API_TOKEN` for confidential credentials.
+- [x] Remove browser-side reads of `VITE_DATABASE_URL` and `VITE_API_TOKEN`; use server-only `DATABASE_URL`, with explicit local mode opt-in. This does not implement admin authentication.
 - [ ] Add authenticated sessions, server-enforced project permissions, CSRF protections where applicable, request validation and limits.
 - [ ] Add action attribution, audit logging, backup/rollback controls, and safe file path/type/size constraints.
 - [ ] Keep game moderation and portfolio publication privileges isolated.
@@ -80,9 +83,9 @@ Full findings: [docs/PHASE1_VERIFICATION.md](docs/PHASE1_VERIFICATION.md).
 ## Existing Morkahja work to preserve and harden
 
 - [x] Verify player inspection, timeout, ban, unban and HTTP error responses with an injected in-memory database fixture (not PostgreSQL). [CI](https://github.com/babunidev/babuni.admin/actions/runs/41644848938).
-- [ ] Verify the actual PostgreSQL adapter against a disposable database, including session revocation and partially failed writes.
+- [x] Verify actual PostgreSQL adapter against disposable PostgreSQL, including session revocation and trigger-injected rollback. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41659550592).
 - [x] Verify server-side create/update routes for encounters, solutions, expansions, portraits and frames, plus WebP upload paths, using temporary filesystem fixtures. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41644848938).
-- [ ] Exercise the actual rendered editor forms and image conversion against an isolated content fixture.
+- [x] Exercise all five rendered editor forms and browser WebP conversion/decoding against isolated legacy fixtures. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41659550592).
 - [ ] Resolve local and remote content API inconsistencies before remote use.
 - [ ] Ensure mock fallbacks cannot be mistaken for successful live writes.
 - [ ] Audit file uploads, database transactions, authorization and recovery procedures.

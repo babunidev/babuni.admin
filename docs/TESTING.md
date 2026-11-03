@@ -59,3 +59,11 @@ It checks player lookup and timeout/ban/unban, invalid inputs and database excep
 ## Dependency vulnerability audit
 
 GitHub Actions includes a separate nonmutating `audit` job, which runs `npm audit --json` and `npm audit --omit=dev --json` against the committed lockfile. The audit job reports findings without automatically altering dependencies or blocking existing build/test workflows while remediation is planned. See [the 2026-11-03 findings](DEPENDENCY_AUDIT_2026-11-03.md) and [audit run 41654264717](https://github.com/babunidev/babuni.admin/actions/runs/41654264717). A green audit job means the assessment command ran successfully, **not that dependencies are free of advisories**.
+
+## Expanded Phase 1 hardening suite (2026-11-03)
+
+The hardening review branch adds `npm run test:postgres` (requires an explicit localhost `TEST_DATABASE_URL` pointing to a **disposable database named `babuni_fixture`**) and `npm run test:browser:content` (requires an explicitly configured local-only, temporary Morkahja game-content fixture server). **Never run the PostgreSQL test against a real database**: it creates and drops tables within that dedicated test database.
+
+The CI `postgres-fixtures` job uses an ephemeral PostgreSQL 16 service; its four tests cover real SQL and transaction rollback. The browser job creates a temporary game folder from `tests/fixtures/legacy/`, explicitly enables local content middleware there, and runs five browser editor/image tests. A pinned public Morkahja WebP file is downloaded into the temporary fixture and decoded in Chromium.
+
+Run `npm ci`, `npm run build`, `npm run lint`, `npm test`, `npm run test:integration` as usual. The special database/browser fixture commands belong only in their isolated environments. [Verified CI run 41659550592](https://github.com/babunidev/babuni.admin/actions/runs/41659550592) · [Hardening report](PHASE1_HARDENING_2026-11-03.md).
