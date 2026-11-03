@@ -1,5 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
-import { AdminLayout } from './layouts/AdminLayout'
+import { AdminLayout } from './app/AdminLayout'
 import { ContentPage } from './features/morkahja/pages/ContentPage'
 import { DashboardPage } from './features/morkahja/pages/DashboardPage'
 import { PlayersPage } from './features/morkahja/pages/PlayersPage'

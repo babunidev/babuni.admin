@@ -1,12 +1,2 @@
-export interface NavItem {
-  to: string
-  label: string
-  icon: string
-}
-
-export const navItems: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: '◈' },
-  { to: '/players', label: 'Players', icon: '◎' },
-  { to: '/content', label: 'Content', icon: '✦' },
-  { to: '/settings', label: 'Settings', icon: '⚙' },
-]
+export type { NavItem } from '../features/morkahja/navigation'
+export { morkahjaNavItems as navItems } from '../features/morkahja/navigation'
