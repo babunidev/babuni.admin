@@ -1,6 +1,6 @@
 # Morkahja Admin — instructions for future human and AI developers
 
-**Creative authority and project creator:** Babuni.dev. The current repository is `babunidev/babuni.admin`, publicly named **Babuni Admin**. `arcanitebrothers` is the historical package/repository name; existing application UI may still say `Morkahja Admin`.
+**Human creative and project authority:** Babuni. The current repository is `babunidev/babuni.admin`, publicly named **Babuni Admin**. `arcanitebrothers` is the historical package/repository name; existing application UI may still say `Morkahja Admin`.
 
 ## Start with the actual architecture
 
@@ -32,3 +32,7 @@ Preserve the original constraints recorded in editor rules: **strict TypeScript,
 Credit original product direction to Babuni.dev; credit AI only for assistance it demonstrably supplied. Preserve narrative development history, revisions, technical debt and verification gaps. Never publish credentials or raw private user data.
 
 The 2026-10-26 audit made **documentation changes only**, with no code or live-data operations.
+
+## Repository-local documentation standard
+
+Before writing or changing project documentation, read [docs/DOCUMENTATION.md](docs/DOCUMENTATION.md). These rules travel with this repository and do not depend on the babuni.dev ChatGPT Project. Preserve all project-specific technical, creative, canon, safety, licensing, and historical rules in this file; follow the linked standard for public first-person narrative, human–AI attribution, concise development journals, decision records, and evidence-based verification. **Babuni** is the human creative; **babuni.dev** is the website/portfolio, not the person. Preserve third-party credits and historical legal notices. References above to a dated “documentation-only audit” describe that past task, not a permanent ban on later authorized implementation.
