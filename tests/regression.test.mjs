@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import ts from 'typescript'
-import { readFile } from 'node:fs/promises'
+import { readFile, readdir } from 'node:fs/promises'
+import { existsSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 
 async function load(relativePath) {
@@ -154,4 +155,37 @@ test('workspace shell uses URL-derived navigation and distinct top bars without 
   assert.match(sidebar, /current.navItems.map/)
   assert.match(overview, /not available yet/)
   assert.doesNotMatch(overview, /fetch\(|localStorage|contentApi/)
+})
+
+test('source imports resolve without historical compatibility exports', async () => {
+  const retiredDirectories = ['src/components', 'src/layouts', 'src/stores', 'src/utils']
+  for (const directory of retiredDirectories) {
+    assert.equal(existsSync(directory), false, directory + ' should not contain compatibility shims')
+  }
+  const removedServices = ['adminApi', 'contentApi', 'mockPlayerDetail', 'mockState']
+  const removedTypes = ['encounterDetail', 'gameContent', 'playerDetail']
+  for (const name of removedServices) {
+    assert.equal(existsSync('src/services/' + name + '.ts'), false)
+  }
+  for (const name of removedTypes) {
+    assert.equal(existsSync('src/types/' + name + '.ts'), false)
+  }
+  async function checkDirectory(directory) {
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      const file = directory + '/' + entry.name
+      if (entry.isDirectory()) {
+        await checkDirectory(file)
+      } else if (/\\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) {
+        const content = await readFile(file, 'utf8')
+        for (const match of content.matchAll(/(?:from\\s*|import\\s*)['"](\\.[^'"]+)['"]/g)) {
+          const target = resolve(dirname(file), match[1])
+          const candidates = [target, target + '.ts', target + '.tsx', target + '.js',
+            target + '/index.ts', target + '/index.tsx']
+          assert.ok(candidates.some(existsSync), file + ' has unresolved import ' + match[1])
+        }
+      }
+    }
+  }
+  await checkDirectory('src')
+  await checkDirectory('vite')
 })
