@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { ACTIVITY_POLL_MS } from '../../../config/constants'
 import { fetchActivityFeed } from '../../../services/adminApi'
-import type { ActivityFeedItem } from '../types'
+import type { ActivityFeedItem } from '../../../types'
 import { formatDateTime } from '../../../utils/format'
 import { StatusBadge } from '../../../components/StatusBadge'
 
