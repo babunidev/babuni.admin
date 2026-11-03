@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from 'node:http'
+import type { ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard'
 

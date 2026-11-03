@@ -145,13 +145,6 @@ async function listLiveSessionPlayerIds(
   return new Set(result.rows.map((row) => row.player_id))
 }
 
-async function revokeAllPlayerSessions(
-  db: pg.Pool,
-  playerId: string,
-): Promise<void> {
-  await db.query('DELETE FROM sessions WHERE player_id = $1', [playerId])
-}
-
 function mapPlayer(
   row: PlayerRow,
   activeAvatar: AvatarRow | undefined,
