@@ -8,7 +8,7 @@ import type {
   Player,
   ServerStatus,
   TimeoutPlayerRequest,
-} from '../types'
+} from '../../../types'
 import type { PlayerDetail } from '../../../types/playerDetail'
 import { getMockPlayerDetail } from './mockPlayerDetail'
 import { apiGet, apiPost } from '../../../services/http'
