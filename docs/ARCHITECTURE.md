@@ -2,28 +2,31 @@
 
 ## Current state (2026-11-03)
 
-Babuni Admin remains a React 19, TypeScript and Vite 8 frontend with React Router, TanStack Query, Zustand and Tailwind CSS 4. The Morkahja domain has been partly isolated under `src/features/morkahja/`. Existing shared controls, app routing and configuration still use their previous paths. Transitional re-export files retain imports during the migration.
+Babuni Admin remains a React 19, TypeScript and Vite 8 frontend with React Router, TanStack Query, Zustand and Tailwind CSS 4. The Morkahja domain has been partly isolated under `src/features/morkahja/`. The active layout, sidebar, UI state and navigation composition now live in `src/app/`. Reusable controls and formatting live in `src/shared/`, while Morkahja navigation and server-status display remain owned by `src/features/morkahja/`. App routing and configuration remain at their existing entry paths; transitional re-export files retain old imports during the migration.
 
 ```text
 src/
   App.tsx                     # existing router, routes not yet separated by project
-  layouts/                    # current shared app layout
+  layouts/                    # transitional compatibility export
   features/
     morkahja/
+      navigation.ts            # current Morkahja routes and labels
       pages/                  # dashboard, players, content
-      components/             # Morkahja domain UI
+      components/             # domain UI and MorkahjaTopBar
       services/               # Morkahja domain data adapters
       types/                  # game and player types
       utils/                  # domain utilities
     babuni-dev/               # reserved only; no editor implemented
-  app/                        # future shell boundary, currently README
-  shared/                     # future shared boundary, currently README
+  app/                        # AdminLayout, Sidebar, navigation, uiStore
+  shared/
+    components/               # PageHeader, Table, StatusBadge, ConnectionBanner
+    utils/                    # generic formatting
   components/, services/,
   types/, utils/              # existing shared files and transition exports
 vite/                         # development-only privileged middleware
 ```
 
-Morkahja's historical pages and adapters are implemented in source, but **no build, lint, browser or database verification has yet been recorded for this migration**. No production API, cross-project navigation or live content publisher exists yet.
+Morkahja's historical pages and adapters are implemented in source, but the build, lint and six source-level tests passed in GitHub Actions for the shell extraction; browser and database verification are still missing. No production API, cross-project navigation or live content publisher exists yet.
 
 ## Proposed platform design (not implemented)
 

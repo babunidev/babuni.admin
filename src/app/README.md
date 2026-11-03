@@ -1,3 +1,7 @@
-# Shared application shell
+# Application shell
 
-The router and layout still live at `src/App.tsx` and `src/layouts/AdminLayout.tsx`. This directory reserves their future home after route and regression coverage is in place.
+`AdminLayout.tsx` and `Sidebar.tsx` own the current frame and sidebar presentation. `uiStore.ts` owns responsive sidebar state. `navigation.ts` composes navigation from the currently enabled Morkahja workspace.
+
+`src/App.tsx` continues to own the router until workspace routing and permissions are implemented. The layout currently renders `MorkahjaTopBar` explicitly because the Morkahja workspace is the only active one; this is not yet a generic workspace switcher.
+
+Legacy exports under `src/layouts/`, `src/components/`, `src/stores/` and `src/utils/` preserve existing imports until consumers are migrated.

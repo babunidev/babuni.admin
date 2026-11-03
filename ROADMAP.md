@@ -21,7 +21,7 @@ A GitHub Actions check on 2026-11-03 subsequently **passed** `npm ci` and `npm r
 - [x] Run `npm run lint` and resolve reported lint errors. GitHub Actions [run 41552146789](https://github.com/babunidev/babuni.admin/actions/runs/41552146789) passed `npm ci`, `npm run build` and `npm run lint` on commit `72a3169`.
 - [x] Add initial automated regression tests for player ordering, encounter drafts/details, in-memory moderation and route declarations. Five tests passed in [CI run 41552579859](https://github.com/babunidev/babuni.admin/actions/runs/41552579859).
 - [ ] Expand coverage to rendered components, navigation, backend adapters and isolated game-data writes; verify complete Morkahja workflows.
-- [ ] Establish explicit shared application shell and navigation boundaries.
+- [x] Separate the active application layout, sidebar, UI store, and navigation composition into `src/app/`; move generic controls and formatting to `src/shared/`, and Morkahja navigation/status to its feature folder. [CI verification](https://github.com/babunidev/babuni.admin/actions/runs/41563231632).
 - [ ] Introduce project workspaces and project-specific navigation, retaining old Morkahja URLs through a compatibility plan.
 - [ ] Replace transitional re-export imports with direct feature imports, then remove unused shims.
 - [ ] Keep the Babuni Dev workspace inactive until its content operations are designed and authorized.

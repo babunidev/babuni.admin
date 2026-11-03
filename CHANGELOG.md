@@ -1,5 +1,14 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — Shared application boundaries
+
+- Relocated the layout, sidebar, Zustand UI store and app navigation composition to `src/app/`.
+- Moved reusable `PageHeader`, `Table`, `StatusBadge`, `ConnectionBanner` and generic formatting into `src/shared/`.
+- Placed current Morkahja navigation entries and the server-status top bar in its feature workspace; existing route paths and labels remain unchanged.
+- Preserved old import paths with transitional re-exports and added a sixth regression test covering the shell-to-workspace connections.
+- Fixed a sidebar compatibility-export path discovered by the first CI build; [run 41563231632](https://github.com/babunidev/babuni.admin/actions/runs/41563231632) passed build, lint and all six tests at commit `3fd29b1`.
+- No project switching, authentication, live database operation or website deployment was implemented or tested.
+
 ## 2026-11-03 — Initial automated regression coverage
 
 - Added five Node test-runner regressions covering player ordering/counts, encounter draft defaults, encounter solution/expansion/follow-up lookups, in-memory mock moderation, and Morkahja route declarations.

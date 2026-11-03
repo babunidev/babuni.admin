@@ -2,6 +2,12 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-03 — Shared shell, project-owned information
+
+**Implemented:** The layout, sidebar, navigation composition and sidebar state are application concerns. Generic tables, notices, badges, headings and formatting are shared resources. Morkahja-specific link definitions and server-health status display remain in its workspace. This avoids making the shared shell import game data directly, except for the explicit current-workspace top-bar composition, and does not pretend project switching exists.
+
+**Migration choice:** Keep transitional re-exports until remaining consumers can be updated and tested. The previous URLs are intentionally unchanged. [Build, lint and six tests passed](https://github.com/babunidev/babuni.admin/actions/runs/41563231632); rendered UI and privileged operations remain unverified.
+
 ## 2026-11-03 — Shared administration platform
 
 **Decided:** Expand the existing Morkahja administration tool into Babuni Admin, with project-specific workspaces for Morkahja, Babuni Dev and future needs. Keep the existing React/TypeScript/Vite frontend instead of replacing it with another web framework.

@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Separating the interface from the game
+
+A shared administration application needs boundaries that reflect what belongs to one project and what can be used by all of them. With Morkahja's domain already grouped together, I directed the next change toward the layout, reusable controls and navigation. AI moved the active layout, sidebar and UI state into `src/app/`, placed common tables, badges, headers, connection notices and formatting into `src/shared/`, and kept Morkahja's navigation entries and server-status display with the game workspace. Its existing routes and visible labels were deliberately preserved rather than presenting unfinished multi-project switching as available.
+
+The first GitHub Actions build identified an incorrect transitional sidebar export. AI corrected that path and added a regression check for the separation. [CI run 41563231632](https://github.com/babunidev/babuni.admin/actions/runs/41563231632) passed TypeScript/Vite, ESLint and all six tests at commit `3fd29b1`. Compatibility exports still connect older imports, and the new structure has not been verified through rendered-screen, live moderation or filesystem integration tests.
+
 ## 2026-11-03 — Protecting the existing Morkahja behavior
 
 With the TypeScript build and lint checks working, I wanted some protection against changing the existing Morkahja features while Babuni Admin grows into a multi-project tool. AI introduced a small regression suite for player ordering, encounter drafts and relationships, in-memory moderation and the established routes. The tests deliberately use local fixtures rather than connecting to player accounts or changing game files.

@@ -23,3 +23,9 @@ With the creative's approval to continue directly on `main`, AI moved eight more
 Compatibility re-export files remain at the previous component and service paths; existing routes and consumers therefore need no immediate imports rewrite. A targeted check of the new relative imports in all 14 Morkahja domain components and services found no unresolved local paths. This is source-level inspection, **not** a successful TypeScript build, lint pass or runtime test. Production credentials, moderation behavior, game files, routes and hosting were not changed.
 
 **Still to verify:** TypeScript build, lint, functional browser flows and any live admin write paths in an authorized test environment. Follow-up cleanup can migrate consumers to direct workspace imports and remove compatibility shims after tests are established. The security findings about Vite middleware remain open.
+
+## Shared application shell extraction — 2026-11-03
+
+AI moved the active layout, sidebar and UI state into `src/app/`, and placed generic heading, table, badge, connection-banner and formatting controls in `src/shared/`. Current Morkahja route definitions and server-status top bar were separated into `src/features/morkahja/`. Legacy module exports remain temporarily; page URLs and the visible game-specific header are intentionally unchanged. A sixth source-level regression check verifies the route/navigation composition and shared-component locations.
+
+The initial refactor produced a broken sidebar compatibility export. After correcting it, [run 41563231632](https://github.com/babunidev/babuni.admin/actions/runs/41563231632) passed `npm ci`, `npm run build`, `npm run lint` and six regression tests for source commit `3fd29b1`. Actual browser navigation, live backend and remote administration remain outside the current test evidence.
