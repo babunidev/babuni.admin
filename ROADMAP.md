@@ -9,11 +9,11 @@
 - [x] Preserve the Morkahja Dashboard, Players, Content and Settings routes during the initial restructuring.
 - [x] Create `src/features/morkahja/`, `src/features/babuni-dev/`, `src/app/`, and `src/shared/` boundaries.
 - [x] Move Morkahja pages, domain components, services, types and utilities under its feature folder.
-- [x] Maintain transitional re-export files at original component/service/type/utility paths.
+- [x] Initially maintain transitional re-export files during feature extraction; these were retired after all imports were migrated.
 - [x] Perform targeted relative-import checks for the migrated files.
 - [x] Record the migration and known limits in `docs/MULTI_PROJECT_ARCHITECTURE.md`.
 
-A GitHub Actions check on 2026-11-03 subsequently **passed** `npm ci` and `npm run build` (TypeScript project build and Vite production output). ESLint, browser regression and safe moderation/content writes remain unverified.
+GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine regression tests following shim removal. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784). Browser regression and safe moderation/content writes remain unverified.
 
 ## Phase 1 — Finish modular architecture and verify existing behavior
 
@@ -24,7 +24,7 @@ A GitHub Actions check on 2026-11-03 subsequently **passed** `npm ci` and `npm r
 - [x] Separate the active application layout, sidebar, UI store, and navigation composition into `src/app/`; move generic controls and formatting to `src/shared/`, and Morkahja navigation/status to its feature folder. [CI verification](https://github.com/babunidev/babuni.admin/actions/runs/41563231632).
 - [x] Add URL-driven workspace selection, separate Morkahja/Babuni Dev navigation, and a non-operational Babuni Dev overview. Keep existing Morkahja URLs and status bar intact. [CI: 8 tests, build, lint passed](https://github.com/babunidev/babuni.admin/actions/runs/41563642755).
 - [ ] Add real workspace authorization/permissions and Babuni Dev content operations after the secure backend is implemented.
-- [ ] Replace transitional re-export imports with direct feature imports, then remove unused shims.
+- [x] Replace historical shim imports with direct feature/shared paths and remove all 33 obsolete re-export files. CI verified TypeScript/Vite build, lint and nine tests, including an import-integrity regression. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784).
 - [x] Keep Babuni Dev content operations inactive: the new overview is explicitly a placeholder and cannot edit or publish.
 - [ ] Update architecture/decisions/changelog/journal alongside actual verified changes.
 

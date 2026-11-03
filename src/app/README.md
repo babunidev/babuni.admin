@@ -4,4 +4,4 @@
 
 `src/App.tsx` retains the original Morkahja routes and adds `/babuni-dev`. Workspace switching uses navigation, not a persisted global flag, so bookmarks and browser history remain consistent. This is **not** a permission system.
 
-Legacy exports remain in older locations to preserve compatibility while imports are migrated.
+The historical layout, sidebar and UI-store compatibility exports were removed after consumers adopted direct imports. Project permissions and browser-level navigation tests remain future work.

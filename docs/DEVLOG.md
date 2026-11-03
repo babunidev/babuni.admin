@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-03 — Retiring the temporary bridges
+
+Moving the components into their own workspaces had left temporary exports behind so existing imports would continue working. With the layout and workspace switcher now in place, I wanted to finish that transitional work instead of carrying two paths to every feature. AI traced the old imports through the Morkahja pages, components, services and PostgreSQL adapter, redirected them to their real locations, and removed 33 redundant compatibility files. The underlying shared type definitions and HTTP service stayed where they belonged.
+
+A new regression check now guards against importing missing modules or restoring the retired shim directories. [GitHub Actions run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784) passed the build, lint and all nine tests for source commit `3786028`. The cleanup is complete at source level; full browser navigation, privileged Morkahja operations and production access remain unverified.
+
 ## 2026-11-03 — First local view of Babuni Dev
 
 After pulling the updated repository to my computer, I launched the development server and opened the new Babuni Dev workspace in the browser. The workspace selector, dedicated header, overview navigation and informational placeholder all appeared as expected. The screenshot below records that first visible check; it was provided by me and added to the repository by AI as a reduced, cropped WebP for documentation.

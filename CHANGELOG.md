@@ -1,5 +1,14 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — Retire temporary import compatibility files
+
+- Replaced old component, service, utility and domain-type re-export imports with direct `src/features/morkahja/` and `src/shared/` imports. The active shared shell continues to live under `src/app/`.
+- Updated the PostgreSQL adapter to import its Morkahja-specific player detail type directly.
+- Deleted 33 unused compatibility files from the old `components/`, `layouts/`, `stores/`, `utils/`, domain-service and domain-type locations. Retained actual implementations such as `src/types/index.ts`, `src/services/http.ts` and application configuration.
+- Added an import-integrity test verifying retired shims are absent and relative imports resolve.
+- [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784) passed `npm ci`, `npm run build`, `npm run lint` and all nine tests at source commit `3786028`.
+- No frontend behavior, remote service, live database, game content or deployment was exercised by this refactor.
+
 ## 2026-11-03 — Workspace selector and project navigation
 
 - Added a sidebar workspace selector driven by the browser URL with Morkahja and Babuni Dev options.

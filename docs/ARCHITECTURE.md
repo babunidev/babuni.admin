@@ -2,12 +2,11 @@
 
 ## Current state (2026-11-03)
 
-Babuni Admin remains a React 19, TypeScript and Vite 8 frontend with React Router, TanStack Query, Zustand and Tailwind CSS 4. The Morkahja domain has been partly isolated under `src/features/morkahja/`. The active layout, sidebar, UI state and navigation composition now live in `src/app/`. Reusable controls and formatting live in `src/shared/`, while Morkahja navigation and server-status display remain owned by `src/features/morkahja/`. App routing and configuration remain at their existing entry paths; transitional re-export files retain old imports during the migration.
+Babuni Admin remains a React 19, TypeScript and Vite 8 frontend with React Router, TanStack Query, Zustand and Tailwind CSS 4. The Morkahja domain has been partly isolated under `src/features/morkahja/`. The active layout, sidebar, UI state and navigation composition now live in `src/app/`. Reusable controls and formatting live in `src/shared/`, while Morkahja navigation and server-status display remain owned by `src/features/morkahja/`. App routing and configuration retain their established entry points. The temporary re-export files have been deleted, with imports now targeting feature and shared modules directly.
 
 ```text
 src/
   App.tsx                     # legacy Morkahja routes + Babuni Dev overview
-  layouts/                    # transitional compatibility export
   features/
     morkahja/
       navigation.ts            # current Morkahja routes and labels
@@ -24,12 +23,13 @@ src/
   shared/
     components/               # PageHeader, Table, StatusBadge, ConnectionBanner
     utils/                    # generic formatting
-  components/, services/,
-  types/, utils/              # existing shared files and transition exports
+  services/http.ts            # generic HTTP client
+  types/index.ts              # foundational app data contracts
+  config/                     # existing environment configuration
 vite/                         # development-only privileged middleware
 ```
 
-Morkahja's historical pages and adapters are implemented in source, but the build, lint and six source-level tests passed in GitHub Actions for the shell extraction; browser and database verification are still missing. Frontend-only workspace switching and separate navigation now exist; a secure production API, workspace authorization and live content publisher do not.
+Morkahja's historical pages and adapters are implemented in source, but the build, lint and nine regression tests (including import resolution) passed after compatibility cleanup in [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784); browser and database verification are still missing. Frontend-only workspace switching and separate navigation now exist; a secure production API, workspace authorization and live content publisher do not.
 
 ## Workspace routing and current behavior
 

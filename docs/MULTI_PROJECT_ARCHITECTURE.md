@@ -35,3 +35,7 @@ The initial refactor produced a broken sidebar compatibility export. After corre
 At Babuni's direction, AI added URL-driven workspace switching and project-specific sidebar links. Morkahja still uses its original URLs; Babuni Dev uses `/babuni-dev` and exposes only an overview placeholder. The project header switches with the workspace, without mounting Morkahja's status-query header in Babuni Dev. This is frontend navigation, not project-based authentication or permissions.
 
 [CI run 41563642755](https://github.com/babunidev/babuni.admin/actions/runs/41563642755) passed the build, lint and eight source-level regression tests at source commit `4f9b2ed`. Live data, actual browser navigation and production deployment were not tested.
+
+## Compatibility imports retired — 2026-11-03
+
+The migration previously kept 33 re-export files at historical paths. AI replaced all remaining consumer imports with direct Morkahja, shared and application paths, including the PostgreSQL adapter, then deleted the obsolete shims. Foundational `src/types/index.ts` and generic `src/services/http.ts` remain as real source modules rather than shims. [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784) passed `npm ci`, TypeScript/Vite build, lint and nine regression tests (including import-path integrity). The result does not establish live browser or production backend behavior.

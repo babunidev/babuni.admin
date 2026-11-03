@@ -6,7 +6,7 @@
 
 Babuni Admin is planned as one private workbench for maintaining multiple projects. **Morkahja** is the existing functional domain: its dashboard, player moderation, activity views and game-content editors remain in source. **Babuni Dev** is the next proposed workspace, intended to manage GitHub-backed portfolio documents and publish individual content updates without rebuilding the whole website. Additional project workspaces may be introduced later.
 
-The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Query, Zustand and Tailwind CSS 4. Morkahja-specific code has been moved into `src/features/morkahja/`, with transitional exports preserving existing imports. The Babuni Dev workspace is only a placeholder. There is **no deployed unified backend or working Babuni Dev content manager yet**.
+The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Query, Zustand and Tailwind CSS 4. Morkahja-specific code now lives in `src/features/morkahja/`, shared controls in `src/shared/`, and the application shell in `src/app/`. The transitional re-export files have been removed and direct imports verified in CI. The Babuni Dev workspace has a navigable overview but no editor or publishing capability. There is **no deployed unified backend or working Babuni Dev content manager yet**.
 
 ## Project documentation
 
@@ -20,7 +20,7 @@ The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Q
 
 ## Safety and verification
 
-This application can interact with sensitive Morkahja player data and game files when configured. Its existing Vite-local APIs are **not** a secure public administration backend; browser-visible `VITE_` configuration must not contain secrets. Do not deploy privileged Vite middleware publicly. The latest structural work has not passed a documented full build/lint or runtime regression test. No live database operation, game-file mutation or deployment was performed by the latest documentation work.
+This application can interact with sensitive Morkahja player data and game files when configured. Its existing Vite-local APIs are **not** a secure public administration backend; browser-visible `VITE_` configuration must not contain secrets. Do not deploy privileged Vite middleware publicly. The current source passed TypeScript/Vite build, ESLint and nine automated tests in [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784); browser-level and privileged integration tests have not been run. No live database operation, game-file mutation or deployment was performed by the latest documentation work.
 
 ## Earlier Morkahja-specific documentation
 

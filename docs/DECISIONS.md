@@ -2,6 +2,14 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-03 — Retiring compatibility imports
+
+**Implemented:** Once feature boundaries and navigation were established, AI replaced imports through transitional root re-export files with direct references to `src/features/morkahja/`, `src/shared/` and `src/app/`. The 33 redundant shims were removed, while real shared contracts and the HTTP client remained in place.
+
+**Reason:** A single import path per implementation makes ownership clearer and reduces ambiguity before adding more project workspaces. No product features or permissions changed.
+
+**Verification:** [CI run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784) passed build, lint and nine source-level tests, including module resolution checks. Browser rendering and privileged operations remain unverified.
+
 ## 2026-11-03 — Workspace switching without premature backend access
 
 **Decided and implemented:** Use URL-derived frontend workspace selection rather than independent persisted selection state. Morkahja keeps its historical paths; Babuni Dev is available at `/babuni-dev` with an informational overview. Separate navigation sets and headers prevent Morkahja's game-server status panel from showing in Babuni Dev.
