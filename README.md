@@ -20,10 +20,15 @@ The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Q
 - [Testing guide](docs/TESTING.md)
 - [Phase 1 verification and risks](docs/PHASE1_VERIFICATION.md)
 - [Dependency vulnerability audit](docs/DEPENDENCY_AUDIT_2026-11-03.md)
+- [Phase 1 hardening report](docs/PHASE1_HARDENING_2026-11-03.md)
 
 ## Safety and verification
 
-This application can interact with sensitive Morkahja player data and game files when configured. Its existing Vite-local APIs are **not** a secure public administration backend; browser-visible `VITE_` configuration must not contain secrets. Do not deploy privileged Vite middleware publicly. The current source passed TypeScript/Vite build, ESLint, nine source tests, nine isolated middleware integration tests and five Chromium browser tests in [CI run 41645348546](https://github.com/babunidev/babuni.admin/actions/runs/41645348546). Real PostgreSQL, production filesystem and privileged backend security tests have not been run. No live database operation, game-file mutation or deployment was performed by the latest documentation work.
+This application can interact with sensitive Morkahja player data and game files when configured. Its existing Vite-local APIs are **not** a secure public administration backend; browser-visible `VITE_` configuration must not contain secrets. Do not deploy privileged Vite middleware publicly. The current source passed TypeScript/Vite build, ESLint, nine source tests, nine isolated middleware integration tests and five Chromium browser tests in [CI run 41645348546](https://github.com/babunidev/babuni.admin/actions/runs/41645348546). Disposable PostgreSQL and isolated game-content fixture tests now pass on the hardening branch; real production systems and authenticated backend security remain unverified. See [hardening report](docs/PHASE1_HARDENING_2026-11-03.md). No live database operation, game-file mutation or deployment was performed by the latest documentation work.
+
+## Historical note
+
+The following earlier Morkahja documentation is retained as a historical account of the previous implementation. References to `VITE_DATABASE_URL`, `VITE_API_TOKEN`, unconditional content middleware registration and the old test count describe **past source**, not the current hardened branch. The source of truth for current setup is [the hardening report](docs/PHASE1_HARDENING_2026-11-03.md).
 
 ## Earlier Morkahja-specific documentation
 

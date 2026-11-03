@@ -1,0 +1,22 @@
+{
+  "10001": {
+    "mSolutionID": 10001,
+    "mSolutionIconName": "skill_learn",
+    "mSolutionInventoryType": 1,
+    "mSolutionName": "Arcane Intellect",
+    "mSolutionRewardType": 1,
+    "mSolutionText": "The absorption and mastery of strength, cunning or magic abilities, broadening expertise and enhancing diverse talents and capabilities.",
+    "mSolutionType": 1,
+    "mSolutionUses": 3
+  },
+  "10002": {
+    "mSolutionID": 10002,
+    "mSolutionIconName": "skill_buy",
+    "mSolutionInventoryType": 1,
+    "mSolutionName": "Haggling",
+    "mSolutionRewardType": 1,
+    "mSolutionText": "The art of haggling with whimsical merchants, trading glittering treasure for mystical items and rare artifacts in the bustling markets of Morkahja.",
+    "mSolutionType": 3,
+    "mSolutionUses": 3
+  }
+}

@@ -66,3 +66,19 @@ The installed versions were read from `package-lock.json`. Versions marked *tran
 **Not performed:** `npm audit fix`, lockfile upgrades, exploitation tests, real deployment verification, direct assessment of every vulnerable code path, or validation that the latest patched releases work with this project. Advisory output can change as new vulnerabilities are published.
 
 **Disposition:** **Dependency audit complete; vulnerability remediation outstanding.** These reports do not independently authorize a production release.
+
+## Remediation result — compatible lockfile updates, 2026-11-03
+
+The original inventory above records **the baseline before fixes** and is preserved for historical accuracy. On the hardening review branch, `npm audit fix --package-lock-only --ignore-scripts` updated compatible locked versions, followed by a successful build, lint and integration verification before committing the new lockfile.
+
+| Scope | Baseline | After compatible fixes |
+|---|---:|---:|
+| High | 8 | **0** |
+| Moderate | 14 | **12** |
+| Low | 1 | **0** |
+| All npm affected package records | 23 | **12** |
+| `npm audit --omit=dev` affected packages | 6 | **0** |
+
+Examples: Vite `8.0.14 → 8.3.5`, React Router and React Router DOM `7.15.1 → 7.18.5`, PostCSS `8.5.15 → 8.5.32`, nanoid `3.3.12 → 3.3.20`, source-map-js `1.2.1 → 1.2.2`. All changes were resolved within the existing declared dependency ranges, with no force-upgrade. The remaining twelve moderate findings are in the linting/tooling tree and are **not considered resolved**. [Verified audit and tests](https://github.com/babunidev/babuni.admin/actions/runs/41659550592).
+
+This does not eliminate the need to secure the development endpoints and future production backend independently.

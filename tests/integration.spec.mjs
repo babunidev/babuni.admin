@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { after, before, test } from 'node:test'
-import { chmod, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, mkdir, readFile, readdir, rm, writeFile, symlink } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'vite'
@@ -52,15 +52,11 @@ before(async () => {
   const game = join(tempRoot, 'game')
   await mkdir(game, { recursive: true })
   await mkdir(join(tempRoot, 'UI'), { recursive: true })
-  const initial = {
-    'encountersdata.json': {},
-    'solutiondata.json': {},
-    'expansiondata.json': { expansions: {} },
-    'frames.json': { Frames: [] },
-    'portraits.json': { Avatar: [] },
-  }
-  for (const [name, data] of Object.entries(initial)) {
-    await writeFile(join(game, name), JSON.stringify(data))
+  // Compact snapshots of actual Morkahja content (see fixture provenance).
+  for (const fileName of ['encountersdata.json','solutiondata.json','expansiondata.json',
+    'frames.json','portraits.json']) {
+    const original = await readFile(new URL('./fixtures/legacy/' + fileName, import.meta.url))
+    await writeFile(join(game, fileName), original)
   }
   server = await createServer({
     configFile: false,
@@ -196,6 +192,8 @@ test('invalid content inputs and missing files are rejected without reporting su
   const writeFailure = await request(content('solutions'), { key: '00099', data: {} })
   assert.equal(writeFailure.status, 500)
   assert.notEqual(writeFailure.body.ok, true)
+  await writeFile(join(tempRoot, 'game', 'solutiondata.json'),
+    await readFile(new URL('./fixtures/legacy/solutiondata.json', import.meta.url)))
 })
 
 test('WebP image uploads validate names, data and paths inside fixture directories', async () => {
@@ -263,7 +261,8 @@ test('client content adapter rejects HTTP 200 with explicit failed save acknowle
 test('filesystem write failures return non-success and preserve original fixture data', async () => {
   const path = join(tempRoot, 'game', 'encountersdata.json')
   const initial = await readFile(path, 'utf8')
-  await chmod(path, 0o444)
+  const directory = join(tempRoot, 'game')
+  await chmod(directory, 0o555)
   try {
     const result = await request(content('encounters'), {
       key: '00077', data: { mEncounterID: 77, mEncounterTitle: 'Should not persist' },
@@ -272,6 +271,75 @@ test('filesystem write failures return non-success and preserve original fixture
     assert.notEqual(result.body.ok, true)
     assert.equal(await readFile(path, 'utf8'), initial)
   } finally {
-    await chmod(path, 0o644)
+    await chmod(directory, 0o755)
   }
+})
+
+test('all local admin and file endpoints refuse cross-origin requests', async () => {
+  for (const route of [admin('players'), content('encounters')]) {
+    const response = await fetch(base + route, {
+      headers: { Origin: 'http://external.example', 'Sec-Fetch-Site': 'cross-site' },
+    })
+    assert.equal(response.status, 403)
+    assert.equal((await response.json()).error, 'LOCAL_ONLY')
+  }
+})
+
+test('oversized request bodies fail without writing data', async () => {
+  const original = await readFile(join(tempRoot,'game','frames.json'),'utf8')
+  const payload = { frameID: 3, padding: 'A'.repeat(9 * 1024 * 1024) }
+  const response = await request(content('frames'), payload)
+  assert.equal(response.status, 413)
+  assert.equal(await readFile(join(tempRoot,'game','frames.json'),'utf8'), original)
+})
+
+test('successful updates preserve a versioned backup, and recovery restores it', async () => {
+  const file = join(tempRoot,'game','frames.json')
+  const before = await readFile(file)
+  const response = await request(content('frames'), {frameID:5,name:'Changed'})
+  assert.equal(response.status, 201)
+  const names = await readdir(join(tempRoot,'game'))
+  const backups = names.filter(name => name.startsWith('frames.json.bak-'))
+  assert.ok(backups.length > 0)
+  const latest = join(tempRoot,'game',backups[backups.length-1])
+  assert.deepEqual(await readFile(latest), before)
+  const writes = await server.ssrLoadModule('/vite/atomicGameWrites.ts')
+  writes.restoreBackup(file,latest)
+  assert.deepEqual(await readFile(file),before)
+})
+
+test('symlinked content targets cannot be overwritten through local API', async () => {
+  const victim = join(tempRoot,'game','safe-victim.json')
+  await writeFile(victim,'{"safe":true}')
+  const target = join(tempRoot,'game','portraits.json')
+  await rm(target)
+  await symlink(victim,target)
+  try {
+    const result = await request(content('portraits'),{avatarID:1,name:'Unsafe'})
+    assert.equal(result.status, 500)
+    assert.notEqual(result.body.ok,true)
+    assert.equal(await readFile(victim,'utf8'),'{"safe":true}')
+  } finally {
+    await rm(target)
+    await writeFile(target,await readFile(new URL('./fixtures/legacy/portraits.json',import.meta.url)))
+  }
+})
+
+test('legacy game data fields and metadata survive isolated updates', async () => {
+  const encounters = await onDisk('encountersdata.json')
+  assert.equal(encounters['19001'].mEncounterID,19001)
+  assert.ok(Object.hasOwn(encounters['19001'],'mEncounterSolutiuonB'))
+  const solutions = await onDisk('solutiondata.json')
+  assert.equal(solutions['10001'].mSolutionID,10001)
+  const expansions = await onDisk('expansiondata.json')
+  assert.ok(expansions._meta)
+  assert.equal(expansions.expansions['1001'].mExtensioID,1001)
+  const frames = await onDisk('frames.json')
+  assert.equal(frames.Frames[1].frameID,1)
+  const portraits = await onDisk('portraits.json')
+  assert.equal(portraits.Avatar[1].avatarID,1)
+  await request(content('expansions'),{key:'1003',data:{mExtensioID:1003,mExtensioName:'New fixture'}})
+  const rewritten = await onDisk('expansiondata.json')
+  assert.deepEqual(rewritten._meta,expansions._meta)
+  assert.deepEqual(rewritten.expansions['1001'],expansions.expansions['1001'])
 })

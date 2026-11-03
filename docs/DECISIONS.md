@@ -2,6 +2,16 @@
 
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
+## 2026-11-03 — Safe, local-first hardening
+
+**Direction:** Verify all seven remaining Phase 1 hardening areas with disposable data and reviewable changes rather than interacting with live player records, game files or the VPS.
+
+**AI implementation:** Compatible npm lockfile fixes; PostgreSQL player/session transactions and rollback tests; real browser-form tests against five representative legacy JSON files and a pinned WebP image; same-directory atomic file replacement with backups; loopback/origin checks, request limits and server-only database configuration.
+
+**Why the limits matter:** The new local request guards are defense in depth, not administrator authentication. The legacy samples do not establish compatibility with every game record, and the backup mechanism needs a retention/recovery policy. Twelve moderate tooling advisories remain.
+
+**Verification:** [CI run 41659550592](https://github.com/babunidev/babuni.admin/actions/runs/41659550592) passed all 37 tests, TypeScript/Vite and lint. [Hardening report](PHASE1_HARDENING_2026-11-03.md).
+
 ## 2026-11-03 — Audit before dependency upgrades
 
 **Implemented:** A nonmutating npm security audit runs in CI, comparing all locked dependencies with `--omit=dev`, and summarizes affected packages and fix availability. The review is documented in [the dependency audit](DEPENDENCY_AUDIT_2026-11-03.md).

@@ -52,6 +52,29 @@ jobs:
           cat /tmp/babuni-preview.log
           exit 1
       - run: npm run test:browser
+      - name: Start isolated Morkahja content fixture server
+        run: |
+          mkdir -p "$RUNNER_TEMP/morkahja-fixture/game" "$RUNNER_TEMP/morkahja-fixture/UI"
+          cp tests/fixtures/legacy/*.json "$RUNNER_TEMP/morkahja-fixture/game/"
+          mkdir -p "$RUNNER_TEMP/morkahja-fixture/game/solutionimages"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://raw.githubusercontent.com/babunidev/Morkahja/239cf21ed759cf12137e68ae41a85a0a26382fb9/client/public/game/solutionimages/skill_aevis_levitation.webp \
+            --output "$RUNNER_TEMP/morkahja-fixture/game/solutionimages/legacy_sample.webp"
+
+          MORKAHJA_PUBLIC="$RUNNER_TEMP/morkahja-fixture" \
+          VITE_USE_LOCAL_CONTENT=true LOCAL_CONTENT_WRITES=true \
+          VITE_USE_MOCK_DATA=true DATABASE_URL='' \
+          npm run dev -- --host 127.0.0.1 --port 5182 > /tmp/babuni-fixture.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5182/local-content-api/status >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/babuni-fixture.log
+          exit 1
+      - name: Test rendered Morkahja content editors
+        env:
+          BROWSER_TEST_BASE_URL: http://127.0.0.1:5182
+        run: npm run test:browser:content
 
   audit:
     runs-on: ubuntu-24.04
@@ -91,3 +114,32 @@ jobs:
             }
           }
           NODE
+
+  postgres-fixtures:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: fixture-only
+          POSTGRES_USER: fixture
+          POSTGRES_DB: babuni_fixture
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U fixture -d babuni_fixture"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      TEST_DATABASE_URL: postgresql://fixture:fixture-only@127.0.0.1:5432/babuni_fixture
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:postgres

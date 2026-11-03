@@ -1,5 +1,15 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — Phase 1 security and data-integrity hardening
+
+- Updated the lockfile with compatible npm security fixes on a review branch; audit findings dropped from 23 to 12 moderate-only, with zero under `--omit=dev`. No forced major-version downgrade/upgrade was applied; 12 tooling advisories remain.
+- Moved PostgreSQL connection string to server-only `DATABASE_URL`; removed browser API-token forwarding; required explicit opt-ins for local DB, game content middleware and development proxy. Local endpoints reject cross-origin/nonloopback requests and oversized bodies.
+- Wrapped timeout/ban moderation and session deletion in transactions with account row locking. Added four real disposable PostgreSQL tests, including a deliberate session-delete failure to verify rollback.
+- Replaced direct game file overwrites with same-directory temporary writes, fsync, versioned backups and an explicit restoration helper. Expanded middleware tests to cover recovery, rejection and permissions.
+- Added five rendered content-editor tests and compact legacy game JSON snapshots based on the Morkahja repository. Chromium validated PNG-to-WebP upload and decoding of an original pinned Morkahja WebP file.
+- [CI run 41659550592](https://github.com/babunidev/babuni.admin/actions/runs/41659550592) passed build, lint, nine source tests, fourteen integration tests, four PostgreSQL tests and ten browser tests (37 tests total).
+- The work remains a development hardening change, not production authentication or a complete backup/rollback policy. [Details](docs/PHASE1_HARDENING_2026-11-03.md).
+
 ## 2026-11-03 — Dependency security audit (no upgrades)
 
 - Added a GitHub Actions audit job for `npm audit --json` and `npm audit --omit=dev --json`, with a nonmutating package-level summary for review.

@@ -1,0 +1,35 @@
+{
+  "_meta": {
+    "source": "LudusExtensio",
+    "extractedFrom": "morkahja-old database.json",
+    "description": "Expansion catalog (shop/unlock definitions). IDs match mEncounterExpansion in encountersdata."
+  },
+  "expansions": {
+    "1001": {
+      "mExtensioActive": true,
+      "mExtensioCollectionImage": "expansion_keldor",
+      "mExtensioCost": 75,
+      "mExtensioPriceEurCents": 399,
+      "mExtensioHeaderImage": "expansion_keldor",
+      "mExtensioID": 1001,
+      "mExtensioName": "The cursed forest of Keldor",
+      "mExtensioReward": 30,
+      "mExtensioSummaryText": "Unlock 40+ unique encounters, items and skills!",
+      "mExtensioText": "The cursed forest of Keldor is a place of fear and mystery, shrouded in darkness and surrounded by remote mountains. It is said to be a hub of dark magic and ancient horrors, with twisted trees and bizarre wildlife that seem to come straight out of nightmares. The forest is blanketed by an ever-present, dense fog that obscures vision and permeates the air with a noxious odour. The cursed magic of the forest is believed to be slowly spreading, tainting everything in its path. Brave adventurers who venture into the forest may never return, and those who do come back with tales of unspeakable terror, forever changed by the horrors they have faced. The forest's shadows conceal strange and dangerous creatures that stalk their prey and prey upon the unwary. Only the bravest and most foolhardy dare to venture into the Cursed Forest, and they do so at their own peril.",
+      "mExtensioUnlockButton": "expansion_keldor"
+    },
+    "1002": {
+      "mExtensioActive": false,
+      "mExtensioCollectionImage": "expansion_urcogor",
+      "mExtensioCost": 60,
+      "mExtensioPriceEurCents": 299,
+      "mExtensioHeaderImage": "expansion_urcogor",
+      "mExtensioID": 1002,
+      "mExtensioName": "Urcogor Ravage",
+      "mExtensioReward": 31,
+      "mExtensioSummaryText": "Unlock 30+ unique encounters, items and skills!",
+      "mExtensioText": "The Urcogor Ravage is a recurring calamity that has plagued Morkahja for as long as history can remember. During these periods, ancient peoples known as the Urco, Gobbls, Ogrus, and their many bloodlines emerge from forgotten places across the world and gather into vast warbands. Settlements are raided, roads become unsafe, and entire regions can fall into chaos as the Ravage spreads across the land.\n\nNo one knows what causes these awakenings. Some believe the Ravage is tied to powers older than the Pantheon itself, remnants of a forgotten age that still linger beneath the world. Whatever its source, the pattern remains the same. The ancient races awaken, unite, and sweep across Morkahja before eventually retreating once more into hidden strongholds, deep wilderness, and long slumbers.\n\nThe Ravage may last for weeks, months, or even years, and though every generation prepares for its return, none have ever succeeded in preventing it. When the Urcogor Ravage begins, survival depends upon vigilance, unity, and the strength to endure until the storm passes.",
+      "mExtensioUnlockButton": "expansion_urcogor"
+    }
+  }
+}

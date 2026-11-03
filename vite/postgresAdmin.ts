@@ -145,13 +145,6 @@ async function listLiveSessionPlayerIds(
   return new Set(result.rows.map((row) => row.player_id))
 }
 
-async function revokeAllPlayerSessions(
-  db: pg.Pool,
-  playerId: string,
-): Promise<void> {
-  await db.query('DELETE FROM sessions WHERE player_id = $1', [playerId])
-}
-
 function mapPlayer(
   row: PlayerRow,
   activeAvatar: AvatarRow | undefined,
@@ -316,22 +309,40 @@ export async function listActivityFromPostgres(
   }))
 }
 
-async function loadPlayerRow(
-  db: pg.Pool,
-  playerId: string,
-): Promise<PlayerRow | null> {
-  const result = await db.query<PlayerRow>(
-    'SELECT id, data FROM players WHERE id = $1',
-    [playerId],
-  )
-  return result.rows[0] ?? null
-}
 
-async function savePlayerRow(db: pg.Pool, row: PlayerRow): Promise<void> {
-  await db.query(
-    `UPDATE players SET data = $2::jsonb WHERE id = $1`,
-    [row.id, JSON.stringify(row.data)],
-  )
+async function withModerationTransaction(
+  connectionString: string,
+  playerId: string,
+  update: (data: PlayerDocumentJson) => void,
+  revokeSessions: boolean,
+): Promise<{ ok: boolean; message: string }> {
+  const client = await getPool(connectionString).connect()
+  try {
+    await client.query('BEGIN')
+    const result = await client.query<PlayerRow>(
+      'SELECT id, data FROM players WHERE id = $1 FOR UPDATE',
+      [playerId],
+    )
+    const row = result.rows[0]
+    if (!row) {
+      await client.query('ROLLBACK')
+      return { ok: false, message: 'Player not found' }
+    }
+    update(row.data)
+    await client.query('UPDATE players SET data = $2::jsonb WHERE id = $1', [
+      row.id, JSON.stringify(row.data),
+    ])
+    if (revokeSessions) {
+      await client.query('DELETE FROM sessions WHERE player_id = $1', [playerId])
+    }
+    await client.query('COMMIT')
+    return { ok: true, message: row.data.playerName ?? playerId }
+  } catch (error) {
+    try { await client.query('ROLLBACK') } catch { /* preserve original failure */ }
+    throw error
+  } finally {
+    client.release()
+  }
 }
 
 export async function timeoutPlayerInPostgres(
@@ -340,25 +351,20 @@ export async function timeoutPlayerInPostgres(
   durationMinutes: number,
   reason?: string,
 ): Promise<{ ok: boolean; message: string }> {
-  const db = getPool(connectionString)
-  const row = await loadPlayerRow(db, playerId)
-  if (!row) return { ok: false, message: 'Player not found' }
-
-  row.data.activeSessionId = null
-  row.data.activeSessionExpiresAt = null
-  row.data.moderation = {
-    ...row.data.moderation,
-    banned: false,
-    timeoutUntil: Date.now() + durationMinutes * 60_000,
-    banReason: reason?.trim() || row.data.moderation?.banReason,
+  if (!Number.isSafeInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 10080) {
+    throw new Error('Invalid timeout duration')
   }
-  await savePlayerRow(db, row)
-  await revokeAllPlayerSessions(db, playerId)
-
-  return {
-    ok: true,
-    message: `${row.data.playerName ?? playerId} timed out for ${durationMinutes}m`,
-  }
+  const result = await withModerationTransaction(connectionString, playerId, data => {
+    data.activeSessionId = null
+    data.activeSessionExpiresAt = null
+    data.moderation = {
+      ...data.moderation,
+      banned: false,
+      timeoutUntil: Date.now() + durationMinutes * 60000,
+      banReason: reason?.trim() || data.moderation?.banReason,
+    }
+  }, true)
+  return result.ok ? { ok: true, message: result.message + ' timed out for ' + durationMinutes + 'm' } : result
 }
 
 export async function banPlayerInPostgres(
@@ -366,39 +372,27 @@ export async function banPlayerInPostgres(
   playerId: string,
   reason?: string,
 ): Promise<{ ok: boolean; message: string }> {
-  const db = getPool(connectionString)
-  const row = await loadPlayerRow(db, playerId)
-  if (!row) return { ok: false, message: 'Player not found' }
-
-  row.data.activeSessionId = null
-  row.data.activeSessionExpiresAt = null
-  row.data.moderation = {
-    ...row.data.moderation,
-    banned: true,
-    banReason: reason?.trim() || 'Banned by admin',
-    timeoutUntil: null,
-  }
-  await savePlayerRow(db, row)
-  await revokeAllPlayerSessions(db, playerId)
-
-  return { ok: true, message: `${row.data.playerName ?? playerId} banned` }
+  const result = await withModerationTransaction(connectionString, playerId, data => {
+    data.activeSessionId = null
+    data.activeSessionExpiresAt = null
+    data.moderation = {
+      ...data.moderation,
+      banned: true,
+      banReason: reason?.trim() || 'Banned by admin',
+      timeoutUntil: null,
+    }
+  }, true)
+  return result.ok ? { ok: true, message: result.message + ' banned' } : result
 }
 
 export async function unbanPlayerInPostgres(
   connectionString: string,
   playerId: string,
 ): Promise<{ ok: boolean; message: string }> {
-  const db = getPool(connectionString)
-  const row = await loadPlayerRow(db, playerId)
-  if (!row) return { ok: false, message: 'Player not found' }
-
-  row.data.moderation = {
-    ...row.data.moderation,
-    banned: false,
-    banReason: undefined,
-  }
-  await savePlayerRow(db, row)
-  return { ok: true, message: `${row.data.playerName ?? playerId} unbanned` }
+  const result = await withModerationTransaction(connectionString, playerId, data => {
+    data.moderation = { ...data.moderation, banned: false, banReason: undefined }
+  }, false)
+  return result.ok ? { ok: true, message: result.message + ' unbanned' } : result
 }
 
 export function getPostgresServerStatus(): ServerStatus {
