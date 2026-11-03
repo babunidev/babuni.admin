@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-03 — Initial automated regression coverage
+
+- Added five Node test-runner regressions covering player ordering/counts, encounter draft defaults, encounter solution/expansion/follow-up lookups, in-memory mock moderation, and Morkahja route declarations.
+- Added `npm test` and a required test step after build/lint in GitHub Actions. Tests compile TypeScript fixtures using the existing TypeScript package and do not connect to real services.
+- Corrected the test loader after initial CI failures; all five regressions, build and ESLint passed in [CI run 41552579859](https://github.com/babunidev/babuni.admin/actions/runs/41552579859) at commit `ba014ea`.
+- UI rendering, real database writes, remote authorization and file-upload integration remain untested.
+
 ## 2026-11-03 — ESLint and migration cleanup
 
 - Added `npm run lint` to the GitHub Actions build workflow.
