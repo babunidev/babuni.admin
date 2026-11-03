@@ -1,18 +1,29 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { build } from 'esbuild'
+import ts from 'typescript'
 import { readFile } from 'node:fs/promises'
+import { dirname, resolve } from 'node:path'
 
 async function load(relativePath) {
-  const result = await build({
-    entryPoints: [relativePath],
-    bundle: true,
-    platform: 'node',
-    format: 'esm',
-    write: false,
-    logLevel: 'silent',
-  })
-  return import('data:text/javascript;base64,' + Buffer.from(result.outputFiles[0].text).toString('base64'))
+  const cache = new Map()
+  async function compile(file) {
+    const absolute = resolve(file)
+    if (cache.has(absolute)) return cache.get(absolute)
+    const source = await readFile(absolute, 'utf8')
+    let js = ts.transpileModule(source, {
+      compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+      fileName: absolute,
+    }).outputText
+    const matches = [...js.matchAll(/from ['"](\\.[^'"]+)['"]/g)]
+    for (const match of matches) {
+      const child = await compile(resolve(dirname(absolute), match[1] + '.ts'))
+      js = js.replace(match[0], 'from ' + JSON.stringify(child))
+    }
+    const url = 'data:text/javascript;base64,' + Buffer.from(js).toString('base64')
+    cache.set(absolute, url)
+    return url
+  }
+  return import(await compile(relativePath))
 }
 
 test('player list sorts online first, status next, then recent activity without mutating input', async () => {
