@@ -1,3 +1,42 @@
+# Babuni Admin — Concept
+
+**Creative:** Babuni  
+**Application:** Babuni Admin  
+**Repository:** `babunidev/babuni.admin`  
+**Origin:** The Morkahja administration workbench; its existing interface remains Morkahja-specific while the larger platform evolves.
+
+## One administration workbench
+
+A separate administration application for every project would scatter my work across unrelated tools. Babuni Admin should instead provide one place to manage the projects that actually require administration, with each project retaining its own workspace, data boundaries, permissions and operating vocabulary.
+
+Morkahja is the first workspace because the tool originally grew from its player moderation, activity inspection, encounters, solutions, expansions and artwork management. Babuni Dev is the next intended workspace, concerned with the portfolio's modules, GitHub documentation and publication. Additional workspaces can be introduced later when a real project requires them; their functionality is not assumed in advance.
+
+The interface should stay dark, atmospheric, restrained and practical. Its character matters, but consequential actions need clear explanations, previews, permissions and recovery rather than decoration.
+
+## Babuni Dev content workbench — planned
+
+The immediate content problem is that the current static website prepares imported Markdown, module previews and readable pages during a build. A documentation correction should not require regenerating and deploying the entire website. A document or module should be independently refreshable where its dependent assets can be prepared safely.
+
+The planned workspace would let me browse projects/modules, pull one source document from GitHub, compare revisions, edit Markdown, preview changes, save drafts and publish verified revisions. An edit made through Babuni Admin should be committed back to its authoritative GitHub repository rather than creating an undocumented second source of truth.
+
+Publication must update dependent views together: module bodies, previews, indexes and the site's readable/searchable pages. A successful GitHub commit alone must not be presented as proof that the VPS serves the new revision.
+
+## Human and AI participation
+
+The creative direction, requirements, corrections and publication choices remain mine. AI may research, draft, refactor, test or prepare changes, but its execution and any unverified claims must be attributed accurately. Agent access, if developed, must use the same narrowly scoped backend permissions and revision safeguards as the human interface. It is a proposal, not a currently deployed capability.
+
+## Non-negotiable boundaries
+
+- One interface does not mean one shared database permission or unrestricted backend.
+- Public portfolio data must not grant access to player moderation or game files.
+- GitHub is the source of truth for repository-backed documentation.
+- Sensitive credentials stay server-side; Vite development middleware is not the production administration API.
+- Morkahja's existing functionality remains available while the code is progressively organized.
+- No production publishing or privileged remote access is implied by frontend folder restructuring.
+
+## Current state
+
+React/TypeScript/Vite, existing Morkahja pages and domain operations are implemented in source. Morkahja pages, components, services, types and utilities have been grouped under `src/features/morkahja/` with transitional imports. The Babuni Dev feature folder exists but has no editor, GitHub publishing or live synchronization functionality. The new shared shell, secure production API and cross-project navigation remain future work.
 # Morkahja Admin — project concept
 
 **Human creator and creative director:** Babuni.dev  
