@@ -3,7 +3,7 @@ import type {
   DashboardStats,
   Player,
   ServerStatus,
-} from '../types'
+} from '../../../types'
 
 const activityTemplates: Omit<ActivityFeedItem, 'id' | 'timestamp'>[] = [
   {
