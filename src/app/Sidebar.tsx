@@ -60,6 +60,12 @@ export function Sidebar() {
           ))}
         </ul>
       </nav>
+      <div className="border-t border-gold/10 px-3 py-2">
+        <NavLink to="/connections" onClick={() => setSidebarOpen(false)}
+          className="block rounded-md px-3 py-2.5 text-sm text-fog hover:bg-ash/80 hover:text-parchment">
+          ◎ Connections
+        </NavLink>
+      </div>
       <p className="border-t border-gold/10 px-5 py-4 text-[10px] uppercase tracking-widest text-fog/70">
         Local console · 127.0.0.1
       </p>

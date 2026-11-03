@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — The first local connections screen
+
+With the local-only architecture settled, I wanted the administration tool to begin recognizing distinct projects without prematurely reaching the actual servers. AI implemented a shared Connections screen and a small registry that saves non-secret connection descriptions on my PC. A profile can be created or removed, but stays explicitly disconnected; no SSH, GitHub or database access is attempted yet. Fixture tests cover persistence and rejection of credential-like configuration. This first slice still uses the Vite development server and needs a separate local service before real privileged connections can be enabled.
+
 ## 2026-11-04 — Keeping the administration tool at home
 
 The earlier roadmap could be read as a plan to host an administration backend somewhere on the internet. That was not what I wanted: Babuni Admin belongs on my own PC, with connections going *out* to the projects that need maintaining. After confirming that the updated application built, passed its local tests and opened in the browser, I clarified this boundary before moving into Phase 2.

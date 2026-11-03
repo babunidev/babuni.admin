@@ -4,6 +4,7 @@ import { OverviewPage } from './features/babuni-dev/pages/OverviewPage'
 import { ContentPage } from './features/morkahja/pages/ContentPage'
 import { DashboardPage } from './features/morkahja/pages/DashboardPage'
 import { PlayersPage } from './features/morkahja/pages/PlayersPage'
+import { ConnectionsPage } from './pages/ConnectionsPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="players/:playerId" element={<PlayersPage />} />
           <Route path="content" element={<ContentPage />} />
           <Route path="content/:kind/:itemKey" element={<ContentPage />} />
+          <Route path="connections" element={<ConnectionsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="babuni-dev" element={<OverviewPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

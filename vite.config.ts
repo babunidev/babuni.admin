@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { localConnectionProfilesPlugin } from './vite/localConnectionProfilesPlugin'
 import { morkahjaLocalAdminPlugin } from './vite/localAdminPlugin'
 import {
   morkahjaLocalContentPlugin,
@@ -52,6 +53,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      localConnectionProfilesPlugin(),
       ...(enableLocalContent ? [morkahjaLocalContentPlugin(morkahjaPublic)] : []),
       ...(databaseUrl ? [morkahjaLocalAdminPlugin(databaseUrl)] : []),
     ],
