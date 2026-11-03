@@ -2,6 +2,12 @@
 
 The administration workbench began with Morkahja, but the growing collection of projects has made a wider structure useful. These entries tell the story from my perspective: what I wanted, what I decided, what AI implemented, and what evidence exists. Earlier source-only history is retained below rather than silently presented as a personal recollection.
 
+## 2026-11-03 — Checking that the reorganized project still builds
+
+After the Morkahja files had been moved into their workspace, the next important question was whether the application could still compile. At my request, AI added a GitHub Actions build workflow because the isolated local environment could not reach GitHub or the npm registry. The first CI run installed dependencies but TypeScript rejected four `../types` imports in moved Morkahja components and services. Those paths still assumed their old directories.
+
+AI corrected the four imports on `main` and checked the resulting workflow. [GitHub Actions run 41551602985](https://github.com/babunidev/babuni.admin/actions/runs/41551602985) completed successfully: `npm ci`, `tsc -b` and `vite build` all passed. This verifies compilation and production bundling for commit `b2062fe`, not browser behavior, moderation operations, deployment or lint quality. The dependency installer also reported 23 security advisories (1 low, 14 moderate, 8 high); those require a separate dependency audit rather than an automatic breaking upgrade.
+
 ## 2026-11-03 — A shared home for administration
 
 Managing Morkahja gave the admin tool its original purpose: player activity, moderation and game content in one interface. With babuni.dev now needing a simpler way to maintain its project documentation, I wanted to expand that tool instead of creating another separate administrator. Morkahja would become one workspace, Babuni Dev another, and future projects could have their own spaces when needed.
