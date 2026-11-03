@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AdminLayout } from './app/AdminLayout'
+import { OverviewPage } from './features/babuni-dev/pages/OverviewPage'
 import { ContentPage } from './features/morkahja/pages/ContentPage'
 import { DashboardPage } from './features/morkahja/pages/DashboardPage'
 import { PlayersPage } from './features/morkahja/pages/PlayersPage'
@@ -16,6 +17,7 @@ export default function App() {
           <Route path="content" element={<ContentPage />} />
           <Route path="content/:kind/:itemKey" element={<ContentPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="babuni-dev" element={<OverviewPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

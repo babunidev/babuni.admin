@@ -1,25 +1,47 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useUiStore } from './uiStore'
-import { navItems } from './navigation'
+import { workspaceForPath, workspaces, type WorkspaceId } from './navigation'
 
 export function Sidebar() {
   const setSidebarOpen = useUiStore((s) => s.setSidebarOpen)
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const current = workspaceForPath(pathname)
+
+  const selectWorkspace = (id: WorkspaceId) => {
+    const target = workspaces.find((workspace) => workspace.id === id)
+    if (target) {
+      setSidebarOpen(false)
+      navigate(target.home)
+    }
+  }
 
   return (
     <aside className="flex h-full w-56 flex-col border-r border-gold/15 bg-slate/95 lg:w-60">
       <div className="border-b border-gold/10 px-5 py-5">
-        <p className="text-xs uppercase tracking-[0.25em] text-fog">Morkahja</p>
-        <h2 className="mt-1 text-lg font-medium tracking-wide text-gold-bright">
-          Admin
-        </h2>
+        <p className="text-xs uppercase tracking-[0.25em] text-fog">Babuni Admin</p>
+        <label htmlFor="workspace-select" className="mt-4 block text-xs text-fog">
+          Workspace
+        </label>
+        <select
+          id="workspace-select"
+          aria-label="Select workspace"
+          value={current.id}
+          onChange={(event) => selectWorkspace(event.target.value as WorkspaceId)}
+          className="mt-1 w-full rounded border border-gold/20 bg-ash px-3 py-2 text-sm text-parchment focus-visible:outline focus-visible:outline-2 focus-visible:outline-gold"
+        >
+          {workspaces.map((workspace) => (
+            <option key={workspace.id} value={workspace.id}>{workspace.label}</option>
+          ))}
+        </select>
       </div>
-      <nav className="scrollbar-thin flex-1 overflow-y-auto px-3 py-4">
+      <nav aria-label={`${current.label} navigation`} className="scrollbar-thin flex-1 overflow-y-auto px-3 py-4">
         <ul className="space-y-1">
-          {navItems.map((item) => (
+          {current.navItems.map((item) => (
             <li key={item.to}>
               <NavLink
                 to={item.to}
-                end={item.to === '/'}
+                end={item.to === '/' || item.to === '/babuni-dev'}
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
                   `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors ${

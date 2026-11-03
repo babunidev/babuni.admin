@@ -1,11 +1,15 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
-import { TopBar } from '../features/morkahja/components/MorkahjaTopBar'
+import { TopBar as MorkahjaTopBar } from '../features/morkahja/components/MorkahjaTopBar'
+import { BabuniDevTopBar } from './BabuniDevTopBar'
+import { workspaceForPath } from './navigation'
 import { useUiStore } from './uiStore'
 
 export function AdminLayout() {
   const sidebarOpen = useUiStore((s) => s.sidebarOpen)
   const setSidebarOpen = useUiStore((s) => s.setSidebarOpen)
+  const { pathname } = useLocation()
+  const isBabuniDev = workspaceForPath(pathname).id === 'babuni-dev'
 
   return (
     <div className="app-grain flex h-full min-h-0 bg-void">
@@ -25,7 +29,7 @@ export function AdminLayout() {
         <Sidebar />
       </div>
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar />
+        {isBabuniDev ? <BabuniDevTopBar /> : <MorkahjaTopBar />}
         <main className="scrollbar-thin flex-1 overflow-y-auto p-4 lg:p-6">
           <Outlet />
         </main>
