@@ -126,3 +126,32 @@ test('shared shell uses project-owned navigation and reusable controls', async (
     assert.match(shared, new RegExp('export (?:function|interface) ' + component + '\\b|export interface Column'))
   }
 })
+
+test('workspace selection follows URL and preserves legacy Morkahja navigation', async () => {
+  const { workspaces, workspaceForPath } = await load('src/app/navigation.ts')
+  assert.deepEqual(workspaces.map(w => w.id), ['morkahja', 'babuni-dev'])
+  assert.equal(workspaceForPath('/').id, 'morkahja')
+  assert.equal(workspaceForPath('/players/p-001').id, 'morkahja')
+  assert.equal(workspaceForPath('/content/encounters/00001').id, 'morkahja')
+  assert.equal(workspaceForPath('/settings').id, 'morkahja')
+  assert.equal(workspaceForPath('/babuni-dev').id, 'babuni-dev')
+  assert.equal(workspaceForPath('/babuni-dev/').id, 'babuni-dev')
+  assert.equal(workspaceForPath('/babuni-dev/other').id, 'babuni-dev')
+  assert.equal(workspaceForPath('/babuni-development').id, 'morkahja')
+  assert.deepEqual(workspaces[0].navItems.map(item => item.to), ['/', '/players', '/content', '/settings'])
+  assert.deepEqual(workspaces[1].navItems.map(item => item.to), ['/babuni-dev'])
+})
+
+test('workspace shell uses URL-derived navigation and distinct top bars without content editing', async () => {
+  const app = await readFile('src/App.tsx', 'utf8')
+  const layout = await readFile('src/app/AdminLayout.tsx', 'utf8')
+  const sidebar = await readFile('src/app/Sidebar.tsx', 'utf8')
+  const overview = await readFile('src/features/babuni-dev/pages/OverviewPage.tsx', 'utf8')
+  assert.match(app, /path="babuni-dev" element={<OverviewPage \/>}/)
+  assert.match(layout, /isBabuniDev \? <BabuniDevTopBar \/> : <MorkahjaTopBar \/>/)
+  assert.match(sidebar, /workspaceForPath\(pathname\)/)
+  assert.match(sidebar, /navigate\(target.home\)/)
+  assert.match(sidebar, /current.navItems.map/)
+  assert.match(overview, /not available yet/)
+  assert.doesNotMatch(overview, /fetch\(|localStorage|contentApi/)
+})
