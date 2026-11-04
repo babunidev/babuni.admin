@@ -1,5 +1,11 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Fix OpenSSH tunnel startup
+
+- Removed the server-only `PermitTTY=no` option from the SSH client command; existing `-T` continues to disable terminal allocation.
+- Extracted the argument builder and added an offline real-OpenSSH `ssh -G` regression test for the exact production arguments. The test reproduces the original parser failure and passes after correction.
+- The corrected application health probe remains unverified on the target desktop.
+
 ## 2026-11-04 — Operator-gated SSH/PostgreSQL read-only health probe
 
 - Added a separate Morkahja-only `ssh:probe` endpoint, inert unless both a private on-disk operator configuration and service environment explicitly enable it.

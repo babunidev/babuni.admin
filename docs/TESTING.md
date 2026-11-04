@@ -1,5 +1,11 @@
 # Testing Babuni Admin
 
+## 2026-11-04 — OpenSSH client parser regression
+
+OpenSSH rejected the production arguments with `Bad configuration option: permittty`. Terminal allocation remains disabled through `-T` after removing that server-only option from the client command.
+
+`node --test --test-name-pattern='production tunnel' tests/ssh-tunnel.test.mjs` runs real OpenSSH with `-G` against the production argument builder, without contacting the synthetic host. In the AI workspace, this test failed with the reported invalid-option error before removal and passed afterward, including `requesttty false`. The existing socket fixture cannot detect invalid OpenSSH options on its own. Its local execution was blocked by the workspace's Unix-socket `listen EPERM` restriction; CI must verify the lifecycle fixture. Build and lint passed. Target-desktop verification remains pending.
+
 ## Operator-gated Morkahja SSH/PostgreSQL probe — 2026-11-04
 
 The opt-in health probe is **disabled by default**. `tests/ssh-online-probe.test.mjs` checks private configuration, exact host and independently approved SHA256 fingerprint, unlocked-keyring requirements, denial, concurrency, cleanup and sanitized failures. `tests/ssh-tunnel.test.mjs` replaces `ssh` with a local-only test binary and checks strict host-key options, a private local Unix-domain forward, token-isolated child environment and cleanup without contacting any server. The updated local-service test covers endpoint scoping and disabled-state refusal. `npm run test:postgres` additionally exercises `inspectReadOnlyDatabase` against a disposable PostgreSQL 16 fixture, asserting that a limited role passes and the fixture's privileged role fails. It also runs an actual PostgreSQL read-only query over a private Unix socket forwarded by a *simulated* local SSH process, never a real SSH server.

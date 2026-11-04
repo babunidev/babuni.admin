@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Finding the first real SSH startup fault
+
+While testing the connection, I encountered a tunnel startup error. AI traced it to `PermitTTY`, a server setting incorrectly passed to the SSH client, and removed it while preserving `-T`. A new offline test using real OpenSSH fails before the correction and passes afterward; build and lint also passed. Verification on my desktop remains pending.
+
 ## 2026-11-04 — Building a connection that stays closed by default
 
 After confirming the local host-key check, the next problem was verifying a real SSH/PostgreSQL path without turning the admin into a permanently connected or write-capable service. AI added a separate, operator-controlled health probe: my PC must explicitly approve the host and fingerprint, an SSH identity and a dedicated database role before it can run. The probe opens a temporary, private Unix-socket tunnel for a fixed read-only privilege check and then closes it. Disposable SSH and PostgreSQL fixtures exercise the implementation; my live Morkahja server remains untouched, and none of the editing tools gains remote authority.
