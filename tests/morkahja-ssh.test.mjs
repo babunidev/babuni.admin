@@ -4,7 +4,7 @@ import { EventEmitter } from 'node:events'
 import { mkdtempSync, lstatSync, readFileSync, symlinkSync, unlinkSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { MorkahjaTunnelManager } from '../local-service/morkahjaTunnel.mjs'
+import { MorkahjaTunnelManager, buildSshArgs } from '../local-service/morkahjaTunnel.mjs'
 import { readMorkahjaConfig, saveMorkahjaConfig } from '../local-service/morkahjaConfig.mjs'
 import { verifyReadonlyRole, readPlayerPreview, readDatabaseHealth } from '../local-service/morkahjaReadonly.mjs'
 
@@ -122,4 +122,18 @@ test('readonly queries reject privileged roles and enforce transaction boundarie
   const c=f.manager.deps.makeClient({host:'127.0.0.1'})
   assert.equal((await readDatabaseHealth(c)).readOnly,true)
   assert.equal((await readPlayerPreview(c))[0].id,'fixture-001')
+})
+
+test('SSH argv enforces pinned host, localhost forwarding and noninteractive authentication',()=>{
+  const args=buildSshArgs(profile,config,51432)
+  assert.ok(args.includes('StrictHostKeyChecking=yes'))
+  assert.ok(args.includes('BatchMode=yes'))
+  assert.ok(args.includes('ForwardAgent=no'))
+  assert.ok(args.includes('ExitOnForwardFailure=yes'))
+  assert.ok(args.includes('PasswordAuthentication=no'))
+  assert.ok(args.includes('127.0.0.1:51432:127.0.0.1:5432'))
+  assert.ok(args.includes('-F'))
+  assert.ok(args.includes('/dev/null'))
+  assert.equal(args.at(-1),config.sshUser+'@'+profile.target)
+  assert.equal(args.includes('StrictHostKeyChecking=accept-new'),false)
 })
