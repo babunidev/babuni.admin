@@ -9,6 +9,8 @@
 The opt-in legacy `vite/localContentPlugin.ts` static route now verifies real path containment and disallows file symlinks, malformed paths and cross-site requests. The static route hardening does not grant live write authority to the old Vite middleware. Full release findings: [Phase 2 security review](PHASE2_SECURITY_REVIEW_2026-11-04.md).
 
 
+Legacy local admin/content mutation requests now require an explicit exact HTTP loopback Origin and reject `same-site` cross-origin Fetch Metadata requests; this is still not authorization against local same-user processes.
+
 ## Phase 2 — Profile editing, local lifecycle and browser session (2026-11-04)
 
 `vite/connectionAdapters.ts` contains a static server-side project/adapter capability allowlist. Only Morkahja `local-files` has active read-only permissions; SSH, GitHub and publishing transports remain unavailable. Profile edits can change the name or target, not the project, adapter or credential UUID. A target change invalidates previous checks.
