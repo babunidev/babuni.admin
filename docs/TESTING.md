@@ -86,3 +86,13 @@ Run `npm run dev` to inspect the Connections UI. Test performs a manual read-onl
 The `browser-connections` GitHub Actions job launches an isolated local service and Vite process with a disposable profile registry, then runs `npm run test:browser:connections` against the rendered Connections page. It tests create, test, connect, disconnect, reconnect, inspect, edit and remove, plus absent-session and forged-origin/host denial.
 
 `npm run keyring:verify` is a manual on-PC check: it generates a random synthetic secret, verifies store and private retrieval, then attempts to delete it from Linux Secret Service. This test does not run in CI and should be observed on the actual Nobara desktop before marking credential storage fully verified.
+
+## Protected Morkahja SSH reader and scoped content tests (2026-11-04)
+
+`npm run test:connections` now runs injected SSH/client tests alongside the original service/keyring fixtures. The tests deny unknown host keys and privileged database roles, exercise read-only health/preview and connection failure cleanup, and verify that no legacy session-mutation query executes. The `postgres-fixtures` CI job creates a disposable PostgreSQL user with SELECT access only and verifies the reader queries and denied UPDATE.
+
+`npm run test:content:scoped` (Node with type stripping) exercises a temporary game folder: missing and expired grants, dataset boundaries, revision conflicts, symlink denial, atomic write backups, restore and audit metadata without live game files. The authenticated local-service tests also cover denied and granted content writes plus rollback.
+
+Protected JSON saves are enabled only when `VITE_USE_PROTECTED_CONTENT=true`, `VITE_USE_LOCAL_CONTENT=true`, `MORKAHJA_PUBLIC` points to the local game public root, and `VITE_MORKAHJA_PROFILE_ID` identifies a local-files profile. A separate CLI-issued 15-minute dataset grant is still required. The old Vite write plugins are disabled in regular use and require explicit isolated fixture opt-ins in CI.
+
+Remaining verification on Nobara: confirm the SSH fingerprint independently, configure a least-privileged Morkahja DB role, observe a real read-only connection/preview/disconnect, then test the protected editor and rollback against disposable copies of the current real game datasets. Neither the actual VPS nor production files were contacted by these CI tests.
