@@ -156,12 +156,31 @@ test('independent local service requires session key and tests local folder with
     assert.equal((await request(sshProfile.id+'/connect',{method:'POST'})).status,409)
     assert.equal((await request(sshProfile.id+'/inspect')).status,403)
     const listedSsh=(await (await request()).json()).profiles.find(row=>row.id===sshProfile.id)
-    assert.deepEqual(listedSsh.capabilities,['ssh:preflight','ssh:probe'])
+    assert.deepEqual(listedSsh.capabilities,['ssh:preflight','ssh:probe','ssh:read'])
     const liveDisabled=await (await request(sshProfile.id+'/probe',{method:'POST'})).json()
     assert.equal(liveDisabled.status.code,'REMOTE_PROBE_DISABLED')
     assert.equal(liveDisabled.status.state,'not-configured')
     assert.equal((await request(remoteId+'/probe',{method:'POST'})).status,403)
     assert.equal((await request(p.id+'/probe',{method:'POST'})).status,403)
+    assert.equal((await request(sshProfile.id+'/read-players',{
+      method:'POST',body:JSON.stringify({page:0}),
+    })).status,400)
+    assert.equal((await request(sshProfile.id+'/read-players',{
+      method:'POST',body:JSON.stringify({page:1,extra:'secret'}),
+    })).status,400)
+    const readDisabled=await request(sshProfile.id+'/read-overview',{method:'POST'})
+    assert.equal(readDisabled.status,403)
+    assert.equal((await readDisabled.json()).error,'REMOTE_PROBE_DISABLED')
+    assert.equal((await request(sshProfile.id+'/read-players',{
+      method:'POST',body:JSON.stringify({page:1}),
+    })).status,403)
+    assert.equal((await request(remoteId+'/read-overview',{method:'POST'})).status,403)
+    assert.equal((await request(p.id+'/read-players',{
+      method:'POST',body:JSON.stringify({page:1}),
+    })).status,403)
+    assert.equal((await request(sshProfile.id+'/read-overview',{
+      method:'POST',headers:{Origin:'https://attacker.invalid'},
+    })).status,403)
     assert.equal(listedSsh.state,'not-configured')
     // The disposable CI service may have no Secret Service keyring.
     // Remote profile deletion fails closed in that situation; leave its
