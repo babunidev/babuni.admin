@@ -1,9 +1,16 @@
 # Testing Babuni Admin
 
+## Operator-verified live Morkahja snapshot — 2026-11-04
+
+Following the restricted-view adapter update, the operator supplied screenshots of both read-only dashboard panels on Nobara. The overview displays **62 players**, **90 avatars**, **0 active sessions**, **0 events in the prior 24 hours** and the UI's SSH-disconnected-after-snapshot message (checked 2026-11-04, 23:10:25 in the screenshot's locale). The player-preview table renders display name, avatar count and last-played columns with actual data. No player ID, session token or public identity key is visible in the presented UI. This is operator-reported live verification, distinct from CI's disposable PostgreSQL fixture tests.
+
+Unverified live behaviors: navigating Next/Previous through all player pages, reconciling zero activity counts with actual gameplay, and simulated network/keyring interruption and cleanup. The application/server code was not modified in this verification checkpoint. Raw screenshots and individual player records are not placed in the public repository.
+
+
 ## First live read failure — sanitized diagnosis (2026-11-04)
 ## Morkahja restricted-view integration — 2026-11-04
 
-The operator's Ubuntu PostgreSQL output confirmed both `babuni_admin_ro` views were created and committed, that `babuni_admin_probe` can SELECT each view, cannot CREATE objects in the schema, and cannot SELECT `public.players` or `public.sessions`. A count of rows in the preview view succeeded. This is **server-side verification**, not yet evidence of an end-to-end browser read.
+The operator's Ubuntu PostgreSQL output confirmed both `babuni_admin_ro` views were created and committed, that `babuni_admin_probe` can SELECT each view, cannot CREATE objects in the schema, and cannot SELECT `public.players` or `public.sessions`. A count of rows in the preview view succeeded. This was initially **server-side verification**; subsequent operator screenshots independently show successful end-to-end dashboard reads.
 
 The disposable `npm run test:postgres` test now creates corresponding `security_barrier` views owned by the fixture database owner, grants the test reader ONLY view SELECT privileges, and verifies that the read adapter succeeds without raw-table grants. Negative cases cover missing view grants and unexpected direct SELECT on sensitive base tables. Existing fixture checks retain count, pagination, restricted returned fields, unchanged sessions, and rejection of a write-capable role. The SQL is fixed; no test is directed at live Morkahja.
 
@@ -11,7 +18,7 @@ The disposable `npm run test:postgres` test now creates corresponding `security_
 
 The creative's first attempted `/read-only` snapshot returned `REMOTE_READ_FAILED`. This confirms a request was unsuccessful but not whether the cause is insufficient SELECT permission, schema incompatibility, a network issue or something else. `classifyReadOnlyError()` now converts PostgreSQL SQLSTATE values into safe codes: `DB_READ_PERMISSION_DENIED`, `DB_READ_TABLE_MISSING`, `DB_READ_COLUMN_MISSING`, `DB_READ_SCHEMA_MISMATCH`, `DB_READ_INVALID_DATA`, `DB_READ_TIMEOUT`, `DB_READ_AUTH_FAILED` and `DB_READ_CONNECTION_FAILED`. Unknown errors retain the generic code. Raw database diagnostics are deliberately not returned to the browser or logged.
 
-The disposable PostgreSQL test now checks **before** SELECT grants that a non-write-capable role may pass the metadata health check but fail actual table reads with `42501`; this must produce `DB_READ_PERMISSION_DENIED` rather than the unhelpful generic failure. All PostgreSQL fixture modifications remain restricted to disposable CI databases. The actual live failure category has not yet been verified.
+The disposable PostgreSQL test now checks **before** SELECT grants that a non-write-capable role may pass the metadata health check but fail actual table reads with `42501`; this must produce `DB_READ_PERMISSION_DENIED` rather than the unhelpful generic failure. All PostgreSQL fixture modifications remain restricted to disposable CI databases. The operator subsequently observed `DB_READ_PERMISSION_DENIED`, which motivated the restricted-view design.
 
 ## Morkahja read-only data dashboard — 2026-11-04
 
@@ -19,7 +26,7 @@ The disposable PostgreSQL test now checks **before** SELECT grants that a non-wr
 
 `npm run test:postgres` exercises the adapter with a disposable PostgreSQL 16 database and a dedicated fixture reader. It verifies database counts, two pages of non-sensitive player preview results, omission of identity and session credentials, unchanged session rows, and rejection of a write-capable database role. **This is not safe to point at a live database**: the existing CI fixture suite creates and removes test data.
 
-The new UI is linked from Morkahja navigation as `/read-only`. Data is not fetched merely by visiting the page; an operator must select the approved SSH profile and manually request each snapshot. The existing Dashboard and Players routes remain separate. The real SSH/database **health probe** succeeded on the operator's Nobara PC, but live player-data access and schema compatibility are pending independent verification. [Contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
+The new UI is linked from Morkahja navigation as `/read-only`. Data is not fetched merely by visiting the page; an operator must select the approved SSH profile and manually request each snapshot. The existing Dashboard and Players routes remain separate. The real SSH/database **health probe** succeeded on the operator's Nobara PC, and operator screenshots subsequently confirmed live reads through the restricted views; additional pagination and recovery checks remain pending. [Contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 
 ## 2026-11-04 — OpenSSH client parser regression
