@@ -6,7 +6,7 @@ import { join } from 'node:path'
 import { createHash } from 'node:crypto'
 import { execFileSync } from 'node:child_process'
 import { readMorkahjaProbeConfig } from '../local-service/remoteProbeConfig.mjs'
-import { probeMorkahjaPostgres } from '../local-service/sshPostgresProbe.mjs'
+import { probeMorkahjaPostgres, fetchMorkahjaReadOnly } from '../local-service/sshPostgresProbe.mjs'
 
 const profile={projectId:'morkahja',kind:'postgres-ssh',
   target:'morkahja.example.invalid',id:'a72e405e-d30b-4328-a1aa-68b78540c0d4'}
@@ -96,4 +96,44 @@ test('short-lived remote probe never connects when disabled and cleans up even o
   finish({ok:true})
   assert.equal((await pending).code,'REMOTE_DB_HEALTHY_READ_ONLY')
   assert.equal(stops,4)
+})
+
+
+test('approved data read stays disabled by default, shares lock and closes tunnel',async()=>{
+  let opens=0,stops=0,credentials=0,reads=0
+  const config={readOnlyDataEnabled:false}
+  const deps={
+    readConfig:async()=>({ok:true,config}),
+    getPassword:async()=>{credentials++;return 'synthetic'},
+    openTunnel:async()=>{opens++;return {socketDir:'/tmp/disposable-socket',stop:async()=>{stops++}}},
+    queryData:async()=>{reads++;return {ok:true,data:{players:2}}},
+  }
+  const denied=await fetchMorkahjaReadOnly(profile,'overview',1,deps)
+  assert.equal(denied.code,'REMOTE_READ_DISABLED')
+  assert.equal(opens,0)
+  assert.equal(credentials,0)
+  config.readOnlyDataEnabled=true
+  config.readOnlyDataFields=['displayName','avatarCount']
+  assert.equal((await fetchMorkahjaReadOnly(profile,'overview',1,deps)).code,'REMOTE_READ_DISABLED')
+  config.readOnlyDataFields=['displayName','avatarCount','lastPlayedAt']
+  const approved=await fetchMorkahjaReadOnly(profile,'overview',1,deps)
+  assert.equal(approved.ok,true)
+  assert.deepEqual(approved.data,{players:2})
+  assert.equal(opens,1)
+  assert.equal(reads,1)
+  assert.equal(stops,1)
+  deps.queryData=async()=>{throw new Error('private content must not leak')}
+  const failed=await fetchMorkahjaReadOnly(profile,'players',1,deps)
+  assert.deepEqual(failed,{ok:false,code:'REMOTE_READ_FAILED'})
+  assert.equal(stops,2)
+  let resume
+  deps.queryData=()=>new Promise(resolve=>{resume=resolve})
+  const held=fetchMorkahjaReadOnly(profile,'players',2,deps)
+  assert.deepEqual(await fetchMorkahjaReadOnly(profile,'overview',1,deps),
+    {ok:false,code:'REMOTE_PROBE_BUSY'})
+  for(let n=0;n<40 && !resume;n++) await new Promise(r=>setTimeout(r,5))
+  assert.ok(resume)
+  resume({ok:true,data:{page:2,players:[]}})
+  assert.equal((await held).ok,true)
+  assert.equal(stops,3)
 })
