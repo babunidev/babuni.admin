@@ -12,10 +12,12 @@ export const isSshProbeActive=()=>inFlight
 
 // Queries metadata and effective write privileges only. No player records are read.
 // The current transaction is explicitly READ ONLY regardless of the server role.
-export async function inspectReadOnlyDatabase(config,localPort,password) {
+export async function inspectReadOnlyDatabase(config,endpoint,password) {
   const { default:pg } = await import('pg')
   const client=new pg.Client({
-    host:'127.0.0.1',port:localPort, user:config.dbUser,database:config.dbName,
+    host:typeof endpoint==='string'?endpoint:'127.0.0.1',
+    port:typeof endpoint==='string'?5432:endpoint,
+    user:config.dbUser,database:config.dbName,
     password,ssl:false,connectionTimeoutMillis:4500,
     query_timeout:3500,statement_timeout:3000,
     application_name:'babuni-admin-read-only-health',
@@ -65,7 +67,7 @@ export async function probeMorkahjaPostgres(profile, deps={}) {
     const config=configResult.config
     const password=await (deps.getPassword||readCredentialForService)(profile)
     tunnel=await (deps.openTunnel||startSshTunnel)(config)
-    const probe=await (deps.inspectDatabase||inspectReadOnlyDatabase)(config,tunnel.port,password)
+    const probe=await (deps.inspectDatabase||inspectReadOnlyDatabase)(config,tunnel.socketDir,password)
     if(!probe.ok)return status(probe.code,'Remote database role did not satisfy the read-only requirements.')
     return status('REMOTE_DB_HEALTHY_READ_ONLY',
       'Authenticated SSH and read-only database privilege probe succeeded; tunnel closed after the test.',true)
