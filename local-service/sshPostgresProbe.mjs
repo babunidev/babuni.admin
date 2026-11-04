@@ -8,6 +8,7 @@ const status = (code,detail,ok=false) => ({
   ...(ok?{lastSuccessAt:checked()}:{}),
 })
 let inFlight=false
+export const isSshProbeActive=()=>inFlight
 
 // Queries metadata and effective write privileges only. No player records are read.
 // The current transaction is explicitly READ ONLY regardless of the server role.
