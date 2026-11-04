@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdtempSync, rmSync } from 'node:fs'
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'node:net'
@@ -37,12 +37,22 @@ test('independent local service requires session key and tests local folder with
     assert.equal((await fetch(url,{headers:{...headers,'X-Babuni-Service-Key':'incorrect'}})).status,403)
     assert.equal((await request('',{headers:{Origin:'https://bad.example'}})).status,403)
     assert.equal((await request('',{headers:{'Sec-Fetch-Site':'cross-site'}})).status,403)
+    mkdirSync(join(dir,'game'))
+    writeFileSync(join(dir,'game','encountersdata.json'), JSON.stringify({'001':{name:'fixture'},_meta:{version:1}}))
+    symlinkSync(join(dir,'game','encountersdata.json'), join(dir,'game','solutiondata.json'))
     const added=await request('',{method:'POST',body:JSON.stringify({
       projectId:'morkahja',kind:'local-files',displayName:'Fixture',target:dir,
     })})
     assert.equal(added.status,201)
     const p=(await added.json()).profile
     assert.equal(p.state,'not-configured')
+    const inspected=await request(p.id+'/inspect')
+    assert.equal(inspected.status,200)
+    const report=await inspected.json()
+    assert.equal(report.readOnly,true)
+    assert.equal(report.files[0].entries,1)
+    assert.equal(report.files[1].status,'unavailable')
+    assert.equal(report.files[2].reason,'MISSING')
     const checked=await request(p.id+'/test',{method:'POST'})
     assert.equal(checked.status,200)
     assert.equal((await checked.json()).status.state,'available')
