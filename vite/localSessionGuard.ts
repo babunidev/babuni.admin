@@ -19,7 +19,7 @@ export function localSessionGuard(token:string, port:number):Plugin {
         if (!req.url?.startsWith('/local-connections-api')) return next()
         const host=req.headers.host
         if (!isLoopback(req.socket.remoteAddress) ||
-          !['127.0.0.1:'+port,'localhost:'+port].includes(host)) {
+          !['127.0.0.1:'+port,'localhost:'+port].includes(host ?? '')) {
           res.writeHead(403);res.end();return
         }
         const requestedOrigin='http://'+host
