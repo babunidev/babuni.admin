@@ -51,7 +51,7 @@ test('independent local service requires session key and tests local folder with
     const health=await (await request('health')).json()
     assert.equal(health.ok,true)
     assert.equal(health.mode,'local-only')
-    assert.ok(['available','unavailable'].includes(health.keyring))
+    assert.ok(['available','unavailable','locked'].includes(health.keyring))
     assert.equal((await fetch(url,{headers:{...headers,'X-Babuni-Service-Key':'incorrect'}})).status,403)
     assert.equal((await request('',{headers:{Origin:'https://bad.example'}})).status,403)
     assert.equal((await request('',{headers:{'Sec-Fetch-Site':'cross-site'}})).status,403)
