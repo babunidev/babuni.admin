@@ -18,7 +18,9 @@
     "test:connections": "node --test tests/connections.test.mjs tests/keyring.test.mjs tests/local-service.test.mjs",
     "credentials": "node --experimental-strip-types scripts/credentials.mjs",
     "test:browser:connections": "node --test tests/browser-connections.spec.mjs",
-    "keyring:verify": "node --experimental-strip-types scripts/verify-keyring.mjs"
+    "keyring:verify": "node --experimental-strip-types scripts/verify-keyring.mjs",
+    "keyring:inspect": "node scripts/verify-keyring-conditions.mjs inspect",
+    "keyring:verify-unavailable": "node scripts/verify-keyring-conditions.mjs unavailable"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
