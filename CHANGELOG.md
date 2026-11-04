@@ -4,7 +4,7 @@
 
 - Added a separate Morkahja-only `ssh:probe` endpoint, inert unless both a private on-disk operator configuration and service environment explicitly enable it.
 - Required exact approved server host-key SHA256 fingerprint, private SSH identity and unlocked Linux Secret Service credentials, with no SSH private-key or database-password exposure in the browser.
-- Added strict noninteractive SSH startup, a short-lived loopback-only PostgreSQL forward, fixed read-only role/privilege inspection and cleanup after every probe.
+- Added strict noninteractive SSH startup, a short-lived user-private Unix socket forwarding to the server's loopback PostgreSQL port, fixed read-only role/privilege inspection and cleanup after every probe.
 - Added disposable SSH and PostgreSQL tests; no live Morkahja connection, general SQL, persistent SSH Connect or write capability was enabled.
 
 ## 2026-11-04 — Offline Morkahja SSH host-key preflight
