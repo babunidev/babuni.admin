@@ -13,26 +13,36 @@ export function parsePlayerPage(value) {
   return value.page
 }
 
+// The live Morkahja role can SELECT only from these two owner-controlled
+// views. Never query public.players, sessions, avatars or game_events directly.
 const OVERVIEW_SQL = [
-  'SELECT',
-  ' (SELECT COUNT(*)::integer FROM players) AS players,',
-  ' (SELECT COUNT(*)::integer FROM avatars) AS avatars,',
-  ' (SELECT COUNT(*)::integer FROM sessions s JOIN players p ON p.id=s.player_id',
-  "   WHERE p.data->>'activeSessionId'=s.id AND",
-  "     (CASE WHEN (s.data->>'expiresAt') ~ '^[0-9]{1,15}$'",
-  "     THEN (s.data->>'expiresAt')::bigint ELSE NULL END) > $1) AS active_sessions,",
-  ' (SELECT COUNT(*)::integer FROM game_events WHERE timestamp >= $2) AS recent_events',
+  'SELECT players, avatars, active_sessions, events_last_24h',
+  'FROM babuni_admin_ro.overview',
 ].join('\n')
 
 const PLAYERS_SQL = [
-  "SELECT LEFT(COALESCE(NULLIF(p.data->>'playerName',''),'Unnamed player'),80) AS display_name,",
-  " (CASE WHEN (p.data->>'lastPlayedAt') ~ '^[0-9]{1,15}$'",
-  "   THEN (p.data->>'lastPlayedAt')::bigint ELSE NULL END) AS last_seen_ms,",
-  ' (SELECT COUNT(*)::integer FROM avatars a WHERE a.player_id=p.id) AS avatar_count',
-  ' FROM players p',
-  " ORDER BY (CASE WHEN (p.data->>'lastPlayedAt') ~ '^[0-9]{1,15}$'",
-  "   THEN (p.data->>'lastPlayedAt')::bigint ELSE NULL END) DESC NULLS LAST, p.id ASC",
-  ' LIMIT $1 OFFSET $2',
+  'SELECT display_name, avatar_count, last_played_at',
+  'FROM babuni_admin_ro.player_preview',
+  'WHERE position > $1 AND position <= $2',
+  'ORDER BY position ASC',
+  'LIMIT $3',
+].join('\n')
+
+// Enforce the view-only trust boundary at runtime, not just through server
+// provisioning. A role with raw public-table SELECT rights is rejected.
+const BOUNDARY_SQL = [
+  'SELECT',
+  " has_schema_privilege(current_user,'babuni_admin_ro','USAGE')",
+  " AND has_table_privilege(current_user,'babuni_admin_ro.overview','SELECT')",
+  " AND has_table_privilege(current_user,'babuni_admin_ro.player_preview','SELECT')",
+  ' AS views_allowed,',
+  ' EXISTS (',
+  ' SELECT 1 FROM pg_class c',
+  ' JOIN pg_namespace n ON n.oid=c.relnamespace',
+  " WHERE n.nspname='public' AND c.relname IN",
+  " ('players','avatars','sessions','game_events')",
+  " AND has_table_privilege(current_user,c.oid,'SELECT')",
+  ' ) AS raw_table_access',
 ].join('\n')
 
 // Expose only stable PostgreSQL SQLSTATE categories; never reveal server errors,
@@ -82,23 +92,32 @@ export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1
     await client.connect()
     await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
     inTransaction=true
+    const boundary=(await client.query(BOUNDARY_SQL)).rows[0]
+    if(!boundary?.views_allowed) {
+      return {ok:false,code:'DB_READ_PERMISSION_DENIED'}
+    }
+    if(boundary.raw_table_access) {
+      return {ok:false,code:'DB_ROLE_RAW_READ_ACCESS'}
+    }
     if(kind==='overview') {
-      const now=Date.now()
-      const result=await client.query(OVERVIEW_SQL,[now,now-86400000])
+      const result=await client.query(OVERVIEW_SQL)
       const row=result.rows[0]
       return {ok:true,data:{
         players:Number(row.players),avatars:Number(row.avatars),
-        activeSessions:Number(row.active_sessions),eventsLast24h:Number(row.recent_events),
+        activeSessions:Number(row.active_sessions),eventsLast24h:Number(row.events_last_24h),
       }}
     }
-    const count=await client.query('SELECT COUNT(*)::integer AS total FROM players')
-    const result=await client.query(PLAYERS_SQL,[PLAYER_PAGE_SIZE,(page-1)*PLAYER_PAGE_SIZE])
+    const count=await client.query(
+      'SELECT COUNT(*)::integer AS total FROM babuni_admin_ro.player_preview')
+    const offset=(page-1)*PLAYER_PAGE_SIZE
+    const result=await client.query(PLAYERS_SQL,
+      [offset,offset+PLAYER_PAGE_SIZE,PLAYER_PAGE_SIZE])
     return {ok:true,data:{
       page,pageSize:PLAYER_PAGE_SIZE,total:Number(count.rows[0].total),
       players:result.rows.map(row=>({
         displayName:String(row.display_name).slice(0,80),
         avatarCount:Number(row.avatar_count),
-        lastPlayedAt:asTimestamp(row.last_seen_ms),
+        lastPlayedAt:asTimestamp(row.last_played_at),
       })),
     }}
   } catch(error) {
