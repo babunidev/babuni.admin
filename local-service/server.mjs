@@ -4,6 +4,8 @@ import { inspectContent } from './inspectContent.mjs'
 import { probeProfile, inspectionState } from './connectionHealth.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
+import { probeMorkahjaPostgres, isSshProbeActive } from './sshPostgresProbe.mjs'
+import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -79,13 +81,15 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
     const profile=registry.list().find(p=>p.id===id)
     if (!profile) return send(res,404,{error:'NOT_FOUND'})
 
+    if (['PUT','DELETE'].includes(req.method) && !action &&
+        profile.kind==='postgres-ssh' && isSshProbeActive()) return send(res,409,{error:'REMOTE_PROBE_BUSY'})
     if (req.method==='PUT' && !action) {
       const previous=profile.target
       const updated=registry.update(id,await body(req))
@@ -107,6 +111,12 @@ const server=createServer(async(req,res)=>{
         ? await preflightSshHost(profile) : await probeProfile(profile,previous)
       const status=previous.state==='connected' && result.state==='available'
         ? {...result,state:'connected',code:'LOCAL_READ_ONLY_CONNECTED'} : result
+      states.set(id,status)
+      return send(res,200,{status})
+    }
+    if (req.method==='POST' && action==='probe') {
+      if (!hasCapability(profile,'ssh:probe')) return send(res,403,{error:'CAPABILITY_DENIED'})
+      const status=await probeMorkahjaPostgres(profile)
       states.set(id,status)
       return send(res,200,{status})
     }
@@ -141,6 +151,6 @@ const server=createServer(async(req,res)=>{
 })
 server.on('error',error=>{console.error('Local service could not bind to loopback:',error.code||error.message);process.exitCode=1})
 server.listen(PORT,'127.0.0.1',()=>console.log('Local profile service ready on loopback (no remote access).'))
-const close=()=>server.close(()=>process.exit(0))
+const close=()=>{stopAllSshTunnels();server.close(()=>process.exit(0))}
 process.on('SIGTERM',close)
 process.on('SIGINT',close)
