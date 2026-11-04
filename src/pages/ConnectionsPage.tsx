@@ -93,6 +93,7 @@ export function ConnectionsPage() {
       setHealth(service)
       setStatus('Profiles are stored on this PC. No remote adapters are active.')
     } catch (error) {
+      setProfiles([])
       setHealth(null)
       setStatus(error instanceof Error ? error.message : 'LOCAL_SERVICE_UNAVAILABLE')
     }
@@ -200,7 +201,7 @@ export function ConnectionsPage() {
             <p className="mt-1 break-all text-xs text-fog">{p.projectId} · {p.kind} · {p.target}</p>
             <p className="mt-2 text-xs text-fog">{stateLabel(p)}. {p.detail}</p>
             <p className="mt-1 text-xs text-fog">Result: {p.code || 'NOT_CHECKED'} · Checked: {checkedTime(p.checkedAt)}</p>
-            {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last complete successful check: {checkedTime(p.lastSuccessAt)}</p>}
+            {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last successful check: {checkedTime(p.lastSuccessAt)}</p>}
             {p.kind !== 'local-files' && <p className="mt-1 text-xs text-fog">
               Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · Transport not implemented
             </p>}
