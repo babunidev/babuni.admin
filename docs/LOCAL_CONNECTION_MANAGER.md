@@ -1,6 +1,6 @@
 # Shared local connection manager — Phase 2 design
 
-**Status:** Architecture design with a local profile registry, terminal-only Linux keyring storage and read-only health/inspection slices implemented. No outbound SSH, PostgreSQL, GitHub or publishing adapter is implemented.
+**Status:** Local profile/keyring/inspection slices and an offline Morkahja SSH known-host preflight are implemented. No outbound SSH, PostgreSQL, GitHub or publishing transport is enabled.
 
 ## Purpose and deployment boundary
 
@@ -71,6 +71,12 @@ The interface uses existing dark, restrained Babuni Admin styling and clear labe
 4. **Site publishing:** scoped remote SSH/API destination for deployment, with revision preconditions and explicit publish confirmation. Publication is confirmed only after the website's target revision is actually served.
 
 These adapter implementations are milestones, not functionality present today. Other projects can register an adapter only after their data contracts and trust boundaries are documented.
+
+## Offline Morkahja SSH trust preflight — implemented 2026-11-04
+
+The Morkahja `postgres-ssh` adapter permits only `ssh:preflight`. Pressing **Test** checks that its single hostname has an **exact** public host-key entry in `~/.config/babuni-admin/ssh_known_hosts` (or a server-process-only `BABUNI_SSH_KNOWN_HOSTS` absolute override). The file must be a non-symlink regular file owned by the local user, no more than 1 MiB and not writable by group or others. Wildcards, host lists, hash-only entries and SSH certificate-authority entries do not satisfy this initial exact-host contract. `ssh-keygen -F` is used to confirm that OpenSSH can find the host in that file. The check never contacts a remote address, accepts an unknown key, invokes `ssh-keyscan`, prompts for credentials, opens a tunnel or claims the remote fingerprint matches the stored value. No SSH username, port or database settings are accepted yet; the online transport needs a separately validated profile schema and independent operator-approved fingerprint verification.
+
+Possible results include `SSH_TRUST_STORE_MISSING`, `SSH_TRUST_STORE_UNSAFE`, `SSH_HOST_NOT_PINNED` and `SSH_HOST_KEY_PINNED_OFFLINE`. Even the last result retains `not-configured` state, no last-successful-connection timestamp and no Connect capability. The operator must verify the server's fingerprint through a trusted independent channel *before* adding its exact host key to this trust file. An entry in the file alone is not evidence that this happened; online verification is a separate milestone.
 
 ## Design acceptance criteria
 
