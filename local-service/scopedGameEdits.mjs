@@ -65,6 +65,10 @@ function recordPayload(data,dataset,index) {
   return data
 }
 function audit(operation) {
+  // Failure injection is permitted only with an isolated, explicit test audit directory.
+  if(process.env.BABUNI_TEST_ACTION_LOG_DIR &&
+    process.env.BABUNI_TEST_AUDIT_FAILURE_TYPE===operation.type)
+    throw Error('INJECTED_AUDIT_FAILURE')
   const base=process.env.BABUNI_TEST_ACTION_LOG_DIR ||
     join(process.env.XDG_STATE_HOME||join(homedir(),'.local','state'),'babuni-admin')
   mkdirSync(base,{recursive:true,mode:0o700})
