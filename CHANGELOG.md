@@ -1,5 +1,14 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Read Morkahja through restricted database views
+
+- Updated `local-service/morkahjaReadOnly.mjs` to SELECT from `babuni_admin_ro.overview` and `babuni_admin_ro.player_preview`, matching the operator-created live PostgreSQL views.
+- Preserved fixed 20-player pagination, limited response fields, read-only transaction and private short-lived SSH tunnel.
+- Enforced the required view privileges and rejected unexpected direct SELECT on underlying player, avatar, session or event tables.
+- Reworked disposable PostgreSQL tests to verify view-only access, missing grants, rejected raw-table access and no player/session mutations.
+- No database DDL was executed through GitHub or by AI. The operator reported successful live view creation; end-to-end application verification remains pending.
+
+
 ## 2026-11-04 — Safer Morkahja read-only failure diagnostics
 
 - Classified PostgreSQL read failures by SQLSTATE without returning server messages or query details to the browser.
