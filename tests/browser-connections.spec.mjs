@@ -76,3 +76,35 @@ test('Connections UI creates edits checks connects disconnects and removes a loc
     await context.close()
   }
 })
+
+
+test('read-only dashboard is manual and refuses SSH data access without private operator approval',async()=>{
+  const context=await browser.newContext({viewport:{width:1280,height:900}})
+  const page=await context.newPage()
+  const errors=[]
+  page.on('pageerror',error=>errors.push(error.message))
+  try {
+    await page.goto(origin+'/connections')
+    await page.getByRole('heading',{name:'Connections'}).waitFor()
+    await page.getByRole('combobox',{name:'Connection type'}).selectOption('postgres-ssh')
+    await page.getByRole('textbox',{name:'Profile name'}).fill('Read-only fixture')
+    await page.getByRole('textbox',{name:'Target (no credentials)'}).fill('fixture.example.invalid')
+    await page.getByRole('button',{name:'Save profile'}).click()
+    await page.getByRole('heading',{name:'Read-only fixture'}).waitFor()
+    await page.goto(origin+'/read-only')
+    await page.getByRole('heading',{name:'Morkahja — Read-only dashboard'}).waitFor()
+    await page.getByText('Choose a profile and request an explicit read-only snapshot.').waitFor()
+    assert.equal(await page.getByRole('heading',{name:'Database overview'}).count(),0)
+    await page.getByRole('combobox',{name:'Authorized Morkahja connection'})
+      .selectOption({label:'Read-only fixture · fixture.example.invalid'})
+    await page.getByRole('button',{name:'Load database overview'}).click()
+    await page.getByRole('status').getByText('REMOTE_PROBE_DISABLED').waitFor()
+    assert.equal(await page.getByRole('heading',{name:'Database overview'}).count(),0)
+    await page.getByRole('button',{name:'Load player preview'}).click()
+    await page.getByRole('status').getByText('REMOTE_PROBE_DISABLED').waitFor()
+    assert.equal(await page.getByRole('table').count(),0)
+    assert.deepEqual(errors,[])
+  }finally{
+    await context.close()
+  }
+})

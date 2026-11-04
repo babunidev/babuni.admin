@@ -4,13 +4,18 @@
 **Repository:** `babunidev/babuni.admin`  
 **Current focus:** Structural transition from a local Morkahja administration console into a multi-project administration platform.
 
-**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Read-only local directory and content checks are available. Non-local profiles may store credentials in the Linux OS keyring using a terminal-only command, and a separately configured Morkahja-only SSH/PostgreSQL **health probe** is now implemented but disabled by default. GitHub and remote editing/publishing remain unimplemented; no live server connection has been verified.
+**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Read-only local directory and content checks are available. Non-local profiles may store credentials in the Linux OS keyring using a terminal-only command, and a separately configured Morkahja-only SSH/PostgreSQL **health probe** is now implemented but disabled by default. A real SSH/database health probe was subsequently observed on the operator's Nobara PC. A separately authorized, manual read-only Morkahja data dashboard has now been added; live player-data reading remains unverified. GitHub and remote editing/publishing remain unimplemented.
 
 Babuni Admin is planned as one private workbench for maintaining multiple projects. **Morkahja** is the existing functional domain: its dashboard, player moderation, activity views and game-content editors remain in source. **Babuni Dev** is the next proposed workspace, intended to manage GitHub-backed portfolio documents and publish individual content updates without rebuilding the whole website. Additional project workspaces may be introduced later.
 
 The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Query, Zustand and Tailwind CSS 4. Morkahja-specific code now lives in `src/features/morkahja/`, shared controls in `src/shared/`, and the application shell in `src/app/`. The transitional re-export files have been removed and direct imports verified in CI. The Babuni Dev workspace has a navigable overview but no editor or publishing capability. There is **no deployed unified backend or working Babuni Dev content manager yet**.
 
 ## Local development
+
+### New Morkahja read-only dashboard
+
+The **Read-only** item in the Morkahja workspace opens `/read-only`, separate from the original dashboard and player administration. It displays a manually requested overview (players, avatars, active sessions and 24-hour event count) and paginated player previews containing only display name, avatar count and last-played timestamp. These views use fixed SELECT-only SQL, bounded results and a temporary SSH tunnel; no automatic polling, arbitrary SQL or content writes are enabled. Even with a successful SSH health probe, actual data reads require an **additional operator-owned config opt-in** and exact approved fields. [Read-only dashboard specification and activation](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
+
 
 Use `npm run dev` on your PC. It launches Vite on `127.0.0.1:5180` and the separate profile service on `127.0.0.1:5191`. The service requires a randomized per-run key attached by the server-side Vite proxy. The browser does not receive that key. Stop both with Ctrl+C. Profiles remain in the local XDG config directory. `npm run dev:ui` starts only Vite and cannot manage the profiles.
 
@@ -77,6 +82,7 @@ The legacy opt-in Morkahja static asset middleware has additional canonical path
 - [Architecture](docs/ARCHITECTURE.md)
 - [Local connection manager — design](docs/LOCAL_CONNECTION_MANAGER.md)
 - [Morkahja SSH/PostgreSQL read-only health probe](docs/MORKAHJA_SSH_READONLY_PROBE.md)
+- [Morkahja read-only data dashboard](docs/MORKAHJA_READ_ONLY_DASHBOARD.md)
 - [Decisions](docs/DECISIONS.md)
 - [Multi-project migration record](docs/MULTI_PROJECT_ARCHITECTURE.md)
 - [Changelog](CHANGELOG.md)

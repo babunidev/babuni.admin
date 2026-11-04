@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { before, after, test } from 'node:test'
 import pg from 'pg'
+import {queryMorkahjaReadOnly} from '../local-service/morkahjaReadOnly.mjs'
 import { createServer } from 'vite'
 
 const databaseUrl = process.env.TEST_DATABASE_URL
@@ -104,4 +105,67 @@ test('ban and unban SQL operations commit and missing players never succeed', as
   assert.equal(unban.ok,true)
   state=(await pool.query('SELECT data FROM players WHERE id=$1',['fixture-a'])).rows[0].data
   assert.equal(state.moderation.banned,false)
+})
+
+
+test('dedicated read-only dashboard returns bounded data without session cleanup',async()=>{
+  const role='babuni_data_preview_reader'
+  const password='synthetic-read-only-preview'
+  await pool.query("CREATE ROLE babuni_data_preview_reader LOGIN PASSWORD 'synthetic-read-only-preview'")
+  try {
+    await pool.query('GRANT USAGE ON SCHEMA public TO '+role)
+    await pool.query('GRANT SELECT ON players,avatars,sessions,game_events TO '+role)
+    await pool.query("INSERT INTO players(id,data) SELECT 'preview-'||n, "+
+      "jsonb_build_object('playerName','Preview '||n,'lastPlayedAt',"+(Date.now()-100000)+
+      "+n,'identityPublicKey','HIDDEN_KEY','activeSessionId',NULL) "+
+      "FROM generate_series(1,45) AS n ON CONFLICT (id) DO NOTHING")
+    await pool.query("INSERT INTO avatars(id,player_id,data) SELECT 'avatar-preview-'||n,"+
+      "'preview-'||n,jsonb_build_object('name','Preview Avatar') "+
+      "FROM generate_series(1,45) AS n ON CONFLICT (id) DO NOTHING")
+    await pool.query("UPDATE players SET data=jsonb_set(data,'{activeSessionId}',"+
+      "to_jsonb('preview-session'::text)) WHERE id='preview-1'")
+    await pool.query("INSERT INTO sessions(id,player_id,data) VALUES "+
+      "('preview-session','preview-1',jsonb_build_object('expiresAt',$1::bigint,'token','HIDDEN_TOKEN'))",
+      [Date.now()+600000])
+    const beforeSessions=(await pool.query('SELECT COUNT(*)::integer AS n FROM sessions')).rows[0].n
+    const config={dbUser:role,dbName:'babuni_fixture'}
+    const endpoint=5432
+    const overview=await queryMorkahjaReadOnly(config,endpoint,password,'overview')
+    assert.equal(overview.ok,true)
+    assert.ok(overview.data.players>=45)
+    assert.ok(overview.data.avatars>=45)
+    assert.ok(overview.data.activeSessions>=1)
+    assert.ok(overview.data.eventsLast24h>=0)
+    assert.deepEqual(Object.keys(overview.data).sort(),
+      ['players','avatars','activeSessions','eventsLast24h'].sort())
+    const first=await queryMorkahjaReadOnly(config,endpoint,password,'players',1)
+    const second=await queryMorkahjaReadOnly(config,endpoint,password,'players',2)
+    assert.equal(first.ok,true)
+    assert.equal(second.ok,true)
+    assert.equal(first.data.pageSize,20)
+    assert.equal(first.data.players.length,20)
+    assert.equal(second.data.players.length,20)
+    assert.equal(first.data.total,second.data.total)
+    assert.ok(first.data.total>=45)
+    for(const row of [...first.data.players,...second.data.players]){
+      assert.deepEqual(Object.keys(row).sort(),['displayName','avatarCount','lastPlayedAt'].sort())
+      assert.ok(typeof row.displayName==='string')
+    }
+    const exposed=JSON.stringify({overview,first,second})
+    assert.equal(exposed.includes('HIDDEN_KEY'),false)
+    assert.equal(exposed.includes('HIDDEN_TOKEN'),false)
+    assert.equal(exposed.includes('identityPublicKey'),false)
+    assert.equal((await pool.query('SELECT COUNT(*)::integer AS n FROM sessions')).rows[0].n,beforeSessions)
+    const denied=await queryMorkahjaReadOnly({
+      dbUser:'fixture',dbName:'babuni_fixture',
+    },endpoint,'fixture-only','overview')
+    assert.deepEqual(denied,{ok:false,code:'DB_ROLE_NOT_READ_ONLY'})
+  }finally{
+    await pool.query("DELETE FROM sessions WHERE id='preview-session'")
+    await pool.query("DELETE FROM avatars WHERE id LIKE 'avatar-preview-%'")
+    await pool.query("DELETE FROM players WHERE id LIKE 'preview-%'")
+    await pool.query('REVOKE SELECT ON players,avatars,sessions,game_events FROM '+role)
+    await pool.query('REVOKE USAGE ON SCHEMA public FROM '+role)
+    await pool.query('DROP ROLE IF EXISTS '+role)
+  }
 })

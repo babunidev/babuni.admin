@@ -1,6 +1,6 @@
 # Morkahja — operator-gated SSH/PostgreSQL health probe
 
-**Implementation:** Local service code and disposable tests. **Live server verification:** not performed. **Default:** disabled. **Scope:** Morkahja only; no game/player data reads or writes.
+**Implementation:** Local service code and disposable tests. **Live server verification:** the operator reported a successful Morkahja SSH/database health check on 2026-11-04 at 20:59, following the OpenSSH compatibility fix. **Default:** disabled until explicitly enabled by the operator. **Scope:** a metadata-only health probe, not player-data access or writes.
 
 ## What this does
 
@@ -46,6 +46,10 @@ All nine fields are required; extra fields, URLs, credentials or unapproved dest
 **Second independent opt-in:** start the local service with `BABUNI_MORKAHJA_REMOTE_PROBE=enabled` in its private process environment. The optional `BABUNI_MORKAHJA_PROBE_CONFIG` points to an absolute alternative private JSON file. Without both the process opt-in and file approval, `POST /local-connections-api/:id/probe` remains inert. The normal `npm run dev` path does not set this flag.
 
 The browser receives no DB password or SSH private-key bytes. The password is retrieved only within the local service for this single check, and no query credentials are written to a URL, argument list, frontend storage or application log.
+
+## Separate read-only data permission
+
+The new Morkahja `/read-only` dashboard is **not enabled by the health probe alone**. It additionally requires `readOnlyDataEnabled: true` and the exact field list `['displayName','avatarCount','lastPlayedAt']` in the same operator-private configuration. It uses a separate scoped `ssh:read` capability and fixed SELECT-only queries. See [read-only dashboard contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 ## Verification and boundaries
 

@@ -1,5 +1,14 @@
 # Testing Babuni Admin
 
+## Morkahja read-only data dashboard — 2026-11-04
+
+`npm test` covers strict 1–1000 page bounds, exactly 20 results per page, fixed approved response fields, disabled-by-default private data permissions, shared SSH single-flight handling and cleanup, and denied cross-project/local-service requests. The isolated local service also rejects unwanted JSON keys and forged Origins before attempting SSH.
+
+`npm run test:postgres` exercises the adapter with a disposable PostgreSQL 16 database and a dedicated fixture reader. It verifies database counts, two pages of non-sensitive player preview results, omission of identity and session credentials, unchanged session rows, and rejection of a write-capable database role. **This is not safe to point at a live database**: the existing CI fixture suite creates and removes test data.
+
+The new UI is linked from Morkahja navigation as `/read-only`. Data is not fetched merely by visiting the page; an operator must select the approved SSH profile and manually request each snapshot. The existing Dashboard and Players routes remain separate. The real SSH/database **health probe** succeeded on the operator's Nobara PC, but live player-data access and schema compatibility are pending independent verification. [Contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
+
+
 ## 2026-11-04 — OpenSSH client parser regression
 
 OpenSSH rejected the production arguments with `Bad configuration option: permittty`. Terminal allocation remains disabled through `-T` after removing that server-only option from the client command.

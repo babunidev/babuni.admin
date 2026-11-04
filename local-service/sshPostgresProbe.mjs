@@ -82,3 +82,42 @@ export async function probeMorkahjaPostgres(profile, deps={}) {
     inFlight=false
   }
 }
+
+/**
+ * Separate data-read operation sharing the health probe's single-flight gate.
+ * Every request repeats private config/host-key verification, obtains the
+ * existing keyring credential, starts one temporary tunnel and closes it.
+ */
+export async function fetchMorkahjaReadOnly(profile,kind,page=1,deps={}) {
+  if(inFlight)return {ok:false,code:'REMOTE_PROBE_BUSY'}
+  if(kind!=='overview' && kind!=='players')return {ok:false,code:'READ_OPERATION_DENIED'}
+  inFlight=true
+  let tunnel
+  try {
+    const approved=await (deps.readConfig||readMorkahjaProbeConfig)(profile)
+    if(!approved.ok)return {ok:false,code:approved.code}
+    const config=approved.config
+    const fields=['displayName','avatarCount','lastPlayedAt']
+    if(config.readOnlyDataEnabled!==true ||
+       JSON.stringify(config.readOnlyDataFields)!==JSON.stringify(fields)) {
+      return {ok:false,code:'REMOTE_READ_DISABLED'}
+    }
+    const password=await (deps.getPassword||readCredentialForService)(profile)
+    tunnel=await (deps.openTunnel||startSshTunnel)(config)
+    const read=deps.queryData || (async (...args)=>{
+      const {queryMorkahjaReadOnly}=await import('./morkahjaReadOnly.mjs')
+      return queryMorkahjaReadOnly(...args)
+    })
+    const result=await read(config,tunnel.socketDir,password,kind,page)
+    if(!result.ok)return {ok:false,code:result.code}
+    return {ok:true,data:result.data,checkedAt:new Date().toISOString()}
+  } catch(error) {
+    const permitted=['KEYRING_LOCKED','KEYRING_UNAVAILABLE','KEYRING_UNKNOWN',
+      'KEYRING_CREDENTIAL_MISSING','SSH_SESSION_FAILED','SSH_FORWARD_TIMEOUT']
+    const code=permitted.includes(error?.message)?error.message:'REMOTE_READ_FAILED'
+    return {ok:false,code}
+  } finally {
+    try {await tunnel?.stop()}catch{}
+    inFlight=false
+  }
+}

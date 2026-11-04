@@ -1,5 +1,14 @@
 # Babuni Admin — Architecture
 
+## Phase 2 — Morkahja read-only dashboard, separately authorized (2026-11-04)
+
+A new Morkahja navigation route `/read-only` is deliberately separate from legacy Dashboard/Players. The UI shares the protected local session client but has no automatic remote polling or mutation controls. `local-service/morkahjaReadOnly.mjs` handles four aggregate counts and paginated, fixed-field player previews using only SELECT statements and read-only transactions. No internal player IDs, identity keys, session records or moderation data are returned. Page size is 20, with strict server-side validation.
+
+The service exposes `POST /:id/read-overview` and `POST /:id/read-players`, requiring Morkahja-only `ssh:read`, the existing private SSH trust/keyring checks, and additional owner-only `readOnlyDataEnabled` plus an exact approved field allowlist. `sshPostgresProbe.mjs` shares one in-flight lock across health and data operations. Every read opens a temporary private Unix-socket SSH forward and closes it after fixed SQL. Legacy `vite/postgresAdmin.ts` is not called: that code contains session maintenance that would violate the new read-only requirement.
+
+The operator reported a successful real SSH/database **health probe** at 20:59 on 2026-11-04. The new player-data snapshot remains untested against the live game; tests use disposable PostgreSQL. [Data contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
+
+
 ## Phase 2 — Operator-gated SSH/PostgreSQL read-only health probe (2026-11-04)
 
 The local service now has a separate `ssh:probe` capability for Morkahja `postgres-ssh` profiles. It rejects all requests by default until an explicit process environment opt-in **and** owner-private configuration authorize an exact host, independently approved pinned host-key fingerprint, SSH identity and database role. It retrieves the per-profile DB password from an unlocked Linux Secret Service only inside the local service. `sshTunnel.mjs` spawns noninteractive OpenSSH with strict known-host checking, isolated child environment, owner-private temporary Unix-socket `-L` forwarding to remote loopback, no remote shell, and bounded cleanup. `sshPostgresProbe.mjs` executes only a fixed PostgreSQL metadata/privilege query in a READ ONLY transaction, then closes the tunnel; no general SQL, player data, persistent remote Connect or writes are exposed. A successful probe is `disconnected` with a last-health-check timestamp, not connected.

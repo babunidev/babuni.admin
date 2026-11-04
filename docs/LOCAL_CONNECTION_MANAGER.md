@@ -1,6 +1,6 @@
 # Shared local connection manager — Phase 2 design
 
-**Status:** Local profile/keyring/inspection slices, offline SSH host-key preflight and an explicitly operator-gated, disabled-by-default temporary Morkahja SSH/PostgreSQL health probe are implemented. Live Morkahja verification, persistent sessions, arbitrary SQL, GitHub and publishing remain unavailable.
+**Status:** Local profile/keyring/inspection slices, offline SSH host-key preflight, operator-verified SSH/PostgreSQL health probing, and a new **separately authorized Morkahja read-only data dashboard** are implemented. The dashboard's live player-data operations remain unverified. Persistent sessions, arbitrary SQL, live editing, GitHub and publishing are still unavailable.
 
 ## Purpose and deployment boundary
 
@@ -81,6 +81,10 @@ Possible results include `SSH_TRUST_STORE_MISSING`, `SSH_TRUST_STORE_UNSAFE`, `S
 ## Optional Morkahja health probe — implemented as a guarded capability, not a live authorization
 
 `local-service/remoteProbeConfig.mjs`, `sshTunnel.mjs` and `sshPostgresProbe.mjs` implement a separate `POST /:id/probe` endpoint. The private config and local service environment must **both** opt in; the profile hostname, approved SHA256 fingerprint and dedicated identity file must match. A positively unlocked Secret Service collection and stored per-profile database password are mandatory. The process uses strict pinned-key OpenSSH, a temporary local Unix-domain socket that forwards to the remote database's `127.0.0.1` endpoint and a fixed read-only transaction that rejects write-capable database roles. It always tears down the SSH child; success is reported as **disconnected after health check**, never as a persistent session. Only disposable SSH and PostgreSQL fixture tests establish behavior so far. [Complete contract and operator-only configuration](MORKAHJA_SSH_READONLY_PROBE.md).
+
+## Morkahja read-only data dashboard — implemented as a separate opt-in
+
+The new Morkahja `/read-only` route performs manual aggregate and paginated player-preview reads through the existing private SSH/Secret Service tunnel. A distinct `ssh:read` capability and owner-private `readOnlyDataEnabled` plus exact field allowlist must be enabled; SSH health success alone is insufficient. Only server-defined SELECTs execute, bounded to 20 player rows per page, with no sensitive identifiers or session tokens in results. The adapter is intentionally independent of the legacy Morkahja admin SQL path. [Full read contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 ## Design acceptance criteria
 

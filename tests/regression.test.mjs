@@ -100,7 +100,7 @@ test('mock moderation changes isolated in-memory records without live network or
 
 test('original Morkahja routes remain declared in app router', async () => {
   const app = await readFile('src/App.tsx', 'utf8')
-  for (const route of ['players', 'players/:playerId', 'content', 'content/:kind/:itemKey', 'settings']) {
+  for (const route of ['read-only', 'players', 'players/:playerId', 'content', 'content/:kind/:itemKey', 'settings']) {
     assert.ok(app.includes('path="' + route + '"'), 'missing route ' + route)
   }
   assert.match(app, /<Route index element=/)
@@ -118,7 +118,7 @@ test('shared shell uses project-owned navigation and reusable controls', async (
   assert.match(layout, /features\/morkahja\/components\/MorkahjaTopBar/)
   assert.match(sidebar, /\.\/navigation/)
   assert.match(navigation, /features\/morkahja\/navigation/)
-  for (const route of ['/', '/players', '/content', '/settings']) {
+  for (const route of ['/', '/read-only', '/players', '/content', '/settings']) {
     assert.ok(morkahjaNavigation.includes("to: '" + route + "'"))
   }
   assert.match(topBar, /services\/adminApi/)
@@ -139,7 +139,7 @@ test('workspace selection follows URL and preserves legacy Morkahja navigation',
   assert.equal(workspaceForPath('/babuni-dev/').id, 'babuni-dev')
   assert.equal(workspaceForPath('/babuni-dev/other').id, 'babuni-dev')
   assert.equal(workspaceForPath('/babuni-development').id, 'morkahja')
-  assert.deepEqual(workspaces[0].navItems.map(item => item.to), ['/', '/players', '/content', '/settings'])
+  assert.deepEqual(workspaces[0].navItems.map(item => item.to), ['/', '/read-only', '/players', '/content', '/settings'])
   assert.deepEqual(workspaces[1].navItems.map(item => item.to), ['/babuni-dev'])
 })
 
