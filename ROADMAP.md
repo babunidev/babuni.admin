@@ -2,7 +2,7 @@
 
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  
-**Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Read-only profile checks, structured local connection status and terminal-only Linux keyring storage are implemented slices. Live outbound adapters and real desktop keyring verification remain planned.
+**Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Read-only profile checks, structured local connection status and terminal-only Linux keyring storage are implemented slices. Live outbound adapters remain planned. The creative has verified the unlocked Nobara desktop keyring with a synthetic credential round trip; locked/unavailable behavior remains unverified.
 
 ## Initial restructuring completed (verification scope detailed below)
 
@@ -56,7 +56,7 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Remove browser-side reads of `VITE_DATABASE_URL` and `VITE_API_TOKEN`; use server-only `DATABASE_URL` in the current development adapter. This does not implement a credential vault.
 - [x] Add profile editing for name/target, immutable project/adapter/credential identity, and invalidation of previous checks when the target changes.
 - [x] Add a validated server-owned adapter/capability registry. Only local-file read-only operations are active; remote permissions remain denied.
-- [x] Add Linux Secret Service credential storage through a hidden terminal prompt, outside browser config, logs and Git. Verified with a disposable fake keyring; real Nobara keyring access still requires operator verification.
+- [x] Add Linux Secret Service credential storage through a hidden terminal prompt, outside browser config, logs and Git. Verified with a disposable fake keyring and a separately reported successful real Nobara desktop round trip.
 - [x] Add a read-only local directory test with verified available/error status; non-local adapters explicitly remain unconfigured.
 - [x] Add manual local-file Connect, Disconnect and Reconnect through read-only probes without background retries.
 - [x] Strengthen local Vite proxy Host/Origin/Fetch Metadata checks and add a per-run browser session capability while keeping the service key server-side.
@@ -66,7 +66,8 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Add local service/keyring health, per-profile timestamps and structured error codes; distinguish complete, degraded and failed content inspection without claiming remote connectivity.
 - [x] Correct the portrait JSON key to `Avatar` and add regression coverage for its real-shape fixture.
 - [x] Add `npm run keyring:verify`, an opt-in synthetic real-keyring store/compare/delete check.
-- [ ] Verify the actual Nobara desktop's unlocked keyring and separately observe locked/unavailable behavior; CI only simulates these scenarios.
+- [x] Verify the actual Nobara desktop's unlocked keyring: the creative ran `npm run keyring:verify` and reported successful synthetic store, retrieve and cleanup on 2026-11-04.
+- [ ] Verify actual locked and unavailable desktop keyring behavior; CI currently simulates these conditions.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
 - [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
 - [ ] Enforce origin/session validation, project-scoped operations, read-only defaults, action attribution, and recovery before real mutations.
