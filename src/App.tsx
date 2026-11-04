@@ -13,7 +13,8 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route element={<AdminLayout />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<ReadOnlyDashboardPage />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="read-only" element={<ReadOnlyDashboardPage />} />
           <Route path="players" element={<PlayersPage />} />
           <Route path="players/:playerId" element={<PlayersPage />} />
