@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Confirming the lock and recovery cycle
+
+After the isolated unavailable-bus check, the last desktop test was to lock KDE Wallet itself. Using the read-only diagnostic, I observed the default collection, keyring health and unused credential all report `locked`; following an unlock, those statuses returned to `unlocked`, `available` and `missing`. AI recorded the terminal evidence and closed the keyring verification checklist. This establishes desktop lock detection and status recovery, not authorization for live Morkahja operations.
+
 ## 2026-11-04 — Verifying the unavailable-bus case on Nobara
 
 With the earlier unlocked keyring test working, I ran the new diagnostics on my actual desktop. The default collection reported unlocked and available, with the synthetic unused profile correctly missing; an isolated child process then confirmed that an unreachable D-Bus address fails closed without changing existing credentials. AI documented the observed output separately from the fixture tests. The real locked-collection case remains untested, and live Morkahja operations are still blocked.
