@@ -111,6 +111,244 @@ test('ban and unban SQL operations commit and missing players never succeed', as
 test('dedicated read-only dashboard returns bounded data without session cleanup',async()=>{
   const role='babuni_data_preview_reader'
   const password='synthetic-read-only-preview'
+  // Recreate the structure of the two restricted live views in the disposable
+  // CI fixture. Their owner has raw-table access; the reader does not.
+  await pool.query('DROP SCHEMA IF EXISTS babuni_admin_ro CASCADE')
+  await pool.query('CREATE SCHEMA babuni_admin_ro')
+  await pool.query([
+    'CREATE VIEW babuni_admin_ro.overview WITH (security_barrier = true) AS',
+    'SELECT (SELECT COUNT(*) FROM public.players) AS players,',
+    '  (SELECT COUNT(*) FROM public.avatars) AS avatars,',
+    '  (SELECT COUNT(*) FROM public.sessions s JOIN public.players p',
+    "     ON p.id=s.player_id WHERE p.data->>'activeSessionId'=s.id",
+    "     AND (CASE WHEN (s.data->>'expiresAt') ~ '^[0-9]{1,15}
+  try {
+    await pool.query('GRANT USAGE ON SCHEMA babuni_admin_ro TO '+role)
+    // An otherwise safe, login-capable reader without view SELECT grants passes
+    // the metadata health check but must receive a denied-read result.
+    const noSelect=await queryMorkahjaReadOnly({
+      dbUser:role,dbName:'babuni_fixture',
+    },5432,password,'overview')
+    assert.deepEqual(noSelect,{ok:false,code:'DB_READ_PERMISSION_DENIED'})
+    await pool.query('GRANT SELECT ON babuni_admin_ro.overview, babuni_admin_ro.player_preview TO '+role)
+    const privileges=(await pool.query([
+      "SELECT has_table_privilege($1,'public.players','SELECT') AS players,",
+      " has_table_privilege($1,'public.avatars','SELECT') AS avatars,",
+      " has_table_privilege($1,'public.sessions','SELECT') AS sessions,",
+      " has_table_privilege($1,'public.game_events','SELECT') AS events",
+    ].join(' '),[role])).rows[0]
+    assert.deepEqual(privileges,{players:false,avatars:false,sessions:false,events:false})
+    // Ensure a mistakenly granted sensitive-table SELECT is rejected.
+    await pool.query('GRANT SELECT ON public.sessions TO '+role)
+    const overprivileged=await queryMorkahjaReadOnly({
+      dbUser:role,dbName:'babuni_fixture',
+    },5432,password,'overview')
+    assert.deepEqual(overprivileged,{ok:false,code:'DB_ROLE_RAW_READ_ACCESS'})
+    await pool.query('REVOKE SELECT ON public.sessions FROM '+role)
+    await pool.query("INSERT INTO players(id,data) SELECT 'preview-'||n, "+
+      "jsonb_build_object('playerName','Preview '||n,'lastPlayedAt',"+(Date.now()-100000)+
+      "+n,'identityPublicKey','HIDDEN_KEY','activeSessionId',NULL) "+
+      "FROM generate_series(1,45) AS n ON CONFLICT (id) DO NOTHING")
+    await pool.query("INSERT INTO avatars(id,player_id,data) SELECT 'avatar-preview-'||n,"+
+      "'preview-'||n,jsonb_build_object('name','Preview Avatar') "+
+      "FROM generate_series(1,45) AS n ON CONFLICT (id) DO NOTHING")
+    await pool.query("UPDATE players SET data=jsonb_set(data,'{activeSessionId}',"+
+      "to_jsonb('preview-session'::text)) WHERE id='preview-1'")
+    await pool.query("INSERT INTO sessions(id,player_id,data) VALUES "+
+      "('preview-session','preview-1',jsonb_build_object('expiresAt',$1::bigint,'token','HIDDEN_TOKEN'))",
+      [Date.now()+600000])
+    const beforeSessions=(await pool.query('SELECT COUNT(*)::integer AS n FROM sessions')).rows[0].n
+    const config={dbUser:role,dbName:'babuni_fixture'}
+    const endpoint=5432
+    const overview=await queryMorkahjaReadOnly(config,endpoint,password,'overview')
+    assert.equal(overview.ok,true)
+    assert.ok(overview.data.players>=45)
+    assert.ok(overview.data.avatars>=45)
+    assert.ok(overview.data.activeSessions>=1)
+    assert.ok(overview.data.eventsLast24h>=0)
+    assert.deepEqual(Object.keys(overview.data).sort(),
+      ['players','avatars','activeSessions','eventsLast24h'].sort())
+    const first=await queryMorkahjaReadOnly(config,endpoint,password,'players',1)
+    const second=await queryMorkahjaReadOnly(config,endpoint,password,'players',2)
+    assert.equal(first.ok,true)
+    assert.equal(second.ok,true)
+    assert.equal(first.data.pageSize,20)
+    assert.equal(first.data.players.length,20)
+    assert.equal(second.data.players.length,20)
+    assert.equal(first.data.total,second.data.total)
+    assert.ok(first.data.total>=45)
+    for(const row of [...first.data.players,...second.data.players]){
+      assert.deepEqual(Object.keys(row).sort(),['displayName','avatarCount','lastPlayedAt'].sort())
+      assert.ok(typeof row.displayName==='string')
+    }
+    const exposed=JSON.stringify({overview,first,second})
+    assert.equal(exposed.includes('HIDDEN_KEY'),false)
+    assert.equal(exposed.includes('HIDDEN_TOKEN'),false)
+    assert.equal(exposed.includes('identityPublicKey'),false)
+    assert.equal((await pool.query('SELECT COUNT(*)::integer AS n FROM sessions')).rows[0].n,beforeSessions)
+    const denied=await queryMorkahjaReadOnly({
+      dbUser:'fixture',dbName:'babuni_fixture',
+    },endpoint,'fixture-only','overview')
+    assert.deepEqual(denied,{ok:false,code:'DB_ROLE_NOT_READ_ONLY'})
+  }finally{
+    await pool.query("DELETE FROM sessions WHERE id='preview-session'")
+    await pool.query("DELETE FROM avatars WHERE id LIKE 'avatar-preview-%'")
+    await pool.query("DELETE FROM players WHERE id LIKE 'preview-%'")
+    await pool.query('REVOKE SELECT ON public.sessions FROM '+role)
+    await pool.query('REVOKE SELECT ON babuni_admin_ro.overview, babuni_admin_ro.player_preview FROM '+role)
+    await pool.query('REVOKE USAGE ON SCHEMA babuni_admin_ro FROM '+role)
+    await pool.query('DROP ROLE IF EXISTS '+role)
+    await pool.query('DROP SCHEMA IF EXISTS babuni_admin_ro CASCADE')
+  }
+})
+",
+    "     THEN (s.data->>'expiresAt')::bigint ELSE NULL END)",
+    '     > (EXTRACT(EPOCH FROM now())*1000)::bigint) AS active_sessions,',
+    '  (SELECT COUNT(*) FROM public.game_events WHERE "timestamp" >=',
+    '     (EXTRACT(EPOCH FROM now())*1000)::bigint-86400000) AS events_last_24h',
+  ].join('\n'))
+  await pool.query([
+    'CREATE VIEW babuni_admin_ro.player_preview WITH (security_barrier = true) AS',
+    'SELECT ROW_NUMBER() OVER (ORDER BY',
+    "  (CASE WHEN (p.data->>'lastPlayedAt') ~ '^[0-9]{1,15}
+  try {
+    await pool.query('GRANT USAGE ON SCHEMA public TO '+role)
+    // An otherwise safe, login-capable reader without SELECT grants passes the
+    // metadata health check but must receive a precise denied-read result.
+    const noSelect=await queryMorkahjaReadOnly({
+      dbUser:role,dbName:'babuni_fixture',
+    },5432,password,'overview')
+    assert.deepEqual(noSelect,{ok:false,code:'DB_READ_PERMISSION_DENIED'})
+    await pool.query('GRANT SELECT ON players,avatars,sessions,game_events TO '+role)
+    await pool.query("INSERT INTO players(id,data) SELECT 'preview-'||n, "+
+      "jsonb_build_object('playerName','Preview '||n,'lastPlayedAt',"+(Date.now()-100000)+
+      "+n,'identityPublicKey','HIDDEN_KEY','activeSessionId',NULL) "+
+      "FROM generate_series(1,45) AS n ON CONFLICT (id) DO NOTHING")
+    await pool.query("INSERT INTO avatars(id,player_id,data) SELECT 'avatar-preview-'||n,"+
+      "'preview-'||n,jsonb_build_object('name','Preview Avatar') "+
+      "FROM generate_series(1,45) AS n ON CONFLICT (id) DO NOTHING")
+    await pool.query("UPDATE players SET data=jsonb_set(data,'{activeSessionId}',"+
+      "to_jsonb('preview-session'::text)) WHERE id='preview-1'")
+    await pool.query("INSERT INTO sessions(id,player_id,data) VALUES "+
+      "('preview-session','preview-1',jsonb_build_object('expiresAt',$1::bigint,'token','HIDDEN_TOKEN'))",
+      [Date.now()+600000])
+    const beforeSessions=(await pool.query('SELECT COUNT(*)::integer AS n FROM sessions')).rows[0].n
+    const config={dbUser:role,dbName:'babuni_fixture'}
+    const endpoint=5432
+    const overview=await queryMorkahjaReadOnly(config,endpoint,password,'overview')
+    assert.equal(overview.ok,true)
+    assert.ok(overview.data.players>=45)
+    assert.ok(overview.data.avatars>=45)
+    assert.ok(overview.data.activeSessions>=1)
+    assert.ok(overview.data.eventsLast24h>=0)
+    assert.deepEqual(Object.keys(overview.data).sort(),
+      ['players','avatars','activeSessions','eventsLast24h'].sort())
+    const first=await queryMorkahjaReadOnly(config,endpoint,password,'players',1)
+    const second=await queryMorkahjaReadOnly(config,endpoint,password,'players',2)
+    assert.equal(first.ok,true)
+    assert.equal(second.ok,true)
+    assert.equal(first.data.pageSize,20)
+    assert.equal(first.data.players.length,20)
+    assert.equal(second.data.players.length,20)
+    assert.equal(first.data.total,second.data.total)
+    assert.ok(first.data.total>=45)
+    for(const row of [...first.data.players,...second.data.players]){
+      assert.deepEqual(Object.keys(row).sort(),['displayName','avatarCount','lastPlayedAt'].sort())
+      assert.ok(typeof row.displayName==='string')
+    }
+    const exposed=JSON.stringify({overview,first,second})
+    assert.equal(exposed.includes('HIDDEN_KEY'),false)
+    assert.equal(exposed.includes('HIDDEN_TOKEN'),false)
+    assert.equal(exposed.includes('identityPublicKey'),false)
+    assert.equal((await pool.query('SELECT COUNT(*)::integer AS n FROM sessions')).rows[0].n,beforeSessions)
+    const denied=await queryMorkahjaReadOnly({
+      dbUser:'fixture',dbName:'babuni_fixture',
+    },endpoint,'fixture-only','overview')
+    assert.deepEqual(denied,{ok:false,code:'DB_ROLE_NOT_READ_ONLY'})
+  }finally{
+    await pool.query("DELETE FROM sessions WHERE id='preview-session'")
+    await pool.query("DELETE FROM avatars WHERE id LIKE 'avatar-preview-%'")
+    await pool.query("DELETE FROM players WHERE id LIKE 'preview-%'")
+    await pool.query('REVOKE SELECT ON players,avatars,sessions,game_events FROM '+role)
+    await pool.query('REVOKE USAGE ON SCHEMA public FROM '+role)
+    await pool.query('DROP ROLE IF EXISTS '+role)
+  }
+})
+",
+    "   THEN (p.data->>'lastPlayedAt')::bigint ELSE NULL END) DESC NULLS LAST,",
+    '  p.id) AS position,',
+    "  LEFT(COALESCE(NULLIF(p.data->>'playerName',''),'Unnamed player'),80)",
+    '    AS display_name,',
+    '  (SELECT COUNT(*) FROM public.avatars a WHERE a.player_id=p.id)',
+    '    AS avatar_count,',
+    "  CASE WHEN (p.data->>'lastPlayedAt') ~ '^[0-9]{1,15}
+  try {
+    await pool.query('GRANT USAGE ON SCHEMA public TO '+role)
+    // An otherwise safe, login-capable reader without SELECT grants passes the
+    // metadata health check but must receive a precise denied-read result.
+    const noSelect=await queryMorkahjaReadOnly({
+      dbUser:role,dbName:'babuni_fixture',
+    },5432,password,'overview')
+    assert.deepEqual(noSelect,{ok:false,code:'DB_READ_PERMISSION_DENIED'})
+    await pool.query('GRANT SELECT ON players,avatars,sessions,game_events TO '+role)
+    await pool.query("INSERT INTO players(id,data) SELECT 'preview-'||n, "+
+      "jsonb_build_object('playerName','Preview '||n,'lastPlayedAt',"+(Date.now()-100000)+
+      "+n,'identityPublicKey','HIDDEN_KEY','activeSessionId',NULL) "+
+      "FROM generate_series(1,45) AS n ON CONFLICT (id) DO NOTHING")
+    await pool.query("INSERT INTO avatars(id,player_id,data) SELECT 'avatar-preview-'||n,"+
+      "'preview-'||n,jsonb_build_object('name','Preview Avatar') "+
+      "FROM generate_series(1,45) AS n ON CONFLICT (id) DO NOTHING")
+    await pool.query("UPDATE players SET data=jsonb_set(data,'{activeSessionId}',"+
+      "to_jsonb('preview-session'::text)) WHERE id='preview-1'")
+    await pool.query("INSERT INTO sessions(id,player_id,data) VALUES "+
+      "('preview-session','preview-1',jsonb_build_object('expiresAt',$1::bigint,'token','HIDDEN_TOKEN'))",
+      [Date.now()+600000])
+    const beforeSessions=(await pool.query('SELECT COUNT(*)::integer AS n FROM sessions')).rows[0].n
+    const config={dbUser:role,dbName:'babuni_fixture'}
+    const endpoint=5432
+    const overview=await queryMorkahjaReadOnly(config,endpoint,password,'overview')
+    assert.equal(overview.ok,true)
+    assert.ok(overview.data.players>=45)
+    assert.ok(overview.data.avatars>=45)
+    assert.ok(overview.data.activeSessions>=1)
+    assert.ok(overview.data.eventsLast24h>=0)
+    assert.deepEqual(Object.keys(overview.data).sort(),
+      ['players','avatars','activeSessions','eventsLast24h'].sort())
+    const first=await queryMorkahjaReadOnly(config,endpoint,password,'players',1)
+    const second=await queryMorkahjaReadOnly(config,endpoint,password,'players',2)
+    assert.equal(first.ok,true)
+    assert.equal(second.ok,true)
+    assert.equal(first.data.pageSize,20)
+    assert.equal(first.data.players.length,20)
+    assert.equal(second.data.players.length,20)
+    assert.equal(first.data.total,second.data.total)
+    assert.ok(first.data.total>=45)
+    for(const row of [...first.data.players,...second.data.players]){
+      assert.deepEqual(Object.keys(row).sort(),['displayName','avatarCount','lastPlayedAt'].sort())
+      assert.ok(typeof row.displayName==='string')
+    }
+    const exposed=JSON.stringify({overview,first,second})
+    assert.equal(exposed.includes('HIDDEN_KEY'),false)
+    assert.equal(exposed.includes('HIDDEN_TOKEN'),false)
+    assert.equal(exposed.includes('identityPublicKey'),false)
+    assert.equal((await pool.query('SELECT COUNT(*)::integer AS n FROM sessions')).rows[0].n,beforeSessions)
+    const denied=await queryMorkahjaReadOnly({
+      dbUser:'fixture',dbName:'babuni_fixture',
+    },endpoint,'fixture-only','overview')
+    assert.deepEqual(denied,{ok:false,code:'DB_ROLE_NOT_READ_ONLY'})
+  }finally{
+    await pool.query("DELETE FROM sessions WHERE id='preview-session'")
+    await pool.query("DELETE FROM avatars WHERE id LIKE 'avatar-preview-%'")
+    await pool.query("DELETE FROM players WHERE id LIKE 'preview-%'")
+    await pool.query('REVOKE SELECT ON players,avatars,sessions,game_events FROM '+role)
+    await pool.query('REVOKE USAGE ON SCHEMA public FROM '+role)
+    await pool.query('DROP ROLE IF EXISTS '+role)
+  }
+})
+",
+    "    THEN (p.data->>'lastPlayedAt')::bigint ELSE NULL END AS last_played_at",
+    'FROM public.players p',
+  ].join('\n'))
   await pool.query("CREATE ROLE babuni_data_preview_reader LOGIN PASSWORD 'synthetic-read-only-preview'")
   try {
     await pool.query('GRANT USAGE ON SCHEMA public TO '+role)
