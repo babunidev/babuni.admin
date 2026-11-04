@@ -17,6 +17,8 @@ The isolated unavailable-bus command makes no changes to desktop bus settings. F
 See [Phase 2 security review](PHASE2_SECURITY_REVIEW_2026-11-04.md) for the distinction between CI fixtures, operator-reported results and remaining live-operation gates.
 
 
+The regression suite also checks that legacy HTTP mutation requests without an Origin, with an HTTPS origin against the HTTP local server, or with `Sec-Fetch-Site: same-site` are denied. Legitimate fixture mutations use an explicit local HTTP Origin. Browser form regression tests must continue to pass.
+
 ## Nobara desktop keyring verification — 2026-11-04
 
 The human creative ran `npm run keyring:verify` on the Nobara desktop and supplied the following successful terminal results: `Linux Secret Service round-trip verified: ephemeral store and retrieve.` and `Ephemeral test secret removed from the keyring.` This is operator-reported verification on the actual machine, separate from CI's fake-keyring tests. The synthetic test did not access real project credentials. Locked or unavailable desktop keyring behavior and remote service authentication remain unverified.
