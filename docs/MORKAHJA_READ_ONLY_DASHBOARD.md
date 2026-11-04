@@ -3,6 +3,18 @@
 **Implementation:** Dedicated local-service read adapter and Morkahja-only React view. **Live player-data verification:** pending. **Default:** data reads disabled, even where the SSH/database health probe works.
 
 ## Operator authorization
+## Restricted PostgreSQL views — live server configuration
+
+The database-side permissions have been configured and verified by the operator on the Morkahja Ubuntu server. `morkahjadbadmin` owns `babuni_admin_ro.overview` and `babuni_admin_ro.player_preview`; the distinct login role `babuni_admin_probe` receives schema USAGE and view SELECT only. It has no CREATE permission on that schema and no raw SELECT on `public.players` or `public.sessions`. The view definitions access the underlying data with the owner's rights, so the probe role does not need permission to read the sensitive base tables.
+
+- `overview`: exactly one row with `players`, `avatars`, `active_sessions`, `events_last_24h` aggregate counts.
+- `player_preview`: `position` (internal page ordering), `display_name` (truncated), `avatar_count` and `last_played_at`. Only the latter three display fields are returned by the service.
+- Both views use `security_barrier = true`. Their owner and schema are fixed by the operator's live database transaction, not inferred from application credentials.
+- The adapter explicitly rejects a probe role that gains direct SELECT on any of `public.players`, `public.avatars`, `public.sessions` or `public.game_events`. The database write-privilege test remains separate.
+
+**Verification:** The operator confirmed committed views, usable SELECT grants, a nonempty preview count, and raw player/session SELECT denial. This does **not** verify the dashboard's actual live data requests; those remain pending after the adapter update. No repeat database migration is necessary for this step.
+
+
 
 The existing private `~/.config/babuni-admin/morkahja-probe.json` continues to control the exact SSH destination, approved host-key fingerprint, private SSH identity and dedicated PostgreSQL login. This document adds a **second explicit permission**. To authorize the fixed data view, the operator must review its response fields and manually add these two properties to the existing private JSON configuration:
 
