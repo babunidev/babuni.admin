@@ -41,8 +41,13 @@ async function body(req, maxBytes=4096) {
   try { return JSON.parse(content) } catch { throw Object.assign(new Error('INVALID_JSON'),{status:400}) }
 }
 async function listedProfile(profile) {
-  const last=states.get(profile.id) || {
+  let last=states.get(profile.id) || {
     state:'not-configured',code:'NOT_CHECKED',detail:'No connection test performed.',
+  }
+  if(hasCapability(profile,'db:connect') && last.state==='connected' && !morkahja.isConnected(profile.id)) {
+    last={state:'error',code:'TUNNEL_DISCONNECTED',detail:'The SSH/database session ended.',
+      checkedAt:new Date().toISOString()}
+    states.set(profile.id,last)
   }
   const credential=requiresCredential(profile) ? await credentialStatus(profile) : 'not-required'
   const adapter=specForProfile(profile)
@@ -199,6 +204,10 @@ const server=createServer(async(req,res)=>{
           return send(res,200,{ok:true,status})
         }
         const result=await morkahja.connect(profile)
+        if(result.ok && !registry.list().some(p=>p.id===profile.id && p.target===profile.target)) {
+          await morkahja.disconnect(id)
+          return send(res,409,{error:'PROFILE_CHANGED_DURING_CONNECT'})
+        }
         if(result.ok)states.set(id,result.status)
         else states.set(id,{state:'error',code:result.error,
           detail:'Protected SSH/PostgreSQL connection could not be established.',
