@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Making the first database information useful without changing anything
+
+With the Morkahja SSH/database health probe finally succeeding on my PC, the next step was to see actual information safely. My requirement was a small database overview and a paginated player list, with no secrets, session cleanup or administrative writes. AI built a separate, manually loaded dashboard and fixed read-only SQL behind an additional owner-controlled permission; the original admin screens were left untouched because their older data path includes maintenance actions. Disposable PostgreSQL and service fixtures exercised the new boundary, while live player-data verification remains separate from the successful SSH health check.
+
+
 ## 2026-11-04 — Finding the first real SSH startup fault
 
 While testing the connection, I encountered a tunnel startup error. AI traced it to `PermitTTY`, a server setting incorrectly passed to the SSH client, and removed it while preserving `-T`. A new offline test using real OpenSSH fails before the correction and passes afterward; build and lint also passed. Verification on my desktop remains pending.
