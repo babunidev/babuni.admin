@@ -69,7 +69,8 @@ function audit(operation) {
     join(process.env.XDG_STATE_HOME||join(homedir(),'.local','state'),'babuni-admin')
   mkdirSync(base,{recursive:true,mode:0o700})
   const file=join(base,'content-actions.jsonl')
-  if(existsSync(file) && (lstatSync(file).isSymbolicLink()||!lstatSync(file).isFile()))
+  if(existsSync(file) && (lstatSync(file).isSymbolicLink()||!lstatSync(file).isFile()||
+    (lstatSync(file).mode&0o077)!==0))
     throw Error('AUDIT_LOG_UNSAFE')
   // Never log record contents, credentials, paths to secrets or player data.
   appendFileSync(file,JSON.stringify({at:new Date().toISOString(),...operation})+'\n',
@@ -130,8 +131,7 @@ export function restoreEntry(profile,dataset,key,input) {
     const doc=readDocument(profile,dataset,key)
     if(doc.revision!==input.expectedRevision)throw Error('REVISION_CONFLICT')
     const backup=join(join(profile.target,'game'),input.backup)
-    if(input.backup!==basename(doc.path)+input.backup.slice(basename(doc.path).length) ||
-      !input.backup.startsWith(basename(doc.path)+'.bak-'))throw Error('INVALID_BACKUP_PATH')
+    if(!input.backup.startsWith(basename(doc.path)+'.bak-'))throw Error('INVALID_BACKUP_PATH')
     const backupInfo=lstatSync(backup)
     if(!backupInfo.isFile()||backupInfo.isSymbolicLink()||backupInfo.size>maxFileBytes)
       throw Error('INVALID_BACKUP_FILE')
@@ -139,10 +139,18 @@ export function restoreEntry(profile,dataset,key,input) {
     audit({type:'restore-requested',profileId:profile.id,dataset,key,from:doc.revision,
       backup:input.backup})
     requirePermission(profile,dataset)
-    restoreBackup(doc.path,backup)
+    const recoveryBackup=restoreBackup(doc.path,backup)
     const nextRevision=sha(readFileSync(doc.path))
-    audit({type:'restore-complete',profileId:profile.id,dataset,key,
-      from:doc.revision,to:nextRevision})
+    try {
+      audit({type:'restore-complete',profileId:profile.id,dataset,key,
+        from:doc.revision,to:nextRevision})
+    } catch {
+      if(recoveryBackup) {
+        try {restoreBackup(doc.path,recoveryBackup)} catch {throw Error('PARTIAL_WRITE_NEEDS_RECOVERY')}
+        throw Error('RESTORE_REVERTED_AUDIT_FAILURE')
+      }
+      throw Error('PARTIAL_WRITE_NEEDS_RECOVERY')
+    }
     return {ok:true,restored:true,dataset,key,revision:nextRevision}
   })
 }
