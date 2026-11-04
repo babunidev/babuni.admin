@@ -97,7 +97,7 @@ after(async () => {
 async function request(path, data) {
   const response = await fetch(base + path, data === undefined ? {} : {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Origin: base },
     body: JSON.stringify(data),
   })
   return { status: response.status, body: await response.json() }
