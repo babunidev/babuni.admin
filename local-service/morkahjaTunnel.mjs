@@ -64,6 +64,7 @@ export class MorkahjaTunnelManager {
     this.sessions=new Map()
     this.busy=new Set()
     this.cancelled=new Set()
+    this.inflightChildren=new Map()
   }
   isConnected(id) {
     const session=this.sessions.get(id)
@@ -83,6 +84,7 @@ export class MorkahjaTunnelManager {
       const password=await this.deps.credential(profile)
       const port=await this.deps.reservePort()
       child=this.deps.startTunnel(profile,config,port)
+      this.inflightChildren.set(profile.id,child)
       child.on('error',()=>{})
       const credentials={
         host:'127.0.0.1',port,user:config.databaseUser,database:config.databaseName,
@@ -131,6 +133,7 @@ export class MorkahjaTunnelManager {
       if(child)child.kill('SIGTERM')
       this.busy.delete(profile.id)
       this.cancelled.delete(profile.id)
+      this.inflightChildren.delete(profile.id)
     }
   }
   async health(profile) {
@@ -158,6 +161,8 @@ export class MorkahjaTunnelManager {
   }
   async disconnect(id,cancelPending=true) {
     if(cancelPending&&this.busy.has(id))this.cancelled.add(id)
+    const pendingChild=this.inflightChildren.get(id)
+    if(cancelPending && pendingChild && pendingChild.exitCode===null)pendingChild.kill('SIGTERM')
     const session=this.sessions.get(id)
     if(!session)return
     this.sessions.delete(id)
@@ -165,5 +170,8 @@ export class MorkahjaTunnelManager {
     try {await session.client.end()}catch{}
     if(session.child.exitCode===null)session.child.kill('SIGTERM')
   }
-  async closeAll(){await Promise.all([...this.sessions.keys()].map(id=>this.disconnect(id)))}
+  async closeAll(){
+    const ids=new Set([...this.sessions.keys(),...this.busy.keys()])
+    await Promise.all([...ids].map(id=>this.disconnect(id)))
+  }
 }
