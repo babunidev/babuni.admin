@@ -57,7 +57,7 @@ test('SSH child pins hosts, creates private Unix forward and inherits no service
     tunnel=null
   }finally{
     await tunnel?.stop()
-    stopAllSshTunnels()
+    await stopAllSshTunnels()
     if(originalPath===undefined)delete process.env.PATH
     else process.env.PATH=originalPath
     if(originalToken===undefined)delete process.env.BABUNI_LOCAL_SERVICE_TOKEN
