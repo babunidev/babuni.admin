@@ -129,3 +129,22 @@ Manual local Connect verifies directory access and records an ephemeral `connect
 
 The Vite proxy checks local Host/Origin/Fetch Metadata and an ephemeral browser session capability in memory before injecting its own independent service key. This guards against cross-site browser requests; it cannot distinguish arbitrary same-user local programs. A real Linux keyring check is provided as `npm run keyring:verify`, using a disposable synthetic secret. CI tests use a fake keyring and disposable files, so actual Nobara keyring behavior remains unverified.
 
+## Morkahja remote connection — implementation contract (2026-11-04, proposed)
+
+**Status: design and acceptance criteria only.** No production SSH tunnel, PostgreSQL credentials, live query, remote edit or backup has been executed.
+
+1. **Host identity and SSH:** Profile must bind a non-secret SSH hostname, port, remote username and separately confirmed host-key fingerprint. Verify against a dedicated `known_hosts` entry using strict checking; never use `StrictHostKeyChecking=no`, automatic trust-on-first-use, `sshpass`, or password-bearing command arguments. A changed/missing key fails closed. Keys remain with OpenSSH/agent or OS-protected storage; never in the browser.
+2. **Outbound tunnel:** The local service owns an SSH child process with `-N`, `ExitOnForwardFailure=yes`, a dedicated loopback-bound ephemeral local port and a remote destination restricted to the Morkahja PostgreSQL endpoint. Do not expose PostgreSQL on the VPS public interface or bind the tunnel to `0.0.0.0`. Manage one tunnel per authorized profile, cleanup on error, disconnect and service shutdown, and prohibit unbounded automatic retries.
+3. **Read-only DB access:** Use a dedicated PostgreSQL role with only required SELECT grants, `default_transaction_read_only=on`, TLS/identity settings appropriate to the server, parameterized allowlisted queries, strict timeouts and result-size limits. Query `SELECT 1` and non-sensitive schema/health metadata before attempting any live player read. A successful SSH handshake alone is not DB health.
+4. **Live data:** Route the existing Morkahja read-only data contracts through the protected local service. The UI must label source and freshness, avoid caching sensitive player data across disconnects and never ship database connection strings, private keys or player records into frontend build artifacts, logs or public documentation. Enforce project identity and per-operation capabilities on the server.
+5. **Editing permissions:** Game-content writes require a separate explicit capability, destination allowlist, validated schema and file ownership, preflight/dry-run, operator confirmation and an audit entry without sensitive values. Read-only DB access must not imply file or database write authority. Do not reuse existing development-only Vite mutation routes as production authorization.
+6. **Recovery:** Before any authorized write, create and verify a restorable backup of the exact affected game file or database record. Use atomic replacement/transaction boundaries, post-write verification, version checks to prevent stale overwrites, and tested rollback after injected failure. Stop on partial success; never automatically replay a non-idempotent operation.
+
+### Release gates
+
+- Isolated tests: SSH host-key mismatch, unavailable agent, tunnel port collision, lost tunnel, refused database connection, slow query, result limit, cross-project permission denial, stale UI data and secret redaction.
+- Disposable PostgreSQL: verify SELECT succeeds while INSERT/UPDATE/DELETE are denied for the read-only role, with rollback after failure.
+- Disposable game-data fixtures: verify backup restore byte-for-byte, atomic write and rollback, malformed JSON denial, symlink/path escape rejection and interrupted writes.
+- Operator-only live verification: confirm approved SSH host fingerprint and actual remote endpoint before any tunnel. Begin with health and read-only queries. **No live mutation** until separate permission and recovery gates are reviewed and approved.
+
+The connection profile currently stores a single `target` string. SSH host, port, database destination and identity must become separately validated non-secret fields before implementation; never overload `target` with an executable shell command or URL containing credentials.
