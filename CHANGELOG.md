@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Morkahja read-only dashboard
+
+- Added a separate `/read-only` Morkahja page with manually requested database totals, 24-hour activity count and 20-row paginated player preview.
+- Implemented fixed SELECT-only PostgreSQL queries in a separate adapter, strictly limited to display name, avatar count and last-played time; no player IDs, session secrets, identity keys, arbitrary SQL or mutation actions are returned.
+- Added Morkahja-only `ssh:read` endpoints, guarded by a second operator-owned opt-in and exact field allowlist; each read reuses the keyring and private temporary SSH tunnel, closing it afterward.
+- Added service, configuration, pagination, field-redaction and disposable PostgreSQL regression tests. The operator-reported SSH/database **health probe** worked on Nobara; live player-data reads remain unverified.
+
+
 ## 2026-11-04 — Fix OpenSSH tunnel startup
 
 - Removed the server-only `PermitTTY=no` option from the SSH client command; existing `-T` continues to disable terminal allocation.
