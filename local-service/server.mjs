@@ -82,7 +82,7 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
@@ -121,14 +121,14 @@ const server=createServer(async(req,res)=>{
       states.set(id,status)
       return send(res,200,{status})
     }
-    if (req.method==='POST' && ['read-overview','read-players'].includes(action)) {
+    if (req.method==='POST' && ['read-overview','read-players','read-dashboard'].includes(action)) {
       if (!hasCapability(profile,'ssh:read')) return send(res,403,{error:'CAPABILITY_DENIED'})
       let page=1
-      if(action==='read-players') {
+      if(action==='read-players' || action==='read-dashboard') {
         try {page=parsePlayerPage(await body(req))}
         catch {return send(res,400,{error:'INVALID_PAGE'})}
       }
-      const kind=action==='read-overview'?'overview':'players'
+      const kind=action==='read-overview'?'overview':action==='read-dashboard'?'dashboard':'players'
       const report=await fetchMorkahjaReadOnly(profile,kind,page)
       if(!report.ok) {
         const code=report.code==='REMOTE_PROBE_BUSY'?409:

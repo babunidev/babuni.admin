@@ -14,7 +14,7 @@ Babuni Admin is operated on the human creative's **own PC only**. Do not propose
 
 ## Morkahja read-only data boundary
 
-The dedicated `/read-only` dashboard must use only `local-service/morkahjaReadOnly.mjs` and its bounded SELECT-only SQL. Never reuse `vite/postgresAdmin.ts` for this view: legacy list flows can mutate session records. Data access requires `ssh:read`, exact operator-approved field settings and the same private SSH/keyring trust gates as the health probe. Do not expose player IDs, public keys, session data, moderation state or arbitrary SQL to the browser. Keep each read manual, temporary, one at a time, and close tunnels after every request. See `docs/MORKAHJA_READ_ONLY_DASHBOARD.md`.
+The dedicated `/read-only` dashboard must use only `local-service/morkahjaReadOnly.mjs` and its bounded SELECT-only SQL. Never reuse `vite/postgresAdmin.ts` for this view: legacy list flows can mutate session records. Data access requires `ssh:read`, exact operator-approved field settings and the same private SSH/keyring trust gates as the health probe. Do not expose player IDs, public keys, session data, moderation state or arbitrary SQL to the browser. An explicit operator selection may persist the non-secret profile ID locally; subsequent page reloads may automatically request a new snapshot only for that previously selected profile, subject to all server-side read approvals. Do not persist credentials, tokens or player data, or enable background polling. Keep each read bounded, temporary, one at a time, and close tunnels after every request. See `docs/MORKAHJA_READ_ONLY_DASHBOARD.md`.
 
 ## This is privileged software
 

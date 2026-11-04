@@ -19,6 +19,12 @@ After the operator verified the first live data request failed with missing tabl
 
 
 
+### Morkahja Overview — saved read-only connection
+
+The private **Overview** is now the Morkahja landing page (`/`). Once an approved Morkahja PostgreSQL/SSH profile has been selected, the browser remembers only its local UUID and reloads the overview and player preview together when the page opens. A single manual **Refresh overview and players** also reloads both, and next/previous player pages retain independent bounded reads. The connection selector sits below the overview and player list. Existing `/read-only` remains available; the previous dashboard is preserved at `/dashboard` but is no longer the primary navigation destination. The existing `/players` page is labeled **Moderation** to distinguish legacy privileged controls from the view-only overview.
+
+The counts now include **Players online*** as a clearly labeled **session-based estimate**, derived from the existing active-session count; a valid session is not proof of a live websocket or multiplayer room. More accurate presence, rooms, achievements, gems, and expansion/dice unlock or purchase counts require separately approved, narrowly scoped aggregate database views. No new server-side grants were performed in this UI update. See [view contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
+
 ### New Morkahja read-only dashboard
 
 The **Read-only** item in the Morkahja workspace opens `/read-only`, separate from the original dashboard and player administration. It displays a manually requested overview (players, avatars, active sessions and 24-hour event count) and paginated player previews containing only display name, avatar count and last-played timestamp. These views use fixed SELECT-only SQL, bounded results and a temporary SSH tunnel; no automatic polling, arbitrary SQL or content writes are enabled. Even with a successful SSH health probe, actual data reads require an **additional operator-owned config opt-in** and exact approved fields. [Read-only dashboard specification and activation](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).

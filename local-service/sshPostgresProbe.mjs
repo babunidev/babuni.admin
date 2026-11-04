@@ -90,7 +90,7 @@ export async function probeMorkahjaPostgres(profile, deps={}) {
  */
 export async function fetchMorkahjaReadOnly(profile,kind,page=1,deps={}) {
   if(inFlight)return {ok:false,code:'REMOTE_PROBE_BUSY'}
-  if(kind!=='overview' && kind!=='players')return {ok:false,code:'READ_OPERATION_DENIED'}
+  if(!['overview','players','dashboard'].includes(kind))return {ok:false,code:'READ_OPERATION_DENIED'}
   inFlight=true
   let tunnel
   try {

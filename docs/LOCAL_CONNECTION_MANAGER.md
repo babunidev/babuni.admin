@@ -1,6 +1,10 @@
 # Shared local connection manager — Phase 2 design
 
-**Status:** Local profile/keyring/inspection slices, offline SSH host-key preflight, operator-verified SSH/PostgreSQL health probing, and a new **separately authorized Morkahja read-only data dashboard** are implemented. The dashboard's live player-data operations remain unverified. Persistent sessions, arbitrary SQL, live editing, GitHub and publishing are still unavailable.
+**Status:** Local profile/keyring/inspection slices, offline SSH host-key preflight, operator-verified SSH/PostgreSQL health probing, and a new **separately authorized Morkahja read-only data dashboard** are implemented. The operator verified live player preview navigation and increasing activity counts on 2026-11-04; the newer remembered-selection behavior remains to be verified on Nobara. Persistent sessions, arbitrary SQL, live editing, GitHub and publishing are still unavailable.
+
+## Morkahja Overview: remembered connection (2026-11-04)
+
+Only the previously selected Morkahja SSH profile **UUID** may persist in the PC browser's origin-local storage. The UI validates that UUID against the server-owned profile registry after reload, then uses one authorized, bounded `read-dashboard` request for overview plus a player page. A selected profile does not imply persistent connectivity; every request still requires the private operator-approved trust, keyring and read-only role gates and closes the temporary tunnel. Credentials, local service session capabilities and player data are never stored in the browser. There is no periodic polling. [Read contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 ## Purpose and deployment boundary
 

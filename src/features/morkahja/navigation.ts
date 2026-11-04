@@ -5,9 +5,8 @@ export interface NavItem {
 }
 
 export const morkahjaNavItems: NavItem[] = [
-  { to: '/', label: 'Dashboard', icon: '◈' },
-  { to: '/read-only', label: 'Read-only', icon: '◇' },
-  { to: '/players', label: 'Players', icon: '◎' },
+  { to: '/', label: 'Overview', icon: '◈' },
+  { to: '/players', label: 'Moderation', icon: '◎' },
   { to: '/content', label: 'Content', icon: '✦' },
   { to: '/settings', label: 'Settings', icon: '⚙' },
 ]

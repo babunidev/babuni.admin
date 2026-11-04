@@ -1,5 +1,14 @@
 # Testing Babuni Admin
 
+## Morkahja Overview refresh and remembered profile — 2026-11-04
+
+The operator verified the first read-only implementation's four player-preview pages, returning to page one, and observed active-session/recent-event counts increase while playing. That live evidence applies to the earlier manual controls. The subsequent Overview enhancement requires its **own** Nobara check.
+
+The new `read-dashboard` endpoint returns both the aggregate overview and the requested bounded player page from one PostgreSQL READ ONLY transaction on a disposable fixture database. The SSH wrapper test checks this combined read uses one tunnel, shares the existing busy guard and cleans up. The loopback local-service test rejects unapproved and cross-project combined requests, forged Origin headers, malformed page numbers and any extra page-query options. The rendered-browser test checks that an unselected profile does not request data, selection persists only the non-secret UUID across reloads, a previously chosen profile attempts a fresh read on reload, the Refresh button uses the same restricted endpoint, and disabled server authorization still refuses the request.
+
+**Scope:** no CI tests open a real Morkahja SSH tunnel, modify its database or persist credentials in the browser. No new metrics grant or room/transaction aggregation is enabled. The code's automatic-read behavior must be checked on the operator's Nobara browser before recording success.
+
+
 ## Operator-verified live Morkahja snapshot — 2026-11-04
 
 Following the restricted-view adapter update, the operator supplied screenshots of both read-only dashboard panels on Nobara. The overview displays **62 players**, **90 avatars**, **0 active sessions**, **0 events in the prior 24 hours** and the UI's SSH-disconnected-after-snapshot message (checked 2026-11-04, 23:10:25 in the screenshot's locale). The player-preview table renders display name, avatar count and last-played columns with actual data. No player ID, session token or public identity key is visible in the presented UI. This is operator-reported live verification, distinct from CI's disposable PostgreSQL fixture tests.

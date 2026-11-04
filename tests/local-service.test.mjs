@@ -168,6 +168,24 @@ test('independent local service requires session key and tests local folder with
     assert.equal((await request(sshProfile.id+'/read-players',{
       method:'POST',body:JSON.stringify({page:1,extra:'secret'}),
     })).status,400)
+    assert.equal((await request(sshProfile.id+'/read-dashboard',{
+      method:'POST',body:JSON.stringify({page:0}),
+    })).status,400)
+    assert.equal((await request(sshProfile.id+'/read-dashboard',{
+      method:'POST',body:JSON.stringify({page:1,limit:999}),
+    })).status,400)
+    const combinedDisabled=await request(sshProfile.id+'/read-dashboard',{
+      method:'POST',body:JSON.stringify({page:1}),
+    })
+    assert.equal(combinedDisabled.status,403)
+    assert.equal((await combinedDisabled.json()).error,'REMOTE_PROBE_DISABLED')
+    assert.equal((await request(remoteId+'/read-dashboard',{
+      method:'POST',body:JSON.stringify({page:1}),
+    })).status,403)
+    assert.equal((await request(sshProfile.id+'/read-dashboard',{
+      method:'POST',headers:{Origin:'https://attacker.invalid'},
+      body:JSON.stringify({page:1}),
+    })).status,403)
     const readDisabled=await request(sshProfile.id+'/read-overview',{method:'POST'})
     assert.equal(readDisabled.status,403)
     assert.equal((await readDisabled.json()).error,'REMOTE_PROBE_DISABLED')

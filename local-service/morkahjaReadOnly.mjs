@@ -70,8 +70,8 @@ function asTimestamp(value) {
 }
 
 export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1) {
-  if (kind!=='overview' && kind!=='players') throw new Error('INVALID_READ_OPERATION')
-  if (kind==='players' && (!Number.isInteger(page) || page<1 || page>1000)) {
+  if (!['overview','players','dashboard'].includes(kind)) throw new Error('INVALID_READ_OPERATION')
+  if (kind!=='overview' && (!Number.isInteger(page) || page<1 || page>1000)) {
     throw new Error('INVALID_PAGE')
   }
   let role
@@ -99,27 +99,30 @@ export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1
     if(boundary.raw_table_access) {
       return {ok:false,code:'DB_ROLE_RAW_READ_ACCESS'}
     }
-    if(kind==='overview') {
+    let overview
+    if(kind==='overview' || kind==='dashboard') {
       const result=await client.query(OVERVIEW_SQL)
       const row=result.rows[0]
-      return {ok:true,data:{
+      overview={
         players:Number(row.players),avatars:Number(row.avatars),
         activeSessions:Number(row.active_sessions),eventsLast24h:Number(row.events_last_24h),
-      }}
+      }
+      if(kind==='overview') return {ok:true,data:overview}
     }
     const count=await client.query(
       'SELECT COUNT(*)::integer AS total FROM babuni_admin_ro.player_preview')
     const offset=(page-1)*PLAYER_PAGE_SIZE
     const result=await client.query(PLAYERS_SQL,
       [offset,offset+PLAYER_PAGE_SIZE,PLAYER_PAGE_SIZE])
-    return {ok:true,data:{
+    const players={
       page,pageSize:PLAYER_PAGE_SIZE,total:Number(count.rows[0].total),
       players:result.rows.map(row=>({
         displayName:String(row.display_name).slice(0,80),
         avatarCount:Number(row.avatar_count),
         lastPlayedAt:asTimestamp(row.last_played_at),
       })),
-    }}
+    }
+    return {ok:true,data:kind==='dashboard'?{overview,playerPage:players}:players}
   } catch(error) {
     return {ok:false,code:classifyReadOnlyError(error)}
   } finally {

@@ -144,4 +144,21 @@ test('approved data read stays disabled by default, shares lock and closes tunne
   resume({ok:true,data:{page:2,players:[]}})
   assert.equal((await held).ok,true)
   assert.equal(stops,3)
+  let capturedKind='',capturedPage=0
+  deps.queryData=async (_config,_socket,_password,kind,page)=>{
+    capturedKind=kind
+    capturedPage=page
+    return {ok:true,data:{
+      overview:{players:5,avatars:12,activeSessions:1,eventsLast24h:8},
+      playerPage:{page:3,pageSize:20,total:45,players:[]},
+    }}
+  }
+  const combined=await fetchMorkahjaReadOnly(profile,'dashboard',3,deps)
+  assert.equal(combined.ok,true)
+  assert.equal(capturedKind,'dashboard')
+  assert.equal(capturedPage,3)
+  assert.equal(combined.data.overview.players,5)
+  assert.equal(combined.data.playerPage.page,3)
+  assert.equal(opens,4)
+  assert.equal(stops,4)
 })

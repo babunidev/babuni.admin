@@ -1,5 +1,16 @@
 # Babuni Admin — Architecture
 
+## Morkahja Overview: restored profile and one bounded combined snapshot (2026-11-04)
+
+The Morkahja landing route `/` now renders the restricted read-only **Overview**; `/read-only` remains compatible. The older read/write-capable-style Dashboard route is preserved separately at `/dashboard`. The old `/players` administration route remains, but is explicitly labeled **Moderation** in the workspace navigation. No moderation implementation was changed by the route labels.
+
+A selected local Morkahja SSH profile ID (UUID only) is remembered in the browser's origin-local storage after an explicit selection. On later page loads, the UI first queries current server-owned profiles, checks that the remembered ID still identifies an eligible Morkahja `postgres-ssh` profile, and only then issues an approved snapshot request. It never persists returned game data, credentials or the ephemeral local-service session token. No profile selection means no data request. There is no periodic remote polling.
+
+`POST /local-connections-api/:id/read-dashboard` accepts only `{ "page": 1 }` with the existing 1–1000 page bound. Through `ssh:read` and all original operator-private approvals, it executes the fixed overview and position-paginated player-preview SELECTs inside **one repeatable-read READ ONLY transaction** through the existing temporary private SSH tunnel, then rolls back and closes the tunnel. Existing `read-overview` and `read-players` endpoints remain available; independent Next/Previous navigation continues through `read-players`. A single manual refresh reloads both panels. This uses exactly the existing restricted database views; no new raw-table grants or schema changes.
+
+The fifth display counter, **Players online***, is explicitly a session-based approximation derived from `activeSessions`: a player account may have a valid session without an actual presence heartbeat. PostgreSQL sessions are **not** multiplayer rooms. Achievements, gems, game rooms, unlock ownership and purchases require confirmed meanings and separately approved aggregate-only database views before showing real counts.
+
+
 ## Phase 2 — Morkahja read-only dashboard, separately authorized (2026-11-04)
 ## Phase 2 — Owner-controlled Morkahja PostgreSQL views (2026-11-04)
 

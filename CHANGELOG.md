@@ -1,5 +1,14 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Remembered Morkahja Overview and one-request refresh
+
+- Moved the read-only Overview to the Morkahja home route and navigation label; renamed the existing Players administration navigation/header to Moderation. The older dashboard remains available at `/dashboard`, and `/read-only` is retained.
+- Saved only the chosen local SSH profile ID; automatically load fresh overview and player-preview data on profile selection and subsequent page reload. No player information, secrets or credentials are stored in browser storage.
+- Added `read-dashboard`: a fixed, bounded combined view-only read inside a single PostgreSQL READ ONLY transaction and a short-lived approved SSH tunnel. The manual Refresh button reloads both panels; player pagination remains independent.
+- Put connection settings below overview and player list; added a clearly marked session-based online-player estimate without claiming that sessions are game rooms.
+- Extended disposable database, single-flight SSH and browser denial/persistence tests. Additional counters (rooms, achievements, gems and unlock transactions) remain unimplemented until an owner-controlled aggregate-view contract is approved.
+
+
 ## 2026-11-04 — Live Morkahja read-only verification recorded
 
 - Recorded operator screenshot evidence of successful live `/read-only` overview and player-preview requests through the restricted PostgreSQL views: 62 players, 90 avatars, 0 active sessions and 0 events in the preceding 24 hours.

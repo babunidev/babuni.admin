@@ -1,5 +1,17 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-04 — Remembered Morkahja Overview and combined refresh
+
+- [x] Record operator verification of all four live player-preview pages and successful return to page one.
+- [x] Record operator-observed active-session and recent-event counts increasing while playing the game; this verifies the counters respond to gameplay without equating sessions with rooms.
+- [x] Make view-only Overview the Morkahja landing route and navigation label, preserve the old dashboard at `/dashboard`, and label the existing `/players` administration screen **Moderation**.
+- [x] Remember the selected Morkahja profile UUID locally, validate it against current saved profiles on reload and automatically request a new authorized snapshot; store no credentials, session tokens or player data.
+- [x] Combine overview and player preview into one fixed, bounded request and one temporary SSH/READ ONLY transaction; keep a manual refresh button and independent player-page navigation.
+- [x] Move connection controls below the two data panels; add **Players online*** as a session-based estimate explicitly distinct from actual room or live-presence data.
+- [ ] Confirm restored selection, automatic refresh and merged snapshot in the real Nobara browser; existing live page navigation has already been verified separately.
+- [ ] Design additional restricted aggregates only after confirming schemas and metric meanings: multiplayer rooms, achievements, currency/gems, unlocks/dice and economic transactions. Do not infer purchases from ownership or treat sessions as rooms.
+
+
 ## 2026-11-04 — First successful live read-only Morkahja snapshots
 
 - [x] Verify the updated `/read-only` overview through the actual configured SSH/PostgreSQL connection on Nobara. Operator screenshots report 62 players, 90 avatars, 0 active sessions and 0 game events in the prior 24 hours.

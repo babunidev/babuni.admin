@@ -1,5 +1,16 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Prioritize an automatic view-only Overview without widening database access
+
+**Creative direction:** After the operator verified all preview pages and confirmed the activity counters increase while playing, the next requirement was to restore the selected SSH profile across reloads and load overview/player information together. The read-only overview should be the first Morkahja page, connection configuration should sit below the results, and the existing player-administration screen should be labeled **Moderation**.
+
+**AI implementation:** Preserve only the non-secret local profile UUID across reloads. Automatically request one combined view-only snapshot after a valid previously chosen profile is restored or a new profile is explicitly selected, still enforcing all server-side operator approval on every request and closing the temporary SSH tunnel afterward. Retain a manual refresh and independent pagination. Move the legacy Dashboard to `/dashboard` without deleting it; keep `/read-only` as a compatible URL.
+
+**Data boundary:** Display a session-based online-player estimate, clearly identified as distinct from a realtime presence heartbeat or game room. Achievements, gems, room occupancy, expansion unlocks, dice ownership and transactions remain **proposed**, pending confirmed definitions, schema inspection and separately approved owner-controlled aggregate views. No broader player-data access or server modification was approved as part of the UI convenience work.
+
+**Verification:** The operator already observed all four live preview pages and activity counters changing during gameplay. The new automatic page-load flow and one-request combined snapshots have fixture/browser tests but still require the operator's live Nobara verification.
+
+
 ## 2026-11-04 — Live restricted-view read confirmed
 
 **Operator verification:** Two screenshots of the local Morkahja `/read-only` dashboard show a successful live overview (62 players, 90 avatars, zero active sessions and zero events in the previous 24 hours) and a player preview with the three approved visible fields. The interface reports that the temporary SSH tunnel disconnected after the snapshot. No identity keys or session tokens are visible in these results.
