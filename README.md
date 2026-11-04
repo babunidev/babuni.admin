@@ -11,6 +11,13 @@ Babuni Admin is planned as one private workbench for maintaining multiple projec
 The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Query, Zustand and Tailwind CSS 4. Morkahja-specific code now lives in `src/features/morkahja/`, shared controls in `src/shared/`, and the application shell in `src/app/`. The transitional re-export files have been removed and direct imports verified in CI. The Babuni Dev workspace has a navigable overview but no editor or publishing capability. There is **no deployed unified backend or working Babuni Dev content manager yet**.
 
 ## Local development
+### Restricted Morkahja database views
+
+After the operator verified the first live data request failed with missing table SELECT privileges, the PostgreSQL database was updated **by the operator** to expose two owner-controlled views under `babuni_admin_ro`. The `babuni_admin_probe` account can SELECT those views but cannot SELECT the underlying players or sessions tables. The new `/read-only` adapter queries `babuni_admin_ro.overview` and `babuni_admin_ro.player_preview` only, with bounded pagination and strict privilege checks. No database credentials or raw player documents enter the browser. [View contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
+
+**Observed:** The operator verified view creation, a nonempty preview count, and restricted role privileges on the Ubuntu server. **Still pending:** The first successful end-to-end live dashboard read after pulling this code update.
+
+
 
 ### New Morkahja read-only dashboard
 
