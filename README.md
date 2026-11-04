@@ -4,7 +4,7 @@
 **Repository:** `babunidev/babuni.admin`  
 **Current focus:** Structural transition from a local Morkahja administration console into a multi-project administration platform.
 
-**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Read-only local directory and content checks are available. Non-local profiles may store credentials in the Linux OS keyring using a terminal-only command, but SSH, GitHub and remote project access are not implemented.
+**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Read-only local directory and content checks and an opt-in Morkahja SSH/PostgreSQL reader are implemented, without live server verification. GitHub and remote publishing are not implemented.
 
 Babuni Admin is planned as one private workbench for maintaining multiple projects. **Morkahja** is the existing functional domain: its dashboard, player moderation, activity views and game-content editors remain in source. **Babuni Dev** is the next proposed workspace, intended to manage GitHub-backed portfolio documents and publish individual content updates without rebuilding the whole website. Additional project workspaces may be introduced later.
 
@@ -41,6 +41,42 @@ It generates a temporary synthetic secret, stores it in the Linux Secret Service
 
 The Vite proxy additionally requires an ephemeral in-memory browser session capability and checks the local Host, Origin and Fetch Metadata before forwarding to the service. Its independent service key remains server-side. This reduces browser cross-site risk but does not authenticate arbitrary programs running as the same OS user.
 
+## Protected Morkahja access (opt-in)
+
+The local service now supports host-verified SSH tunneling and fixed read-only PostgreSQL queries. No live server connection or production data change was made during implementation. Nothing connects automatically.
+
+### SSH and read-only PostgreSQL
+
+Create a **Morkahja → PostgreSQL via SSH** profile in Connections with the SSH hostname/IP as its Target. Get the UUID from `npm run credentials -- list`. Confirm the SSH fingerprint with an independently trusted source and ensure it is pinned in `~/.ssh/known_hosts`. Unknown or changed host keys are rejected.
+
+```bash
+npm run morkahja:configure -- <postgres-profile-uuid> <ssh-user> <readonly-db-user> <database-name> [absolute-identity-file]
+npm run credentials -- set <postgres-profile-uuid>
+```
+
+The second command stores the **database reader password** in Linux Secret Service; it does not store an SSH private key. OpenSSH uses your agent or an optional permission-protected identity file under `~/.ssh/`. The local service forwards only to `127.0.0.1:5432`, refuses elevated/write-capable DB roles, and exposes a manually requested preview of at most 25 player IDs and names through `BEGIN READ ONLY` SQL.
+
+Restart `npm run dev` and use **Connect**, **Test**, **Preview players (read-only)** and **Disconnect** in Connections. Main dashboard and moderation screens are not yet migrated to this protected connection. The actual VPS and database roles remain unverified.
+
+### Authorized Morkahja JSON edits
+
+The historical unscoped Vite mutation handlers are disabled during normal development. Select a **Morkahja → Local files** profile targeting the game public directory and set these non-secret values in `.env.local`:
+
+```dotenv
+MORKAHJA_PUBLIC=/absolute/path/to/MorkahjaWebApp/client/public
+VITE_USE_LOCAL_CONTENT=true
+VITE_USE_PROTECTED_CONTENT=true
+VITE_MORKAHJA_PROFILE_ID=<local-files-profile-uuid>
+```
+
+Restart the app. Explicitly authorize one dataset for 15 minutes before a save:
+
+```bash
+npm run morkahja:content-grant -- grant <local-files-profile-uuid> encounters
+npm run morkahja:content-grant -- revoke <local-files-profile-uuid> encounters
+```
+
+Other datasets: `solutions`, `expansions`, `frames`, `portraits`. Grants are confined to one profile, directory and dataset. Each protected save requires confirmation and an exact current file revision, writes a same-directory backup, and records private audit metadata. A revision-checked restore endpoint supports rollback; backups remain for operator review. Protected image uploads are not yet implemented. Verify on disposable copies of actual game files before any live edits.
 ## Project documentation
 
 - [Concept](CONCEPT.md)
