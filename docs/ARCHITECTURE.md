@@ -7,7 +7,7 @@ The live database owner `morkahjadbadmin` owns two views in the `babuni_admin_ro
 
 `local-service/morkahjaReadOnly.mjs` now performs fixed SELECT queries **exclusively** against these views, with server-side page bounds and a private check that the reader possesses the view privileges yet has no SELECT on the underlying four game tables. It still independently runs the existing database-role write-privilege health gate, a repeatable-read READ ONLY transaction and the short-lived SSH/Secret Service boundary. A view-defined `position` provides stable within-snapshot pagination without returning internal player IDs. No arbitrary SQL, moderation or new write authority is exposed. [View contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
-The operator's live SQL commands verify creation, access and privilege boundaries; the application has not yet completed a live snapshot against the views.
+The operator's live SQL commands verified creation, access and privilege boundaries. Subsequent Nobara dashboard screenshots confirmed successful live overview and first player-preview reads through the views (62 players, 90 avatars, zero active sessions, zero events in the prior 24 hours).
 
 
 
@@ -15,7 +15,7 @@ A new Morkahja navigation route `/read-only` is deliberately separate from legac
 
 The service exposes `POST /:id/read-overview` and `POST /:id/read-players`, requiring Morkahja-only `ssh:read`, the existing private SSH trust/keyring checks, and additional owner-only `readOnlyDataEnabled` plus an exact approved field allowlist. `sshPostgresProbe.mjs` shares one in-flight lock across health and data operations. Every read opens a temporary private Unix-socket SSH forward and closes it after fixed SQL. Legacy `vite/postgresAdmin.ts` is not called: that code contains session maintenance that would violate the new read-only requirement.
 
-The operator reported a successful real SSH/database **health probe** at 20:59 on 2026-11-04. The new player-data snapshot remains untested against the live game; tests use disposable PostgreSQL. [Data contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
+The operator reported a successful real SSH/database **health probe** at 20:59 on 2026-11-04. The operator subsequently verified the new read-only data snapshot against the live game database; CI tests continue to use disposable PostgreSQL. [Data contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 
 ## Phase 2 — Operator-gated SSH/PostgreSQL read-only health probe (2026-11-04)
