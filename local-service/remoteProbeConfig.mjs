@@ -18,12 +18,16 @@ export function remoteProbeConfigPath(env=process.env) {
 }
 
 // Reads operator-owned, non-secret configuration, not data supplied by a browser.
-async function privateFile(path, limit=4096) {
+async function privateStat(path, limit=4096) {
   if (!isAbsolute(path)) throw new Error('UNSAFE_FILE')
   const stat=await lstat(path)
   if (!stat.isFile() || stat.isSymbolicLink() || stat.size>limit ||
       (typeof process.getuid==='function' && stat.uid!==process.getuid()) ||
       (stat.mode & 0o077)!==0) throw new Error('UNSAFE_FILE')
+  return stat
+}
+async function privateFile(path, limit=4096) {
+  await privateStat(path,limit)
   return readFile(path,'utf8')
 }
 
@@ -47,7 +51,7 @@ export async function readMorkahjaProbeConfig(profile,env=process.env) {
       typeof config.sshIdentityFile!=='string' || !isAbsolute(config.sshIdentityFile)) {
     return failed('REMOTE_CONFIG_INVALID')
   }
-  try { await privateFile(config.sshIdentityFile,65536) }
+  try { await privateStat(config.sshIdentityFile,65536) }
   catch {return failed('SSH_IDENTITY_UNSAFE')}
   const preflight=await preflightSshHost(profile)
   if (preflight.code!=='SSH_HOST_KEY_PINNED_OFFLINE') return failed(preflight.code)
