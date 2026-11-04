@@ -9,6 +9,14 @@
 **Verification boundary:** Fixture tests and CI can validate denial paths, but do not prove the real login keyring was locked or that live project actions are authorized. The choice to lock the ordinary desktop collection, if needed, remains with the operator because it may interrupt other applications. Live writes remain blocked pending independent authorization and recovery checks.
 
 
+## 2026-11-04 — Verify SSH trust locally before attempting a tunnel
+
+**Creative direction:** Move from completed Nobara keyring verification into secure, read-only Morkahja connectivity while keeping Babuni Admin on the PC and live editing disabled.
+
+**AI implementation choice:** Add a deliberately narrow, offline `ssh:preflight` capability before enabling SSH sessions. Only a separately maintained, exact known-host entry in a privately owned file is accepted; no new fingerprint is trusted from an unauthenticated network scan. A local OpenSSH lookup is a preliminary configuration check, **not** verified remote identity. Browser-supplied SSH usernames, extra ports, arbitrary command arguments and DB credentials are deferred until a typed per-project transport schema and service-side authorization are implemented.
+
+**Outcome:** A profile can now distinguish an absent/unsafe local host trust record from a candidate pinned record. It still cannot connect or query a server. Disposable tests, not live Morkahja, supply verification evidence.
+
 ## 2026-11-04 — Connection control without premature remote authority
 
 **Creative direction:** Complete the local connection-manager workflow, strengthen its security boundary and test it in the browser before enabling access to actual projects.
