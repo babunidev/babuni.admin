@@ -51,7 +51,7 @@ The browser receives no DB password or SSH private-key bytes. The password is re
 
 - Unit tests check missing configuration, wrong host/fingerprint, unsafe file permissions, invalid profile scope, concurrency, cleanup and sanitized error responses.
 - A fake SSH child checks strict argv construction and private Unix forwarding without contacting any VPS.
-- CI uses a **disposable PostgreSQL 16 database** to verify that a limited fixture role passes and a privileged role is rejected.
+- CI uses a **disposable PostgreSQL 16 database** to verify that a limited fixture role passes and a privileged role is rejected; a fake SSH process forwards the database protocol over a private local Unix socket for one combined integration test.
 - The production SSH daemon, live host-key handshake, user key or real Morkahja database have **not** been contacted or verified by these tests.
 
 The role check is deliberately conservative, but it cannot replace server-side role provisioning and a full independent privilege audit (including role membership/SET ROLE, default privileges and future schema changes). The local loopback UI is also not an authentication boundary against malicious programs running as the same OS user. No live Morkahja administrative or content operation is authorized by a successful health check. 
