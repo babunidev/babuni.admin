@@ -2,6 +2,7 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
+import { localSessionGuard } from './vite/localSessionGuard'
 import tailwindcss from '@tailwindcss/vite'
 import { morkahjaLocalAdminPlugin } from './vite/localAdminPlugin'
 import {
@@ -52,6 +53,8 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       tailwindcss(),
+      ...(env.BABUNI_LOCAL_SERVICE_TOKEN && env.BABUNI_UI_SESSION_TOKEN
+        ? [localSessionGuard(env.BABUNI_UI_SESSION_TOKEN, devPort)] : []),
       ...(enableLocalContent ? [morkahjaLocalContentPlugin(morkahjaPublic)] : []),
       ...(databaseUrl ? [morkahjaLocalAdminPlugin(databaseUrl)] : []),
     ],
@@ -62,8 +65,9 @@ export default defineConfig(({ mode }) => {
             target: 'http://127.0.0.1:' + (env.BABUNI_LOCAL_SERVICE_PORT || '5191'),
             changeOrigin: true,
             configure: (proxyServer: unknown) => {
-              const typedProxy = proxyServer as { on: (event: string, cb: (proxyReq: { setHeader: (name: string, value: string) => void }) => void) => void }
+              const typedProxy = proxyServer as { on: (event: string, cb: (proxyReq: { setHeader: (name: string, value: string) => void; removeHeader: (name:string)=>void }) => void) => void }
               typedProxy.on('proxyReq', proxyReq => {
+                proxyReq.removeHeader('X-Babuni-Session')
                 proxyReq.setHeader('X-Babuni-Service-Key', env.BABUNI_LOCAL_SERVICE_TOKEN)
               })
             },
