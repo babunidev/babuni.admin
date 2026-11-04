@@ -1,25 +1,19 @@
 import { spawn } from 'node:child_process'
-import { createServer, connect } from 'node:net'
+import { connect } from 'node:net'
+import { mkdtemp, rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { setTimeout as sleep } from 'node:timers/promises'
 import { sshKnownHostsPath } from './sshHostPreflight.mjs'
 
-// Every probe owns exactly one SSH child process and one ephemeral loopback forward.
-// No background reconnect or session reuse is permitted.
-const liveChildren=new Set()
+// Every probe owns a user-private, randomized Unix socket and exactly one SSH child.
+// No TCP listener, background reconnect, or persistent session is exposed locally.
+const liveSessions=new Set()
+const localSocketName='.s.PGSQL.5432'
 
-function freeLoopbackPort() {
-  return new Promise((resolve,reject)=>{
-    const server=createServer()
-    server.once('error',reject)
-    server.listen(0,'127.0.0.1',()=>{
-      const port=server.address().port
-      server.close(error=>error?reject(error):resolve(port))
-    })
-  })
-}
-function isListening(port) {
+function isListening(path) {
   return new Promise(resolve=>{
-    const socket=connect({host:'127.0.0.1',port})
+    const socket=connect({path})
     const done=value=>{socket.destroy();resolve(value)}
     socket.setTimeout(500,()=>done(false))
     socket.once('connect',()=>done(true))
@@ -35,10 +29,11 @@ function stopChild(child) {
   timer.unref()
 }
 export function stopAllSshTunnels() {
-  for(const child of liveChildren)stopChild(child)
+  for(const session of liveSessions)stopChild(session.child)
 }
 export async function startSshTunnel(config) {
-  const port=await freeLoopbackPort()
+  const socketDir=await mkdtemp(join(tmpdir(),'babuni-ssh-pg-'))
+  const socketPath=join(socketDir,localSocketName)
   const args=['-F','/dev/null','-N','-T',
     '-o','BatchMode=yes','-o','NumberOfPasswordPrompts=0',
     '-o','StrictHostKeyChecking=yes',
@@ -53,32 +48,39 @@ export async function startSshTunnel(config) {
     '-o','ExitOnForwardFailure=yes','-o','ConnectTimeout=5',
     '-o','ServerAliveInterval=5','-o','ServerAliveCountMax=1',
     '-p',String(config.sshPort),'-i',config.sshIdentityFile,'-l',config.sshUser,
-    '-L','127.0.0.1:'+port+':127.0.0.1:'+config.dbPort,config.host]
-  // No remote shell command. ssh reads no terminal and never prompts for trust.
-  // Do not leak the local service token, browser token or other app secrets to SSH.
+    '-L',socketPath+':127.0.0.1:'+config.dbPort,config.host]
+  // The SSH process cannot inherit application tokens or any arbitrary environment.
   const childEnv={}
   for(const name of ['PATH','HOME','USER','LOGNAME','LANG','SSH_AUTH_SOCK','XDG_RUNTIME_DIR']) {
     if(typeof process.env[name]==='string')childEnv[name]=process.env[name]
   }
   childEnv.SSH_ASKPASS_REQUIRE='never'
   childEnv.SSH_ASKPASS='/bin/false'
-  const child=spawn('ssh',args,{shell:false,stdio:['ignore','ignore','ignore'],env:childEnv})
-  liveChildren.add(child)
+  let child
+  try {
+    child=spawn('ssh',args,{shell:false,stdio:['ignore','ignore','ignore'],env:childEnv})
+  }catch(error){
+    await rm(socketDir,{recursive:true,force:true})
+    throw error
+  }
+  const session={child,socketDir}
+  liveSessions.add(session)
   let exited=false
-  child.on('exit',()=>{exited=true;liveChildren.delete(child)})
-  child.on('error',()=>{exited=true;liveChildren.delete(child)})
+  child.on('exit',()=>{exited=true;liveSessions.delete(session)})
+  child.on('error',()=>{exited=true;liveSessions.delete(session)})
   const stop=async()=>{
     if(child.exitCode===null && child.signalCode===null){
       const ended=new Promise(resolve=>child.once('exit',resolve))
       stopChild(child)
       await Promise.race([ended,sleep(1250)])
     }
-    liveChildren.delete(child)
+    liveSessions.delete(session)
+    await rm(socketDir,{recursive:true,force:true})
   }
   try {
     for(let n=0;n<35;n++){
       if(exited)throw new Error('SSH_SESSION_FAILED')
-      if(await isListening(port))return {port,stop}
+      if(await isListening(socketPath))return {socketDir,stop}
       await sleep(200)
     }
     throw new Error('SSH_FORWARD_TIMEOUT')
