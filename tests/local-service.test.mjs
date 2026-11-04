@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import { createServer } from 'node:net'
 import { randomBytes } from 'node:crypto'
 import { request as httpRequest } from 'node:http'
+import { createContentGrant } from '../local-service/contentGrant.mjs'
 
 function requestWithHost(url, headers) {
   return new Promise((resolve,reject)=>{
@@ -31,7 +32,8 @@ test('independent local service requires session key and tests local folder with
   const key=randomBytes(32).toString('hex')
   const child=spawn(process.execPath,['--experimental-strip-types','local-service/server.mjs'],{
     env:{...process.env,BABUNI_LOCAL_SERVICE_PORT:String(port),BABUNI_LOCAL_SERVICE_TOKEN:key,
-      BABUNI_TEST_PROFILE_FILE:join(dir,'profiles.json'),BABUNI_UI_PORT:'5180'},stdio:['ignore','pipe','pipe']
+      BABUNI_TEST_PROFILE_FILE:join(dir,'profiles.json'),BABUNI_UI_PORT:'5180',
+      BABUNI_TEST_CONTENT_GRANT_DIR:join(dir,'grants'),BABUNI_TEST_ACTION_LOG_DIR:join(dir,'audit')},stdio:['ignore','pipe','pipe']
   })
   const url='http://127.0.0.1:'+port+'/local-connections-api/'
   const headers={'X-Babuni-Local':'1','X-Babuni-Service-Key':key,'Content-Type':'application/json',Origin:'http://127.0.0.1:5180'}
@@ -67,6 +69,35 @@ test('independent local service requires session key and tests local folder with
     assert.equal(added.status,201)
     const p=(await added.json()).profile
     assert.equal(p.state,'not-configured')
+    const preview=await request(p.id+'/content/encounters/001')
+    assert.equal(preview.status,200)
+    const previewBody=await preview.json()
+    assert.equal(previewBody.readOnly,true)
+    const proposed={expectedRevision:previewBody.revision,
+      data:{name:'fixture safely edited'},confirm:true}
+    const denied=await request(p.id+'/content/encounters/001',{method:'PUT',
+      body:JSON.stringify(proposed)})
+    assert.equal(denied.status,403)
+    const oldGrant=process.env.BABUNI_TEST_CONTENT_GRANT_DIR
+    process.env.BABUNI_TEST_CONTENT_GRANT_DIR=join(dir,'grants')
+    try{createContentGrant(p,'encounters')}
+    finally{
+      if(oldGrant===undefined)delete process.env.BABUNI_TEST_CONTENT_GRANT_DIR
+      else process.env.BABUNI_TEST_CONTENT_GRANT_DIR=oldGrant
+    }
+    const written=await request(p.id+'/content/encounters/001',{method:'PUT',
+      body:JSON.stringify(proposed)})
+    assert.equal(written.status,200)
+    const writeBody=await written.json()
+    assert.equal(writeBody.ok,true)
+    assert.ok(writeBody.backup)
+    const raced=await request(p.id+'/content/encounters/001',{method:'PUT',
+      body:JSON.stringify(proposed)})
+    assert.equal(raced.status,409)
+    const rollback=await request(p.id+'/content/encounters/001/restore',{method:'POST',
+      body:JSON.stringify({expectedRevision:writeBody.revision,backup:writeBody.backup,confirm:true})})
+    assert.equal(rollback.status,200)
+    assert.equal((await rollback.json()).restored,true)
     const inspected=await request(p.id+'/inspect')
     assert.equal(inspected.status,200)
     const report=await inspected.json()
