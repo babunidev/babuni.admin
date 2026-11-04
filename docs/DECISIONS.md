@@ -1,5 +1,14 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Browser-free credential entry and explicit health states
+
+**Creative direction:** Keep credentials out of browser configuration and improve project connection diagnostics.
+
+**AI implementation choice:** On Nobara Linux, use the user's Secret Service/keyring through `secret-tool`, with a hidden terminal prompt instead of a browser password field. The profile registry remains non-secret. No plaintext fallback or browser retrieval route is provided. This is an implementation approach, not approval of a future remote connection protocol.
+
+**Status semantics:** A directory and its files can be checked without a remote login. A partial read-only inspection is `degraded`, not a connected project session. Unimplemented SSH, GitHub and publishing adapters continue to report `not-configured` even when a credential has been stored. Actual keyring and remote authorization verification remain outstanding.
+
+
 **Creative decision authority:** Babuni. This document distinguishes agreed direction, implementation and unresolved proposals.
 
 ## 2026-11-04 — Babuni Admin remains local, by design

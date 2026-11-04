@@ -67,3 +67,10 @@ The hardening review branch adds `npm run test:postgres` (requires an explicit l
 The CI `postgres-fixtures` job uses an ephemeral PostgreSQL 16 service; its four tests cover real SQL and transaction rollback. The browser job creates a temporary game folder from `tests/fixtures/legacy/`, explicitly enables local content middleware there, and runs five browser editor/image tests. A pinned public Morkahja WebP file is downloaded into the temporary fixture and decoded in Chromium.
 
 Run `npm ci`, `npm run build`, `npm run lint`, `npm test`, `npm run test:integration` as usual. The special database/browser fixture commands belong only in their isolated environments. [Verified CI run 41659550592](https://github.com/babunidev/babuni.admin/actions/runs/41659550592) · [Hardening report](PHASE1_HARDENING_2026-11-03.md).
+
+
+## Linux keyring and local health — 2026-11-04
+
+Run `npm run test:connections`. It exercises the loopback service, credential status and storage via a disposable fake `secret-tool` binary, and inspection of temporary Morkahja JSON files including the capitalized `Avatar` key. The synthetic keyring fixture is not evidence that a real Nobara Secret Service collection is available or unlocked.
+
+Run `npm run dev` to inspect the Connections UI. Test performs a manual read-only local directory check; Inspect reports content availability, degradation and structured errors. The health endpoint remains authenticated through the existing loopback proxy. Remote SSH, PostgreSQL, GitHub and publishing checks are not part of these tests.

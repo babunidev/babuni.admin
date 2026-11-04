@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Keyring credential boundary and local connection diagnostics
+
+- Added terminal-only Linux Secret Service (`secret-tool`) profile credential storage, status and clearing without exposing secrets in browser configuration, command arguments or connection JSON.
+- Added authenticated loopback service/keyring health, per-profile timestamps and stable directory error codes.
+- Added complete/degraded/failed JSON inspection states and specific missing/unsafe/invalid file reasons; corrected portrait inspection to use the `Avatar` property.
+- Added isolated keyring command and local-service fixture tests. No real keyring, remote adapter or live project connection was exercised.
+
+
 ## 2026-11-04 — Read-only Morkahja content inspection
 
 - Added fixed-file metadata inspection for the five legacy Morkahja JSON datasets in the local connection service.
