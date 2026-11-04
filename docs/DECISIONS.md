@@ -1,5 +1,16 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Read-only Morkahja access before live administrative writes
+
+**Creative direction:** Connect Morkahja through host-verified SSH and protected PostgreSQL, while making game-content permissions and recovery explicit.
+
+**AI implementation decision:** A Morkahja SSH profile contains only a host label; the privileged service reads the DB password from Linux Secret Service and SSH uses the local agent or a pre-existing private key. Unknown SSH host keys fail, the tunnel binds to loopback, and fixed read-only SQL rejects elevated/player-write database roles. The legacy query adapter is not reused because some of its read paths can delete expired sessions.
+
+**Content boundary:** Local JSON editing now requires an operator-issued, short-lived grant for exactly one profile, directory and dataset. Each write confirms an expected revision and creates a recoverable backup. The existing unscoped Vite mutation routes are disabled during normal development; image uploads and full live editing verification remain open.
+
+**Verification limit:** Automated SSH behavior uses simulated processes, with an actual disposable PostgreSQL reader in CI. No live VPS, player record or production file was changed. Real SSH host identity, operating credentials and live-data schema must be checked on the creative's PC before describing remote use as verified.
+
+
 ## 2026-11-04 — Connection control without premature remote authority
 
 **Creative direction:** Complete the local connection-manager workflow, strengthen its security boundary and test it in the browser before enabling access to actual projects.
