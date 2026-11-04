@@ -111,16 +111,57 @@ test('ban and unban SQL operations commit and missing players never succeed', as
 test('dedicated read-only dashboard returns bounded data without session cleanup',async()=>{
   const role='babuni_data_preview_reader'
   const password='synthetic-read-only-preview'
+  // Disposable fixture views have the same columns and permission boundary
+  // as the owner-created live Morkahja views.
+  await pool.query('DROP SCHEMA IF EXISTS babuni_admin_ro CASCADE')
+  await pool.query('CREATE SCHEMA babuni_admin_ro')
+  await pool.query(
+    "CREATE VIEW babuni_admin_ro.overview WITH (security_barrier = true) AS SELECT "+
+    "(SELECT COUNT(*) FROM public.players) AS players, "+
+    "(SELECT COUNT(*) FROM public.avatars) AS avatars, "+
+    "(SELECT COUNT(*) FROM public.sessions s JOIN public.players p ON p.id=s.player_id "+
+    "WHERE p.data->>'activeSessionId'=s.id AND "+
+    "(s.data->>'expiresAt')::bigint > (EXTRACT(EPOCH FROM now())*1000)::bigint) AS active_sessions, "+
+    "(SELECT COUNT(*) FROM public.game_events) AS events_last_24h"
+  )
+  await pool.query(
+    "CREATE VIEW babuni_admin_ro.player_preview WITH (security_barrier = true) AS SELECT "+
+    "ROW_NUMBER() OVER (ORDER BY (p.data->>'lastPlayedAt')::bigint DESC NULLS LAST, p.id) AS position, "+
+    "LEFT(COALESCE(NULLIF(p.data->>'playerName',''),'Unnamed player'),80) AS display_name, "+
+    "(SELECT COUNT(*) FROM public.avatars a WHERE a.player_id=p.id) AS avatar_count, "+
+    "(p.data->>'lastPlayedAt')::bigint AS last_played_at FROM public.players p"
+  )
   await pool.query("CREATE ROLE babuni_data_preview_reader LOGIN PASSWORD 'synthetic-read-only-preview'")
   try {
-    await pool.query('GRANT USAGE ON SCHEMA public TO '+role)
-    // An otherwise safe, login-capable reader without SELECT grants passes the
-    // metadata health check but must receive a precise denied-read result.
+    await pool.query('GRANT USAGE ON SCHEMA babuni_admin_ro TO '+role)
+    // An otherwise safe, login-capable reader without view SELECT grants passes
+    // the metadata health check but must receive a denied-read result.
     const noSelect=await queryMorkahjaReadOnly({
       dbUser:role,dbName:'babuni_fixture',
     },5432,password,'overview')
     assert.deepEqual(noSelect,{ok:false,code:'DB_READ_PERMISSION_DENIED'})
-    await pool.query('GRANT SELECT ON players,avatars,sessions,game_events TO '+role)
+    await pool.query('GRANT SELECT ON babuni_admin_ro.overview, babuni_admin_ro.player_preview TO '+role)
+    const privileges=(await pool.query([
+      "SELECT has_table_privilege($1,'public.players','SELECT') AS players,",
+      " has_table_privilege($1,'public.avatars','SELECT') AS avatars,",
+      " has_table_privilege($1,'public.sessions','SELECT') AS sessions,",
+      " has_table_privilege($1,'public.game_events','SELECT') AS events",
+    ].join(' '),[role])).rows[0]
+    assert.deepEqual(privileges,{players:false,avatars:false,sessions:false,events:false})
+    // Ensure a mistakenly granted sensitive-table SELECT is rejected.
+    await pool.query('GRANT SELECT ON public.sessions TO '+role)
+    const overprivileged=await queryMorkahjaReadOnly({
+      dbUser:role,dbName:'babuni_fixture',
+    },5432,password,'overview')
+    assert.deepEqual(overprivileged,{ok:false,code:'DB_ROLE_RAW_READ_ACCESS'})
+    await pool.query('REVOKE SELECT ON public.sessions FROM '+role)
+    // Column-specific SELECT can also expose session data; deny it as well.
+    await pool.query('GRANT SELECT (data) ON public.sessions TO '+role)
+    const columnReader=await queryMorkahjaReadOnly({
+      dbUser:role,dbName:'babuni_fixture',
+    },5432,password,'overview')
+    assert.deepEqual(columnReader,{ok:false,code:'DB_ROLE_RAW_READ_ACCESS'})
+    await pool.query('REVOKE SELECT (data) ON public.sessions FROM '+role)
     await pool.query("INSERT INTO players(id,data) SELECT 'preview-'||n, "+
       "jsonb_build_object('playerName','Preview '||n,'lastPlayedAt',"+(Date.now()-100000)+
       "+n,'identityPublicKey','HIDDEN_KEY','activeSessionId',NULL) "+
@@ -170,8 +211,10 @@ test('dedicated read-only dashboard returns bounded data without session cleanup
     await pool.query("DELETE FROM sessions WHERE id='preview-session'")
     await pool.query("DELETE FROM avatars WHERE id LIKE 'avatar-preview-%'")
     await pool.query("DELETE FROM players WHERE id LIKE 'preview-%'")
-    await pool.query('REVOKE SELECT ON players,avatars,sessions,game_events FROM '+role)
-    await pool.query('REVOKE USAGE ON SCHEMA public FROM '+role)
+    await pool.query('REVOKE SELECT ON public.sessions FROM '+role)
+    await pool.query('REVOKE SELECT ON babuni_admin_ro.overview, babuni_admin_ro.player_preview FROM '+role)
+    await pool.query('REVOKE USAGE ON SCHEMA babuni_admin_ro FROM '+role)
     await pool.query('DROP ROLE IF EXISTS '+role)
+    await pool.query('DROP SCHEMA IF EXISTS babuni_admin_ro CASCADE')
   }
 })

@@ -1,6 +1,15 @@
 # Babuni Admin — Architecture
 
 ## Phase 2 — Morkahja read-only dashboard, separately authorized (2026-11-04)
+## Phase 2 — Owner-controlled Morkahja PostgreSQL views (2026-11-04)
+
+The live database owner `morkahjadbadmin` owns two views in the `babuni_admin_ro` schema: `overview` (a single row containing four aggregate counts) and `player_preview` (position, truncated display name, avatar count and last-played timestamp). The operator granted `babuni_admin_probe` USAGE on that schema and SELECT on those views only; the operator separately verified no direct SELECT on the sensitive public players/sessions tables. No role memberships, superuser permission or schema CREATE rights were added.
+
+`local-service/morkahjaReadOnly.mjs` now performs fixed SELECT queries **exclusively** against these views, with server-side page bounds and a private check that the reader possesses the view privileges yet has no SELECT on the underlying four game tables. It still independently runs the existing database-role write-privilege health gate, a repeatable-read READ ONLY transaction and the short-lived SSH/Secret Service boundary. A view-defined `position` provides stable within-snapshot pagination without returning internal player IDs. No arbitrary SQL, moderation or new write authority is exposed. [View contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
+
+The operator's live SQL commands verify creation, access and privilege boundaries; the application has not yet completed a live snapshot against the views.
+
+
 
 A new Morkahja navigation route `/read-only` is deliberately separate from legacy Dashboard/Players. The UI shares the protected local session client but has no automatic remote polling or mutation controls. `local-service/morkahjaReadOnly.mjs` handles four aggregate counts and paginated, fixed-field player previews using only SELECT statements and read-only transactions. No internal player IDs, identity keys, session records or moderation data are returned. Page size is 20, with strict server-side validation.
 

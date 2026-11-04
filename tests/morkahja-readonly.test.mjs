@@ -19,6 +19,13 @@ test('read-only adapter contains no SQL mutations or legacy admin imports',()=>{
   const source=readFileSync('local-service/morkahjaReadOnly.mjs','utf8')
   assert.match(source,/BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY/)
   assert.match(source,/ROLLBACK/)
+  assert.ok(source.includes('FROM babuni_admin_ro.overview'))
+  assert.ok(source.includes('FROM babuni_admin_ro.player_preview'))
+  for(const table of ['players','avatars','sessions','game_events']) {
+    assert.equal(source.includes('FROM '+table),false)
+    assert.equal(source.includes('FROM public.'+table),false)
+  }
+  assert.match(source,/DB_ROLE_RAW_READ_ACCESS/)
   assert.doesNotMatch(source,/\b(?:DELETE|INSERT|UPDATE|TRUNCATE|DROP|ALTER)\b/i)
   assert.doesNotMatch(source,/postgresAdmin\.ts/)
 })

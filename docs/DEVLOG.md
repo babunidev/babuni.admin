@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Reading through restricted views instead of sensitive tables
+
+The first live dashboard query exposed an important permission boundary: the database role could connect safely but had no reason to read entire player or session tables. On my Ubuntu server, I followed the proposed restricted-view approach and verified that the new views could be read while the underlying sensitive tables stayed inaccessible. AI then changed the dashboard adapter to query only those views, reinforced the role checks and added disposable PostgreSQL tests. The database-side permission checks succeeded; the browser's first successful live snapshot still needs verification.
+
+
 ## 2026-11-04 — Diagnosing the first read-only database failure
 
 The first attempt to load real Morkahja dashboard information returned only `REMOTE_READ_FAILED`. My earlier SSH/database health probe had worked, so this could be a table-permission or schema problem rather than a failed login, but the screenshot alone could not establish which. AI revised the read adapter to translate PostgreSQL error codes into safe categories and added a disposable test for a reader lacking SELECT grants. No new permissions were granted or live data modified; identifying the actual error remains the next verification step.

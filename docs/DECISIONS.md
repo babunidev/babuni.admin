@@ -1,5 +1,16 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Restrict dashboard access at the database boundary
+
+**Creative direction:** Continue the live read-only Morkahja dashboard after identifying a missing SELECT permission, without giving the dashboard unrestricted access to player and session tables.
+
+**Database action by the creative:** Executed the proposed transactional creation of two owner-controlled views in `babuni_admin_ro` on the live Ubuntu PostgreSQL server, granted the probe role only view SELECT/USAGE rights, and verified the grants and direct raw-table denial. The first check of the preview view returned a count, not a player-data export.
+
+**AI implementation:** Updated the dedicated read adapter from direct queries on four public tables to fixed SELECTs against `overview` and `player_preview`. Added an explicit denial when the reader unexpectedly has SELECT on underlying sensitive tables and changed the disposable fixture to reflect view-only access. The existing SSH/keyring/private opt-in, pagination and read-only transaction were preserved.
+
+**Verification boundary:** Server-side view creation and role permissions are operator-observed. Automated fixture verification is separate from, and does not replace, end-to-end live dashboard testing. The new adapter does not authorize moderation, direct SQL or publishing.
+
+
 ## 2026-11-04 — Prefer safe error categories over speculative database changes
 
 **Observed behavior:** The newly added read-only dashboard returned `REMOTE_READ_FAILED` during its first real Morkahja request, even though an earlier metadata-only SSH/database health probe had succeeded. The underlying cause is unknown; no live database error code was available in the screenshot.

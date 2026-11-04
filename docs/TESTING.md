@@ -1,6 +1,13 @@
 # Testing Babuni Admin
 
 ## First live read failure — sanitized diagnosis (2026-11-04)
+## Morkahja restricted-view integration — 2026-11-04
+
+The operator's Ubuntu PostgreSQL output confirmed both `babuni_admin_ro` views were created and committed, that `babuni_admin_probe` can SELECT each view, cannot CREATE objects in the schema, and cannot SELECT `public.players` or `public.sessions`. A count of rows in the preview view succeeded. This is **server-side verification**, not yet evidence of an end-to-end browser read.
+
+The disposable `npm run test:postgres` test now creates corresponding `security_barrier` views owned by the fixture database owner, grants the test reader ONLY view SELECT privileges, and verifies that the read adapter succeeds without raw-table grants. Negative cases cover missing view grants and unexpected direct SELECT on sensitive base tables. Existing fixture checks retain count, pagination, restricted returned fields, unchanged sessions, and rejection of a write-capable role. The SQL is fixed; no test is directed at live Morkahja.
+
+
 
 The creative's first attempted `/read-only` snapshot returned `REMOTE_READ_FAILED`. This confirms a request was unsuccessful but not whether the cause is insufficient SELECT permission, schema incompatibility, a network issue or something else. `classifyReadOnlyError()` now converts PostgreSQL SQLSTATE values into safe codes: `DB_READ_PERMISSION_DENIED`, `DB_READ_TABLE_MISSING`, `DB_READ_COLUMN_MISSING`, `DB_READ_SCHEMA_MISMATCH`, `DB_READ_INVALID_DATA`, `DB_READ_TIMEOUT`, `DB_READ_AUTH_FAILED` and `DB_READ_CONNECTION_FAILED`. Unknown errors retain the generic code. Raw database diagnostics are deliberately not returned to the browser or logged.
 

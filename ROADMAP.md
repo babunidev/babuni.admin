@@ -1,6 +1,17 @@
 # Babuni Admin — Development Roadmap
 
 ## 2026-11-04 — Diagnose first live Morkahja dashboard read failure
+## 2026-11-04 — Align application reads with restricted live PostgreSQL views
+
+- [x] Operator created `babuni_admin_ro.overview` and `babuni_admin_ro.player_preview` on the live Morkahja database, committed the transaction, and verified SELECT access for `babuni_admin_probe` with raw `public.players` and `public.sessions` SELECT denied.
+- [x] Change the dashboard read adapter to use only these fixed views. Preserve 20-row bounded pagination, the approved three-field output, read-only transactions and SSH tunnel teardown.
+- [x] Reject unexpected direct SELECT privileges on the four underlying tables, independently of the existing write-privilege health gate.
+- [x] Extend disposable PostgreSQL fixture tests to mirror view access and verify denial without view grants, raw-table privilege rejection, pagination and no session mutation.
+- [ ] Verify the dashboard overview and player preview end-to-end on the real Morkahja server after this code update and record actual observed behavior; do not count the view's aggregate access check as an application test.
+
+[View and access contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
+
+
 
 - [x] Record operator screenshot: `/read-only` shows `REMOTE_READ_FAILED` when requesting data after successful SSH/database health checking. The actual PostgreSQL error is **not yet known**.
 - [x] Classify trusted PostgreSQL SQLSTATE errors without exposing raw error messages, internal schema details or credentials. UI distinguishes missing SELECT grants, missing tables/columns, invalid data, timeouts, login and connection failures.
