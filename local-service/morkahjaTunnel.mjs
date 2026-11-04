@@ -63,6 +63,7 @@ export class MorkahjaTunnelManager {
     }
     this.sessions=new Map()
     this.busy=new Set()
+    this.cancelled=new Set()
   }
   isConnected(id) {
     const session=this.sessions.get(id)
@@ -72,10 +73,11 @@ export class MorkahjaTunnelManager {
     if(!hasCapability(profile,'db:connect'))return {ok:false,error:'CAPABILITY_DENIED'}
     if(this.busy.has(profile.id))return {ok:false,error:'CONNECTION_BUSY'}
     this.busy.add(profile.id)
+    this.cancelled.delete(profile.id)
     let child
     let client
     try {
-      await this.disconnect(profile.id)
+      await this.disconnect(profile.id,false)
       const config=this.deps.loadConfig(profile)
       if(!await this.deps.isKnownHost(profile.target))return {ok:false,error:'SSH_HOST_NOT_TRUSTED'}
       const password=await this.deps.credential(profile)
@@ -99,8 +101,10 @@ export class MorkahjaTunnelManager {
       const role=await verifyReadonlyRole(client)
       if(role.database!==config.databaseName)return {ok:false,error:'DATABASE_IDENTITY_MISMATCH'}
       const health=await readDatabaseHealth(client)
+      if(this.cancelled.has(profile.id))return {ok:false,error:'CONNECTION_CANCELLED'}
       const session={child,client,profileHost:profile.target,dead:false}
       this.sessions.set(profile.id,session)
+      client.on?.('error',()=>{if(this.sessions.get(profile.id)===session)void this.disconnect(profile.id)})
       child.on('exit',()=>{
         if(this.sessions.get(profile.id)===session){
           session.dead=true
@@ -126,6 +130,7 @@ export class MorkahjaTunnelManager {
       if(client)try{await client.end()}catch{}
       if(child)child.kill('SIGTERM')
       this.busy.delete(profile.id)
+      this.cancelled.delete(profile.id)
     }
   }
   async health(profile) {
@@ -151,7 +156,8 @@ export class MorkahjaTunnelManager {
       return {ok:false,error:'DATABASE_UNAVAILABLE'}
     }
   }
-  async disconnect(id) {
+  async disconnect(id,cancelPending=true) {
+    if(cancelPending&&this.busy.has(id))this.cancelled.add(id)
     const session=this.sessions.get(id)
     if(!session)return
     this.sessions.delete(id)
