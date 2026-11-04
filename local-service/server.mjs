@@ -6,6 +6,8 @@ import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
+import { MorkahjaTunnelManager } from './morkahjaTunnel.mjs'
+import { removeMorkahjaConfig } from './morkahjaConfig.mjs'
 
 const PORT = Number(process.env.BABUNI_LOCAL_SERVICE_PORT || '5191')
 const TOKEN = process.env.BABUNI_LOCAL_SERVICE_TOKEN
@@ -16,6 +18,7 @@ if (!TOKEN || TOKEN.length < 32 || !Number.isInteger(PORT) || PORT < 1024 || POR
 }
 const registry = new LocalConnectionRegistry(process.env.BABUNI_TEST_PROFILE_FILE)
 const states = new Map()
+const morkahja = new MorkahjaTunnelManager()
 function send(res, code, data) {
   res.writeHead(code, {'Content-Type':'application/json; charset=utf-8',
     'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'})
@@ -78,6 +81,19 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
+    const dbMatch=/^\/([0-9a-f-]{36})\/database\/(health|players)$/i.exec(path)
+    if (dbMatch && req.method==='GET') {
+      const profile=registry.list().find(p=>p.id===dbMatch[1])
+      if (!profile)return send(res,404,{error:'NOT_FOUND'})
+      if (!hasCapability(profile,dbMatch[2]==='health'?'db:health':'db:players'))
+        return send(res,403,{error:'CAPABILITY_DENIED'})
+      const result=dbMatch[2]==='health' ? await morkahja.health(profile) : await morkahja.players(profile)
+      if (!result.ok){
+        states.set(profile.id,{state:'error',code:result.error,
+          detail:'Read-only Morkahja database session is unavailable.',checkedAt:new Date().toISOString()})
+      }
+      return send(res,result.ok?200:409,result)
+    }
     const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
@@ -88,7 +104,10 @@ const server=createServer(async(req,res)=>{
     if (req.method==='PUT' && !action) {
       const previous=profile.target
       const updated=registry.update(id,await body(req))
-      if (previous!==updated.target) states.delete(id)
+      if (previous!==updated.target) {
+        await morkahja.disconnect(id)
+        states.delete(id)
+      }
       return send(res,200,{profile:await listedProfile(updated)})
     }
     if (req.method==='DELETE' && !action) {
@@ -96,11 +115,28 @@ const server=createServer(async(req,res)=>{
         try { await clearCredential(profile) }
         catch { return send(res,503,{error:'KEYRING_UNAVAILABLE'}) }
       }
+      await morkahja.disconnect(id)
+      removeMorkahjaConfig(profile)
       const ok=registry.remove(id)
       if (ok) states.delete(id)
       return send(res,ok?200:404,{ok})
     }
     if (req.method==='POST' && action==='test') {
+      if(hasCapability(profile,'db:health')){
+        const checkedAt=new Date().toISOString()
+        const result=await morkahja.health(profile)
+        const status=result.ok ? {
+          state:'connected',code:'DATABASE_READ_ONLY_CONNECTED',
+          detail:'Authenticated, role-verified read-only database session is healthy.',
+          checkedAt,lastSuccessAt:checkedAt,
+        }:{
+          state:'not-configured',code:result.error,
+          detail:'Use Connect to establish a verified SSH and read-only PostgreSQL session.',
+          checkedAt,
+        }
+        states.set(id,status)
+        return send(res,200,{status})
+      }
       const previous=states.get(id) || {}
       const result=await probeProfile(profile,previous)
       const status=previous.state==='connected' && result.state==='available'
@@ -118,6 +154,21 @@ const server=createServer(async(req,res)=>{
       return send(res,report.ok?200:422,report)
     }
     if (req.method==='POST' && ['connect','reconnect','disconnect'].includes(action)) {
+      if(hasCapability(profile,'db:connect')){
+        if(action==='disconnect'){
+          await morkahja.disconnect(id)
+          const status={state:'disconnected',code:'DISCONNECTED',
+            detail:'SSH tunnel and database connection closed.',checkedAt:new Date().toISOString()}
+          states.set(id,status)
+          return send(res,200,{ok:true,status})
+        }
+        const result=await morkahja.connect(profile)
+        if(result.ok)states.set(id,result.status)
+        else states.set(id,{state:'error',code:result.error,
+          detail:'Protected SSH/PostgreSQL connection could not be established.',
+          checkedAt:new Date().toISOString()})
+        return send(res,result.ok?200:422,result)
+      }
       if (!hasCapability(profile,'local:connect')) return send(res,409,{error:'ADAPTER_NOT_IMPLEMENTED'})
       if (action==='reconnect' && !states.has(id)) return send(res,409,{error:'NOT_PREVIOUSLY_CHECKED'})
       if (action==='disconnect') {
@@ -139,6 +190,8 @@ const server=createServer(async(req,res)=>{
 })
 server.on('error',error=>{console.error('Local service could not bind to loopback:',error.code||error.message);process.exitCode=1})
 server.listen(PORT,'127.0.0.1',()=>console.log('Local profile service ready on loopback (no remote access).'))
-const close=()=>server.close(()=>process.exit(0))
+const close=()=>{
+  void morkahja.closeAll().finally(()=>server.close(()=>process.exit(0)))
+}
 process.on('SIGTERM',close)
 process.on('SIGINT',close)
