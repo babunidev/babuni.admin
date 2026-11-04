@@ -34,6 +34,10 @@ Every read repeats private configuration and host-key validation, obtains the pe
 
 The adapter is `local-service/morkahjaReadOnly.mjs`, independent of `vite/postgresAdmin.ts`. The older admin data path may perform maintenance changes while listing players, so it is not used here. Data authorization remains server-side, with no fallback to mock or legacy write-capable APIs.
 
+## First live read attempt and safe diagnostics
+
+The operator's first live Morkahja data request displayed `REMOTE_READ_FAILED` after the previously successful metadata-only health probe. The exact cause is not yet established. A role may pass read-only-role checks while lacking permission to SELECT from one or more dashboard tables. The adapter now maps known PostgreSQL SQLSTATE codes to safe, non-sensitive statuses rather than exposing raw database exceptions. For example, `DB_READ_PERMISSION_DENIED` means a database role needs a separately reviewed table-SELECT permission; it does **not** justify granting write privileges, changing roles automatically or exposing a raw SQL error to the browser. The next operator observation should be recorded before changing server configuration.
+
 ## Verification and limitations
 
 Source tests check page bounds and allowlists. Local-service tests reject unauthorized profiles, malformed page inputs and cross-origin requests. Disposable PostgreSQL fixture tests verify bounded overview/player results, exclude sensitive fields and ensure a read does not remove sessions. The SSH/data wrapper is tested for denied activation, secret-safe errors, shared single-flight behavior and tunnel cleanup.
