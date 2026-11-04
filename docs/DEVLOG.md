@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Seeing Morkahja data through the finished read-only path
+
+After the restricted views and adapter were in place, the first successful snapshots appeared in my local Morkahja dashboard. The overview showed 62 players, 90 avatars, no active sessions and no events in the preceding 24 hours; the separate player preview displayed names, avatar counts and last-played dates. The interface also reported that SSH disconnected after each request. With the requested overview and preview now working against the live database, the remaining checks are page navigation, reconciling the zero activity counts with gameplay and testing failures without leaving a connection open.
+
+
 ## 2026-11-04 — Reading through restricted views instead of sensitive tables
 
 The first live dashboard query exposed an important permission boundary: the database role could connect safely but had no reason to read entire player or session tables. On my Ubuntu server, I followed the proposed restricted-view approach and verified that the new views could be read while the underlying sensitive tables stayed inaccessible. AI then changed the dashboard adapter to query only those views, reinforced the role checks and added disposable PostgreSQL tests. The database-side permission checks succeeded; the browser's first successful live snapshot still needs verification.
