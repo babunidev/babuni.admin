@@ -235,7 +235,7 @@ export function ConnectionsPage() {
               <button type="button" disabled={busy} onClick={()=>{void inspect(p.id)}}>Inspect</button>}
             <button type="button" disabled={busy} onClick={()=>{
               void operation(()=>api('POST','/'+p.id+'/test'))
-            }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Test</button>
+            }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">{p.capabilities?.includes('ssh:preflight')?'Check pinned key (offline)':'Test'}</button>
             {p.capabilities?.includes('local:connect') &&
               (p.state==='connected'
                 ? <button type="button" disabled={busy} onClick={()=>{
