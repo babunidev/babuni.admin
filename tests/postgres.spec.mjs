@@ -111,17 +111,27 @@ test('ban and unban SQL operations commit and missing players never succeed', as
 test('dedicated read-only dashboard returns bounded data without session cleanup',async()=>{
   const role='babuni_data_preview_reader'
   const password='synthetic-read-only-preview'
-  // Recreate the structure of the two restricted live views in the disposable
-  // CI fixture. Their owner has raw-table access; the reader does not.
+  // Disposable fixture views have the same columns and permission boundary
+  // as the owner-created live Morkahja views.
   await pool.query('DROP SCHEMA IF EXISTS babuni_admin_ro CASCADE')
   await pool.query('CREATE SCHEMA babuni_admin_ro')
-  await pool.query([
-    'CREATE VIEW babuni_admin_ro.overview WITH (security_barrier = true) AS',
-    'SELECT (SELECT COUNT(*) FROM public.players) AS players,',
-    '  (SELECT COUNT(*) FROM public.avatars) AS avatars,',
-    '  (SELECT COUNT(*) FROM public.sessions s JOIN public.players p',
-    "     ON p.id=s.player_id WHERE p.data->>'activeSessionId'=s.id",
-    "     AND (CASE WHEN (s.data->>'expiresAt') ~ '^[0-9]{1,15}
+  await pool.query(
+    "CREATE VIEW babuni_admin_ro.overview WITH (security_barrier = true) AS SELECT "+
+    "(SELECT COUNT(*) FROM public.players) AS players, "+
+    "(SELECT COUNT(*) FROM public.avatars) AS avatars, "+
+    "(SELECT COUNT(*) FROM public.sessions s JOIN public.players p ON p.id=s.player_id "+
+    "WHERE p.data->>'activeSessionId'=s.id AND "+
+    "(s.data->>'expiresAt')::bigint > (EXTRACT(EPOCH FROM now())*1000)::bigint) AS active_sessions, "+
+    "(SELECT COUNT(*) FROM public.game_events) AS events_last_24h"
+  )
+  await pool.query(
+    "CREATE VIEW babuni_admin_ro.player_preview WITH (security_barrier = true) AS SELECT "+
+    "ROW_NUMBER() OVER (ORDER BY (p.data->>'lastPlayedAt')::bigint DESC NULLS LAST, p.id) AS position, "+
+    "LEFT(COALESCE(NULLIF(p.data->>'playerName',''),'Unnamed player'),80) AS display_name, "+
+    "(SELECT COUNT(*) FROM public.avatars a WHERE a.player_id=p.id) AS avatar_count, "+
+    "(p.data->>'lastPlayedAt')::bigint AS last_played_at FROM public.players p"
+  )
+  await pool.query("CREATE ROLE babuni_data_preview_reader LOGIN PASSWORD 'synthetic-read-only-preview'")
   try {
     await pool.query('GRANT USAGE ON SCHEMA babuni_admin_ro TO '+role)
     // An otherwise safe, login-capable reader without view SELECT grants passes
