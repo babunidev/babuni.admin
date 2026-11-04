@@ -4,7 +4,7 @@
 **Repository:** `babunidev/babuni.admin`  
 **Current focus:** Structural transition from a local Morkahja administration console into a multi-project administration platform.
 
-**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Read-only local directory and content checks are available. Non-local profiles may store credentials in the Linux OS keyring using a terminal-only command, but SSH, GitHub and remote project access are not implemented.
+**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Read-only local directory and content checks are available. Non-local profiles may store credentials in the Linux OS keyring using a terminal-only command, and a separately configured Morkahja-only SSH/PostgreSQL **health probe** is now implemented but disabled by default. GitHub and remote editing/publishing remain unimplemented; no live server connection has been verified.
 
 Babuni Admin is planned as one private workbench for maintaining multiple projects. **Morkahja** is the existing functional domain: its dashboard, player moderation, activity views and game-content editors remain in source. **Babuni Dev** is the next proposed workspace, intended to manage GitHub-backed portfolio documents and publish individual content updates without rebuilding the whole website. Additional project workspaces may be introduced later.
 
@@ -25,7 +25,7 @@ npm run credentials -- status <profile-uuid>
 npm run credentials -- clear <profile-uuid>
 ```
 
-Local-file profiles do not require credentials. Storing a credential for a remote-type profile does **not** connect to SSH, GitHub, PostgreSQL or any live server; those transports remain unimplemented. Existing SSH private keys should normally stay managed by an SSH agent, not be pasted into this command. The credential is sent only through stdin to `secret-tool`, never in command arguments, browser state or the non-secret connection JSON file. Removing a remote profile attempts keyring cleanup before deleting the profile; if the keyring cannot be reached, removal fails safely.
+Local-file profiles do not require credentials. Storing a credential for a remote-type profile does **not** connect to SSH, GitHub, PostgreSQL or any live server; no connection by itself. A separate Morkahja read-only health probe is implemented but requires private operator approval and is disabled by default; GitHub and publishing transports remain unimplemented. Existing SSH private keys should normally stay managed by an SSH agent, not be pasted into this command. The credential is sent only through stdin to `secret-tool`, never in command arguments, browser state or the non-secret connection JSON file. Removing a remote profile attempts keyring cleanup before deleting the profile; if the keyring cannot be reached, removal fails safely.
 
 The Connections screen reports loopback service and keyring availability, checked timestamps, last complete success, file-specific errors and degraded/available/error local inspection states. Profiles can now be edited without changing their project or adapter identity, and local-file profiles support manual read-only Connect, Disconnect and Reconnect. A service restart clears ephemeral check history; no background remote connection is attempted.
 
@@ -41,7 +41,7 @@ It generates a temporary synthetic secret, stores it in the Linux Secret Service
 
 The Vite proxy additionally requires an ephemeral in-memory browser session capability and checks the local Host, Origin and Fetch Metadata before forwarding to the service. Its independent service key remains server-side. This reduces browser cross-site risk but does not authenticate arbitrary programs running as the same OS user.
 
-### Morkahja SSH — offline host-key preflight only
+### Morkahja SSH — offline trust check and disabled-by-default read-only health probe
 
 The `postgres-ssh` profile's **Test** button now checks the presence of an exact public server host-key entry in a dedicated trust file. It **does not connect to the VPS or PostgreSQL**, compare a live server key, unlock credentials or permit edits.
 
@@ -54,7 +54,7 @@ chmod 600 ~/.config/babuni-admin/ssh_known_hosts
 
 Before adding any line, independently confirm the **actual Morkahja server's SSH host-key fingerprint** through a trusted administrative channel. Add the exact `hostname keytype base64-public-key` known-hosts entry manually; never treat the output of an unauthenticated `ssh-keyscan` as verified identity. The profile's `target` is the hostname only, not a URL, port, command, user or password. Current offline preflight assumes a single exact hostname entry and does not configure a custom SSH port.
 
-The status `SSH_HOST_KEY_PINNED_OFFLINE` means a local candidate trust entry exists and OpenSSH recognizes it; **it does not mean the fingerprint is independently verified or a tunnel is established**. All remote Connect, Inspect, SQL and write permissions are still denied. See [local connection manager](docs/LOCAL_CONNECTION_MANAGER.md).
+The status `SSH_HOST_KEY_PINNED_OFFLINE` means a local candidate trust entry exists and OpenSSH recognizes it; **it does not mean the fingerprint is independently verified or a tunnel is established**. The regular Connect and Inspect operations remain denied. A separate manually invoked, operator-gated SSH + DB health probe can execute one fixed metadata-only, read-only PostgreSQL transaction; it does not allow arbitrary SQL, player inspection or writes. See [operator configuration and release gates](docs/MORKAHJA_SSH_READONLY_PROBE.md). See [local connection manager](docs/LOCAL_CONNECTION_MANAGER.md).
 
 ### Keyring failure diagnostics and security release boundary
 
@@ -76,6 +76,7 @@ The legacy opt-in Morkahja static asset middleware has additional canonical path
 - [Development journal](docs/DEVLOG.md)
 - [Architecture](docs/ARCHITECTURE.md)
 - [Local connection manager — design](docs/LOCAL_CONNECTION_MANAGER.md)
+- [Morkahja SSH/PostgreSQL read-only health probe](docs/MORKAHJA_SSH_READONLY_PROBE.md)
 - [Decisions](docs/DECISIONS.md)
 - [Multi-project migration record](docs/MULTI_PROJECT_ARCHITECTURE.md)
 - [Changelog](CHANGELOG.md)
