@@ -1,6 +1,6 @@
 # Morkahja — Read-only dashboard
 
-**Implementation:** Dedicated local-service read adapter and Morkahja-only React view. **Live player-data verification:** successful operator-observed overview and first preview snapshot on 2026-11-04; pagination navigation and failure recovery remain pending. **Default:** data reads disabled, even where the SSH/database health probe works.
+**Implementation:** Dedicated local-service read adapter and Morkahja-only React view. **Live player-data verification:** operator observed successful overview, all four pages of player previews and matching activity changes during gameplay on 2026-11-04. New automatic reload and combined-read behavior requires a separate local test. **Default:** data reads disabled, even where the SSH/database health probe works.
 
 ## Restricted PostgreSQL views — live server configuration
 
@@ -26,9 +26,15 @@ The existing private `~/.config/babuni-admin/morkahja-probe.json` continues to c
 
 This excerpt is **not** a complete configuration file; retain all existing required settings. The file remains owned by the local operator, mode `0600`. The local service must also be started with `BABUNI_MORKAHJA_REMOTE_PROBE=enabled`. Without both flags and this **exact** field list, no database overview or player page can be retrieved. The browser can select an existing saved Morkahja `postgres-ssh` profile but cannot edit the server allowlist, permissions, keyring password or approved fields.
 
+## Additional counters and interpretation
+
+**Players online*** in the new UI is an estimate based on non-expired matching active-account sessions. This measures an authorized session, **not** a confirmed live player heartbeat or a game room. Sessions and rooms are different concepts; no room count has been verified from the game's database.
+
+The legacy Morkahja adapter references `player_achievements`, player currency JSON, `unlockedExpansions` and player encounter records. Those establish possible data sources, **not** validated aggregate definitions or purchases. A gem balance is different from a gem earned/spent transaction; owned expansions/dice are not proof of a paid purchase. Before adding new cards with numbers, confirm the actual live schema and agree on the meaning of each metric. Then create owner-controlled **aggregate-only** views and extend the fixed data-read contract, never grant the reader SELECT on raw tables.
+
 ## Separate dashboard
 
-The Morkahja navigation adds **Read-only** at `/read-only`. It is intentionally separate from the original Dashboard and Players routes; those legacy paths use different data services and must not be used for this read-only connection. Loading this page performs only a local profile lookup. A remote read starts only after the operator selects a profile and presses **Load database overview** or **Load player preview**.
+The Morkahja navigation now names the read-only landing page **Overview** at `/`; the historical `/read-only` URL still renders the same view. The previous legacy Dashboard remains accessible at `/dashboard`, and the write-capable `/players` route is labeled **Moderation** without changing its authority. The Overview remembers only the selected **local profile UUID** in browser storage. An initial profile selection immediately retrieves the overview and first player page, and reloading a page with a previously selected valid profile retrieves a fresh snapshot. There is no remote request if no profile has been selected; expired/missing local profile identifiers are discarded. All server-side private host, keyring, permission and operator approvals are rechecked on every read. No remote credentials or player data are persisted in the browser.
 
 **Database overview** contains only four counts: players, avatars, active sessions matching a player's active-session reference and not expired, and game events during the previous 24 hours. No player or session records are returned.
 
@@ -38,10 +44,11 @@ The Morkahja navigation adds **Read-only** at `/read-only`. It is intentionally 
 
 The local service's loopback/session/Origin-checked endpoints are:
 
-- `POST /local-connections-api/:id/read-overview` — no body; requires the `ssh:read` capability.
+- `POST /local-connections-api/:id/read-dashboard` — JSON body `{"page":1}`; returns overview and the specified 20-row player page from **one** read-only transaction and private SSH tunnel. Requires the existing `ssh:read` capability and strict page validation.
+- `POST /local-connections-api/:id/read-overview` — no body; retained for compatibility and requires the `ssh:read` capability.
 - `POST /local-connections-api/:id/read-players` — JSON body `{"page":1}` only; the same capability and strict page validation.
 
-Every read repeats private configuration and host-key validation, obtains the per-profile database password from an unlocked Linux Secret Service, starts a short-lived SSH tunnel over an owner-private Unix socket, validates the PostgreSQL role's effective read-only privileges, and executes **fixed SELECT-only queries** in a `REPEATABLE READ READ ONLY` transaction. The transaction is rolled back and the tunnel is closed in all success/failure cases. One remote operation at a time may run; no background polling or persistent database connection is authorized.
+Every read repeats private configuration and host-key validation, obtains the per-profile database password from an unlocked Linux Secret Service, starts a short-lived SSH tunnel over an owner-private Unix socket, validates the PostgreSQL role's effective read-only privileges, and executes **fixed SELECT-only queries** in a `REPEATABLE READ READ ONLY` transaction. The transaction is rolled back and the tunnel is closed in all success/failure cases. One remote operation at a time may run; there is **no periodic background polling** or persistent database connection. Page reloads after a remembered selection, explicit profile changes and the refresh button trigger short-lived requests.
 
 The adapter is `local-service/morkahjaReadOnly.mjs`, independent of `vite/postgresAdmin.ts`. The older admin data path may perform maintenance changes while listing players, so it is not used here. Data authorization remains server-side, with no fallback to mock or legacy write-capable APIs.
 
@@ -51,11 +58,11 @@ The operator's first live Morkahja data request displayed `REMOTE_READ_FAILED` a
 
 ## Verification and limitations
 
-**Observed live result, 2026-11-04:** The local dashboard loaded counts of 62 players, 90 avatars, 0 active sessions and 0 game events over the previous 24 hours. Its preview showed real players using only the approved three visible fields. The interface reported SSH disconnected after snapshot, consistent with the coded tunnel cleanup. This verifies real data retrieval but not the accuracy of the two zero counts against active gameplay or that pagination navigation and error recovery work on the live system. No individual player names or screenshot images are retained in repository documentation.
+**Observed live result, 2026-11-04:** The local dashboard loaded counts of 62 players, 90 avatars, 0 active sessions and 0 game events over the previous 24 hours. Its preview showed real players using only the approved three visible fields. The interface reported SSH disconnected after snapshot, consistent with the coded tunnel cleanup. The operator subsequently navigated through all four pages and back, and observed active-session and recent-event counts increasing during game activity. These live checks are complete; testing the newly added remembered-selection flow and interrupted-connection recovery remains open. No individual player names or screenshot images are retained in repository documentation.
 
 
 Source tests check page bounds and allowlists. Local-service tests reject unauthorized profiles, malformed page inputs and cross-origin requests. Disposable PostgreSQL fixture tests verify bounded overview/player results, exclude sensitive fields and ensure a read does not remove sessions. The SSH/data wrapper is tested for denied activation, secret-safe errors, shared single-flight behavior and tunnel cleanup.
 
-**No live Morkahja player database was queried during AI implementation.** After the view-only change, the operator verified successful live overview and preview requests. A separate read-role membership/default-privilege audit and repeatable failure/recovery checks remain outstanding. A successful read-only snapshot authorizes neither account moderation, content editing, website publishing nor automatic access by AI agents.
+**No live Morkahja player database was queried during AI implementation.** After the view-only change, the operator verified successful live overview and preview requests. A separate read-role membership/default-privilege audit, the new remembered-selection flow and repeatable failure/recovery checks remain outstanding. A successful read-only snapshot authorizes neither account moderation, content editing, website publishing nor automatic access by AI agents.
 
 Do not use `npm run test:postgres` against the actual Morkahja database; that suite performs fixture-only mutations.
