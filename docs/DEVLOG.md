@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Defining the boundary before connecting Morkahja
+
+With local connection handling and the Nobara keyring verified, the next direction was to reach Morkahja securely through SSH and PostgreSQL without exposing the administration interface. Before connecting to a live server, AI reviewed the current adapters and documented host verification, a local-only tunnel, read-only database access and separate permission gates for game-content edits. The resulting plan also requires recoverable backups and failure tests; no live tunnel or game-data modification was performed.
+
 ## 2026-11-04 — The desktop keyring works
 
 With the synthetic keyring checks already passing in CI, the remaining question was whether the same storage flow worked in my actual Nobara session. After pulling the latest code, I ran `npm run keyring:verify` locally and received successful confirmation of temporary credential storage, retrieval and cleanup. The report establishes an unlocked desktop keyring round trip, not locked-keyring behavior or any working remote connection; no existing SSH keys were used.

@@ -1,5 +1,16 @@
 # Babuni Admin — Development Roadmap
 
+### Phase 2 — Connect Morkahja (pending implementation)
+
+- [ ] Implement verified SSH host identity and a separately validated remote profile schema.
+- [ ] Implement lifecycle-managed outbound loopback PostgreSQL SSH tunnel.
+- [ ] Add dedicated read-only PostgreSQL role, health checks and allowlisted query endpoints.
+- [ ] Route live Morkahja reads through the protected local service with source/freshness labels.
+- [ ] Add explicit project-scoped game-content edit permissions, confirmations and audit metadata.
+- [ ] Verify backups, rollback and failure recovery with disposable files and PostgreSQL before any live mutation.
+
+Security requirements and release gates: [Local connection manager](docs/LOCAL_CONNECTION_MANAGER.md). No live connection or edit has been implemented in this planning change.
+
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  
 **Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Read-only profile checks, structured local connection status and terminal-only Linux keyring storage are implemented slices. Live outbound adapters remain planned. The creative has verified the unlocked Nobara desktop keyring with a synthetic credential round trip; locked/unavailable behavior remains unverified.
