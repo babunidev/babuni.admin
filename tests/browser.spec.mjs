@@ -78,12 +78,12 @@ test('switching workspaces updates rendered header, links, URL, and browser hist
 })
 
 test('legacy Morkahja routes render directly with their original navigation', async () => {
-  for (const route of ['/', '/players', '/content', '/settings']) {
+  for (const route of ['/', '/read-only', '/players', '/content', '/settings']) {
     const { page, context, unexpectedErrors } = await openPage(route)
     try {
       await page.getByRole('navigation', { name: 'Morkahja navigation' }).waitFor()
       assert.equal(await page.getByRole('combobox', { name: 'Select workspace' }).inputValue(), 'morkahja')
-      assert.equal(await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link').count(), 4)
+      assert.equal(await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link').count(), 5)
       assert.deepEqual(unexpectedErrors, [], 'uncaught browser errors on ' + route)
     } finally {
       await context.close()
