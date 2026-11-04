@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — The desktop keyring works
+
+With the synthetic keyring checks already passing in CI, the remaining question was whether the same storage flow worked in my actual Nobara session. After pulling the latest code, I ran `npm run keyring:verify` locally and received successful confirmation of temporary credential storage, retrieval and cleanup. The report establishes an unlocked desktop keyring round trip, not locked-keyring behavior or any working remote connection; no existing SSH keys were used.
+
 ## 2026-11-04 — Making connections deliberate
 
 Once the local Morkahja file checks worked, I wanted profile editing, explicit connection controls and stronger permissions before anything reached a remote project. AI added project-scoped adapter rules, guarded profile edits and manual read-only local Connect, Disconnect and Reconnect actions. New session checks protect the development UI's connection proxy, while disposable service and browser tests examine the workflow. Remote adapters remain disabled, and my actual desktop keyring still needs a synthetic round-trip verification.

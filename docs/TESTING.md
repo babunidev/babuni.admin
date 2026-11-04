@@ -1,5 +1,9 @@
 # Testing Babuni Admin
 
+## Nobara desktop keyring verification — 2026-11-04
+
+The human creative ran `npm run keyring:verify` on the Nobara desktop and supplied the following successful terminal results: `Linux Secret Service round-trip verified: ephemeral store and retrieve.` and `Ephemeral test secret removed from the keyring.` This is operator-reported verification on the actual machine, separate from CI's fake-keyring tests. The synthetic test did not access real project credentials. Locked or unavailable desktop keyring behavior and remote service authentication remain unverified.
+
 ## Verified CI checks
 
 GitHub Actions runs the TypeScript/Vite build, ESLint, nine source-level regression checks and nine isolated Morkahja integration tests on every push to `main` and pull request. A separate Ubuntu 24.04 job builds a mock-only preview and runs five Chromium browser scenarios. The complete latest verified run is [41645348546](https://github.com/babunidev/babuni.admin/actions/runs/41645348546); see also [Phase 1 verification scope and gaps](PHASE1_VERIFICATION.md).
