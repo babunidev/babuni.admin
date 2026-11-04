@@ -8,6 +8,8 @@ const namePattern=/^[a-zA-Z_][a-zA-Z0-9_]{0,62}$/
 const sshUserPattern=/^[a-z_][a-z0-9_-]{0,31}$/
 const fingerprintPattern=/^SHA256:[A-Za-z0-9+/]{43}$/
 const keys=['enabled','host','sshUser','sshPort','sshIdentityFile','dbUser','dbName','dbPort','approvedHostKeyFingerprint']
+const dataKeys=['readOnlyDataEnabled','readOnlyDataFields']
+const approvedFields=['displayName','avatarCount','lastPlayedAt']
 
 function isPort(value) { return Number.isInteger(value) && value>=1 && value<=65535 }
 function failed(code) { return {ok:false,code} }
@@ -40,8 +42,13 @@ export async function readMorkahjaProbeConfig(profile,env=process.env) {
   try { config=JSON.parse(await privateFile(remoteProbeConfigPath(env))) }
   catch { return failed('REMOTE_CONFIG_UNAVAILABLE') }
   if (!config || Array.isArray(config) || typeof config!=='object' ||
-      Object.keys(config).length!==keys.length ||
-      Object.keys(config).some(key=>!keys.includes(key)) ||
+      keys.some(key=>!Object.prototype.hasOwnProperty.call(config,key)) ||
+      Object.keys(config).some(key=>!keys.includes(key) && !dataKeys.includes(key)) ||
+      (config.readOnlyDataEnabled!==undefined && typeof config.readOnlyDataEnabled!=='boolean') ||
+      (config.readOnlyDataFields!==undefined &&
+        (!Array.isArray(config.readOnlyDataFields) ||
+         JSON.stringify(config.readOnlyDataFields)!==JSON.stringify(approvedFields))) ||
+      (config.readOnlyDataEnabled===true && !config.readOnlyDataFields) ||
       config.enabled!==true || config.host!==profile.target ||
       !validSshHostname(config.host) ||
       !sshUserPattern.test(config.sshUser) ||
