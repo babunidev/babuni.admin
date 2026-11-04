@@ -74,7 +74,9 @@ async function api<T>(method='GET',path='/',data?:unknown):Promise<T> {
   return value as unknown as T
 }
 function stateLabel(profile:Profile) {
-  if (profile.state==='connected') return 'Connected — local read-only session'
+  if (profile.state==='connected') return profile.kind==='postgres-ssh'
+    ? 'Connected — SSH and verified read-only PostgreSQL'
+    : 'Connected — local read-only session'
   if (profile.state==='available') return 'Available — local check only'
   if (profile.state==='disconnected') return 'Disconnected'
   if (profile.state==='degraded') return 'Degraded — some content is unavailable'
