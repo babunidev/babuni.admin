@@ -62,7 +62,7 @@ test('short-lived remote probe never connects when disabled and cleans up even o
   const deps={
     readConfig:async()=>({ok:false,code:'REMOTE_PROBE_DISABLED'}),
     getPassword:async()=>{credentials++;return 'fixture-only'},
-    openTunnel:async()=>{opens++;return {port:21000,stop:async()=>{stops++}}},
+    openTunnel:async()=>{opens++;return {socketDir:'/tmp/synthetic-private-socket',stop:async()=>{stops++}}},
     inspectDatabase:async()=>({ok:true}),
   }
   const disabled=await probeMorkahjaPostgres(profile,deps)
