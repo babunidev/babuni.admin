@@ -13,11 +13,13 @@ test('project capabilities deny remote adapters and any current write capability
       const projectId=kind==='postgres-ssh'?'morkahja':'babuni-dev'
       const remote={projectId,kind}
       assert.equal(specForProfile(remote).transport,'planned')
-      assert.deepEqual(specForProfile(remote).capabilities,[])
+      assert.deepEqual(specForProfile(remote).capabilities,kind==='postgres-ssh'?['ssh:preflight']:[])
       for(const op of ['local:inspect','local:connect','remote:read','remote:write']) {
         assert.equal(hasCapability(remote,op),false)
       }
     }
+    assert.equal(hasCapability({projectId:'morkahja',kind:'postgres-ssh'},'ssh:preflight'),true)
+    assert.equal(hasCapability({projectId:'babuni-dev',kind:'postgres-ssh'},'ssh:preflight'),false)
     assert.equal(hasCapability(local,'local:write'),false)
     assert.equal(specForProfile({projectId:'babuni-dev',kind:'local-files'}),null)
     assert.equal(specForProfile({projectId:'morkahja',kind:'github'}),null)

@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { spawn } from 'node:child_process'
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync, symlinkSync } from 'node:fs'
+import { spawn, execFileSync } from 'node:child_process'
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, symlinkSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'node:net'
@@ -29,9 +29,11 @@ test('independent local service requires session key and tests local folder with
   const dir=mkdtempSync(join(tmpdir(),'babuni-local-service-'))
   const port=await freePort()
   const key=randomBytes(32).toString('hex')
+  const sshTrust=join(dir,'ssh_known_hosts')
   const child=spawn(process.execPath,['--experimental-strip-types','local-service/server.mjs'],{
     env:{...process.env,BABUNI_LOCAL_SERVICE_PORT:String(port),BABUNI_LOCAL_SERVICE_TOKEN:key,
-      BABUNI_TEST_PROFILE_FILE:join(dir,'profiles.json'),BABUNI_UI_PORT:'5180'},stdio:['ignore','pipe','pipe']
+      BABUNI_TEST_PROFILE_FILE:join(dir,'profiles.json'),BABUNI_UI_PORT:'5180',
+      BABUNI_SSH_KNOWN_HOSTS:sshTrust},stdio:['ignore','pipe','pipe']
   })
   const url='http://127.0.0.1:'+port+'/local-connections-api/'
   const headers={'X-Babuni-Local':'1','X-Babuni-Service-Key':key,'Content-Type':'application/json',Origin:'http://127.0.0.1:5180'}
@@ -136,8 +138,31 @@ test('independent local service requires session key and tests local folder with
     assert.equal((await request(remoteId+'/connect',{method:'POST'})).status,409)
     assert.equal((await request(remoteId+'/inspect')).status,403)
     assert.ok(['missing','unavailable'].includes(checkRemote.credential))
+    const sshResponse=await request('',{method:'POST',body:JSON.stringify({
+      projectId:'morkahja',kind:'postgres-ssh',displayName:'Offline SSH',
+      target:'morkahja.example.invalid',
+    })})
+    assert.equal(sshResponse.status,201)
+    const sshProfile=(await sshResponse.json()).profile
+    const unpinned=await (await request(sshProfile.id+'/test',{method:'POST'})).json()
+    assert.equal(unpinned.status.code,'SSH_TRUST_STORE_MISSING')
+    const sshKey=join(dir,'ssh-fixture')
+    execFileSync('ssh-keygen',['-q','-t','ed25519','-N','','-f',sshKey],{stdio:'ignore'})
+    const pub=readFileSync(sshKey+'.pub','utf8').trim().split(/\s+/)
+    writeFileSync(sshTrust,'morkahja.example.invalid '+pub[0]+' '+pub[1]+'\n',{mode:0o600})
+    const pinned=await (await request(sshProfile.id+'/test',{method:'POST'})).json()
+    assert.equal(pinned.status.code,'SSH_HOST_KEY_PINNED_OFFLINE')
+    assert.equal(pinned.status.state,'not-configured')
+    assert.equal((await request(sshProfile.id+'/connect',{method:'POST'})).status,409)
+    assert.equal((await request(sshProfile.id+'/inspect')).status,403)
+    const listedSsh=(await (await request()).json()).profiles.find(row=>row.id===sshProfile.id)
+    assert.deepEqual(listedSsh.capabilities,['ssh:preflight'])
+    assert.equal(listedSsh.state,'not-configured')
+    // The disposable CI service may have no Secret Service keyring.
+    // Remote profile deletion fails closed in that situation; leave its
+    // fixture metadata for temporary-directory teardown instead.
     assert.equal((await request(p.id,{method:'DELETE'})).status,200)
-    assert.equal((await (await request()).json()).profiles.length,2)
+    assert.equal((await (await request()).json()).profiles.length,3)
   } finally{
     child.kill('SIGTERM')
     await new Promise(r=>{if(child.exitCode!==null)return r();child.once('exit',r)})

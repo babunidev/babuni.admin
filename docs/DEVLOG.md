@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Checking a host key without reaching the server
+
+After verifying the local credential store on Nobara, my next priority was Morkahja's SSH connection. Rather than opening a tunnel immediately, I asked AI to build a local trust check that rejects missing or unsafe host-key entries while keeping network access disabled. The result allows a profile to report whether a privately maintained known-host record exists, but it deliberately cannot claim the actual remote server was verified or that live game data is accessible. An initial integration-test attempt to delete the disposable SSH profile without an available keyring was correctly refused; the test was corrected without weakening that fail-closed behavior.
+
+
 ## 2026-11-04 — Confirming the lock and recovery cycle
 
 After the isolated unavailable-bus check, the last desktop test was to lock KDE Wallet itself. Using the read-only diagnostic, I observed the default collection, keyring health and unused credential all report `locked`; following an unlock, those statuses returned to `unlocked`, `available` and `missing`. AI recorded the terminal evidence and closed the keyring verification checklist. This establishes desktop lock detection and status recovery, not authorization for live Morkahja operations.

@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Offline Morkahja SSH host-key preflight
+
+- Added a read-only, **offline-only** `ssh:preflight` capability for Morkahja PostgreSQL/SSH profiles.
+- Require a dedicated operator-managed known-hosts file, exact hostname match, OpenSSH lookup and non-symlink/private file checks before showing a candidate pinned-key status.
+- Added tests with disposable generated SSH keys and protected local service routes. No SSH transport, tunnel, PostgreSQL access or write permission was enabled.
+
+
 ## 2026-11-04 — Keyring lock diagnostics and local asset containment
 
 - Added read-only default Secret Service collection lock detection; a confirmed locked state blocks storing, clearing and verifying credentials.

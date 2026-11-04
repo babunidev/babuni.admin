@@ -60,7 +60,8 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Add a read-only local directory test with verified available/error status; non-local adapters explicitly remain unconfigured.
 - [x] Add manual local-file Connect, Disconnect and Reconnect through read-only probes without background retries.
 - [x] Strengthen local Vite proxy Host/Origin/Fetch Metadata checks and add a per-run browser session capability while keeping the service key server-side.
-- [ ] Implement SSH/GitHub remote checks, transport lifecycle and independent project authorization.
+- [x] Add Morkahja-only offline SSH host-key trust preflight: dedicated operator-managed known_hosts file, exact host matching, OpenSSH parser check, invalid/unsafe store denial and no outbound connection; verified only by fixture CI tests. [Design](docs/LOCAL_CONNECTION_MANAGER.md).
+- [ ] Implement **online** SSH host-key verification, outbound tunnel lifecycle, PostgreSQL role authorization and GitHub transport (all remain disabled).
 - [ ] Connect Morkahja PostgreSQL through a protected outbound tunnel with least privilege.
 - [x] Add read-only inspection of five known Morkahja JSON datasets through the local service; file counts and status only, using isolated fixtures.
 - [x] Add local service/keyring health, per-profile timestamps and structured error codes; distinguish complete, degraded and failed content inspection without claiming remote connectivity.

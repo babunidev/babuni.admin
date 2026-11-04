@@ -32,7 +32,7 @@ interface Health {
 const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
   morkahja:[
     {value:'local-files',label:'Local files'},
-    {value:'postgres-ssh',label:'PostgreSQL via SSH (planned)'},
+    {value:'postgres-ssh',label:'PostgreSQL via SSH (offline host-key check only)'},
   ],
   'babuni-dev':[
     {value:'github',label:'GitHub repository (planned)'},
@@ -177,7 +177,7 @@ export function ConnectionsPage() {
 
   const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
   return <div className="max-w-4xl space-y-6">
-    <PageHeader title="Connections" description="Private project profiles and read-only local directory sessions. Remote adapters are not active."/>
+    <PageHeader title="Connections" description="Private connection profiles, local file checks and offline SSH trust preflight. No remote connections are active."/>
     <p role="status" className="text-sm text-fog">{status}</p>
     <p className="text-xs text-fog">
       Local service: {health?.service==='available'?'Available (loopback only)':'Not verified'}
@@ -224,7 +224,7 @@ export function ConnectionsPage() {
             <p className="mt-1 text-xs text-fog">Result: {p.code||'NOT_CHECKED'} · Checked: {checkedTime(p.checkedAt)}</p>
             {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last successful check: {checkedTime(p.lastSuccessAt)}</p>}
             {p.kind!=='local-files' && <p className="mt-1 text-xs text-fog">
-              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · Transport not implemented
+              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · Remote transport not implemented
             </p>}
             <p className="mt-1 text-xs text-fog">Allowed operations: {p.capabilities?.join(', ')||'None (adapter planned)'}</p>
           </div>
@@ -235,7 +235,7 @@ export function ConnectionsPage() {
               <button type="button" disabled={busy} onClick={()=>{void inspect(p.id)}}>Inspect</button>}
             <button type="button" disabled={busy} onClick={()=>{
               void operation(()=>api('POST','/'+p.id+'/test'))
-            }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Test</button>
+            }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">{p.capabilities?.includes('ssh:preflight')?'Check pinned key (offline)':'Test'}</button>
             {p.capabilities?.includes('local:connect') &&
               (p.state==='connected'
                 ? <button type="button" disabled={busy} onClick={()=>{

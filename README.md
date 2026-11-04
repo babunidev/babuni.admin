@@ -41,6 +41,21 @@ It generates a temporary synthetic secret, stores it in the Linux Secret Service
 
 The Vite proxy additionally requires an ephemeral in-memory browser session capability and checks the local Host, Origin and Fetch Metadata before forwarding to the service. Its independent service key remains server-side. This reduces browser cross-site risk but does not authenticate arbitrary programs running as the same OS user.
 
+### Morkahja SSH — offline host-key preflight only
+
+The `postgres-ssh` profile's **Test** button now checks the presence of an exact public server host-key entry in a dedicated trust file. It **does not connect to the VPS or PostgreSQL**, compare a live server key, unlock credentials or permit edits.
+
+```bash
+# These commands only prepare an empty local trust file.
+mkdir -p -m 700 ~/.config/babuni-admin
+touch ~/.config/babuni-admin/ssh_known_hosts
+chmod 600 ~/.config/babuni-admin/ssh_known_hosts
+```
+
+Before adding any line, independently confirm the **actual Morkahja server's SSH host-key fingerprint** through a trusted administrative channel. Add the exact `hostname keytype base64-public-key` known-hosts entry manually; never treat the output of an unauthenticated `ssh-keyscan` as verified identity. The profile's `target` is the hostname only, not a URL, port, command, user or password. Current offline preflight assumes a single exact hostname entry and does not configure a custom SSH port.
+
+The status `SSH_HOST_KEY_PINNED_OFFLINE` means a local candidate trust entry exists and OpenSSH recognizes it; **it does not mean the fingerprint is independently verified or a tunnel is established**. All remote Connect, Inspect, SQL and write permissions are still denied. See [local connection manager](docs/LOCAL_CONNECTION_MANAGER.md).
+
 ### Keyring failure diagnostics and security release boundary
 
 The application now inspects the Linux Secret Service default collection's lock property **without unlocking or reading existing credentials**. A confirmed lock prevents credential operations. Providers without a readable lock property remain `unknown`; this is not proof of an unlocked keyring. The inspection command skips credential lookup in that case to avoid an unlock prompt.

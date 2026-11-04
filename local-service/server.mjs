@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto'
 import { inspectContent } from './inspectContent.mjs'
 import { probeProfile, inspectionState } from './connectionHealth.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
+import { preflightSshHost } from './sshHostPreflight.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -102,7 +103,8 @@ const server=createServer(async(req,res)=>{
     }
     if (req.method==='POST' && action==='test') {
       const previous=states.get(id) || {}
-      const result=await probeProfile(profile,previous)
+      const result=hasCapability(profile,'ssh:preflight')
+        ? await preflightSshHost(profile) : await probeProfile(profile,previous)
       const status=previous.state==='connected' && result.state==='available'
         ? {...result,state:'connected',code:'LOCAL_READ_ONLY_CONNECTED'} : result
       states.set(id,status)
