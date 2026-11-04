@@ -59,7 +59,7 @@ test('Connections UI creates edits checks connects disconnects and removes a loc
     await page.getByRole('button',{name:'Connect',exact:true}).click()
     await page.getByText('LOCAL_READ_ONLY_CONNECTED',{exact:false}).waitFor()
     await page.getByRole('button',{name:'Disconnect'}).click()
-    await page.getByText('DISCONNECTED',{exact:false}).waitFor()
+    await page.getByText('Result: DISCONNECTED',{exact:false}).waitFor()
     await page.getByRole('button',{name:'Reconnect'}).click()
     await page.getByText('Connected — local read-only session',{exact:false}).waitFor()
     await page.getByRole('button',{name:'Inspect'}).click()
