@@ -41,6 +41,19 @@ It generates a temporary synthetic secret, stores it in the Linux Secret Service
 
 The Vite proxy additionally requires an ephemeral in-memory browser session capability and checks the local Host, Origin and Fetch Metadata before forwarding to the service. Its independent service key remains server-side. This reduces browser cross-site risk but does not authenticate arbitrary programs running as the same OS user.
 
+### Keyring failure diagnostics and security release boundary
+
+The application now inspects the Linux Secret Service default collection's lock property **without unlocking or reading existing credentials**. A confirmed lock prevents credential operations. Providers without a readable lock property remain `unknown`; this is not proof of an unlocked keyring.
+
+```bash
+npm run keyring:inspect
+npm run keyring:verify-unavailable
+```
+
+The first command reports the real collection state using read-only checks. The second checks fail-closed behavior with a deliberately unreachable D-Bus address **only in a child process**, leaving the existing desktop keyring and session unchanged. A real locked-state verification still requires an operator to temporarily lock the default collection through their desktop's keyring manager; no script performs that action. Locking the regular keyring can interrupt other applications.
+
+The legacy opt-in Morkahja static asset middleware has additional canonical path/symlink and cross-site controls. This does **not** authorize legacy admin or content writes against live projects. See the [Phase 2 security review](docs/PHASE2_SECURITY_REVIEW_2026-11-04.md) for tested boundaries and outstanding release blockers.
+
 ## Project documentation
 
 - [Concept](CONCEPT.md)
