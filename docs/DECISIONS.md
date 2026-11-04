@@ -1,5 +1,14 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Connection control without premature remote authority
+
+**Creative direction:** Complete the local connection-manager workflow, strengthen its security boundary and test it in the browser before enabling access to actual projects.
+
+**AI implementation:** A validated adapter registry denies unimplemented remote operations, and the profile editor cannot reassign credentials to another project. Manual local Connect, Disconnect and Reconnect keep the distinction between a successfully checked folder and a real remote session. A per-run browser session capability and stricter Host/Origin checks protect the development proxy.
+
+**Limits:** A browser session token helps against cross-site requests but does not authenticate arbitrary processes running under the same local account. A real Linux keyring round trip on my Nobara desktop cannot be called verified until its opt-in test is performed. Remote transport permissions remain future work.
+
+
 ## 2026-11-04 — Browser-free credential entry and explicit health states
 
 **Creative direction:** Keep credentials out of browser configuration and improve project connection diagnostics.
