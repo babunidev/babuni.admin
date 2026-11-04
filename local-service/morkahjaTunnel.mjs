@@ -53,6 +53,8 @@ export class MorkahjaTunnelManager {
       reservePort:locatePort,
       startTunnel,
       makeClient:opts=>new pg.Client(opts),
+      maxConnectAttempts:35,
+      retryDelayMs:200,
       ...deps,
     }
     this.sessions=new Map()
@@ -82,12 +84,12 @@ export class MorkahjaTunnelManager {
         statement_timeout:3000,application_name:'babuni-admin-read-only',
       }
       let connected=false
-      for(let retry=0;retry<35;retry++){
+      for(let retry=0;retry<this.deps.maxConnectAttempts;retry++){
         if(child.exitCode!==null || child.signalCode!==null)break
         client=this.deps.makeClient(credentials)
         client.on?.('error',()=>{})
         try {await client.connect();connected=true;break}
-        catch {try {await client.end()}catch{};client=undefined;await pause(200)}
+        catch {try {await client.end()}catch{};client=undefined;await pause(this.deps.retryDelayMs)}
       }
       if(!connected)return {ok:false,error:'SSH_OR_DATABASE_UNAVAILABLE'}
       const role=await verifyReadonlyRole(client)
