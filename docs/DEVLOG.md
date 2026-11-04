@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Making connections deliberate
+
+Once the local Morkahja file checks worked, I wanted profile editing, explicit connection controls and stronger permissions before anything reached a remote project. AI added project-scoped adapter rules, guarded profile edits and manual read-only local Connect, Disconnect and Reconnect actions. New session checks protect the development UI's connection proxy, while disposable service and browser tests examine the workflow. Remote adapters remain disabled, and my actual desktop keyring still needs a synthetic round-trip verification.
+
+
 ## 2026-11-04 — Checking credentials and connection status without exposing either
 
 The first inspection of my Morkahja files found a case-sensitive mismatch: the real portrait dataset used `Avatar`, but the inspector expected `Portraits`. Once the local correction showed the correct portrait count, the next concern was making connection status and credential handling more dependable. AI added a terminal-only Linux keyring adapter, specific directory and JSON error codes, and timestamps that distinguish full, partial and failed read-only checks. Synthetic keyring and filesystem tests exercise the new paths; my real desktop keyring, SSH connections and live remote services have not yet been verified.

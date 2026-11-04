@@ -120,3 +120,12 @@ The `local-service/keyring.mjs` adapter uses Linux Secret Service through `secre
 The loopback health endpoint reports service/keyring status. Manual profile tests record timestamps, last complete success and directory-specific errors. JSON inspection additionally distinguishes `available`, `degraded` and `error`, and preserves individual reasons such as missing files, invalid structure and bad JSON. The correct legacy portrait schema uses `Avatar` with a capital A. Future remote adapters remain `not-configured` even if credentials are present.
 
 Fixture tests verify the subprocess boundary with a disposable fake `secret-tool`, plus isolated directory and JSON checks. No real desktop keyring, database, SSH connection, project file mutation or remote GitHub access has been tested. The root README describes operator commands and keyring requirements.
+
+## 2026-11-04 — Profile edits, scoped read-only session and browser guard
+
+The registry now supports name/target editing while preserving project, adapter and credential UUID. A changed target invalidates the previous check. A server-owned adapter registry allows only read-only Morkahja local-file operations; remote adapters have no active transport capabilities.
+
+Manual local Connect verifies directory access and records an ephemeral `connected` state. Disconnect ends this logical session, and Reconnect explicitly retries the probe. It never opens a file for writing, authenticates a remote server, or retries in the background.
+
+The Vite proxy checks local Host/Origin/Fetch Metadata and an ephemeral browser session capability in memory before injecting its own independent service key. This guards against cross-site browser requests; it cannot distinguish arbitrary same-user local programs. A real Linux keyring check is provided as `npm run keyring:verify`, using a disposable synthetic secret. CI tests use a fake keyring and disposable files, so actual Nobara keyring behavior remains unverified.
+

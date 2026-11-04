@@ -16,7 +16,9 @@
     "test:postgres": "node --test tests/postgres.spec.mjs",
     "test:browser:content": "node --test tests/browser-content.spec.mjs",
     "test:connections": "node --test tests/connections.test.mjs tests/keyring.test.mjs tests/local-service.test.mjs",
-    "credentials": "node --experimental-strip-types scripts/credentials.mjs"
+    "credentials": "node --experimental-strip-types scripts/credentials.mjs",
+    "test:browser:connections": "node --test tests/browser-connections.spec.mjs",
+    "keyring:verify": "node --experimental-strip-types scripts/verify-keyring.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",

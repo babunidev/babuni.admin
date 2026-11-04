@@ -1,5 +1,15 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Local connection lifecycle and UI session hardening
+
+- Added non-secret profile editing with immutable project, adapter and credential identity.
+- Introduced a server-owned, project-scoped adapter allowlist: only Morkahja local files have active read-only operations.
+- Added manual Connect, Disconnect and Reconnect for local folders without open write handles, remote tunnels or background retries.
+- Added an ephemeral in-memory UI session capability and Host/Origin/Fetch Metadata checks for the Vite proxy; service key stays server-side.
+- Added an opt-in synthetic Linux keyring verification command, expanded fixture tests and a Chromium Connections workflow.
+- No real desktop keyring, remote adapter or live Morkahja mutation was exercised during implementation.
+
+
 ## 2026-11-04 — Keyring credential boundary and local connection diagnostics
 
 - Added terminal-only Linux Secret Service (`secret-tool`) profile credential storage, status and clearing without exposing secrets in browser configuration, command arguments or connection JSON.

@@ -27,9 +27,19 @@ npm run credentials -- clear <profile-uuid>
 
 Local-file profiles do not require credentials. Storing a credential for a remote-type profile does **not** connect to SSH, GitHub, PostgreSQL or any live server; those transports remain unimplemented. Existing SSH private keys should normally stay managed by an SSH agent, not be pasted into this command. The credential is sent only through stdin to `secret-tool`, never in command arguments, browser state or the non-secret connection JSON file. Removing a remote profile attempts keyring cleanup before deleting the profile; if the keyring cannot be reached, removal fails safely.
 
-The Connections screen reports loopback service and keyring availability, checked timestamps, last complete success, file-specific errors and degraded/available/error local inspection states. A service restart clears ephemeral check history; no background remote connection is attempted.
+The Connections screen reports loopback service and keyring availability, checked timestamps, last complete success, file-specific errors and degraded/available/error local inspection states. Profiles can now be edited without changing their project or adapter identity, and local-file profiles support manual read-only Connect, Disconnect and Reconnect. A service restart clears ephemeral check history; no background remote connection is attempted.
 
 `npm run test:connections` exercises synthetic keyring and file fixtures. These tests do not verify a real unlocked Nobara keyring, SSH tunneling or remote project access.
+
+A safe operator-triggered desktop check is available:
+
+```bash
+npm run keyring:verify
+```
+
+It generates a temporary synthetic secret, stores it in the Linux Secret Service, privately compares the retrieved value, and attempts cleanup. It does not access existing project secrets. Run it only from the unlocked Nobara desktop session; a locked or unavailable keyring should fail without plaintext fallback. A cleanup warning means the test item could not be confirmed removed.
+
+The Vite proxy additionally requires an ephemeral in-memory browser session capability and checks the local Host, Origin and Fetch Metadata before forwarding to the service. Its independent service key remains server-side. This reduces browser cross-site risk but does not authenticate arbitrary programs running as the same OS user.
 
 ## Project documentation
 

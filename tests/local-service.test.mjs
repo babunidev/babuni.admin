@@ -6,7 +6,18 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'node:net'
 import { randomBytes } from 'node:crypto'
+import { request as httpRequest } from 'node:http'
 
+function requestWithHost(url, headers) {
+  return new Promise((resolve,reject)=>{
+    const req=httpRequest(url,{headers:{...headers,Host:'attacker.invalid'}},res=>{
+      res.resume()
+      res.on('end',()=>resolve(res.statusCode))
+    })
+    req.on('error',reject)
+    req.end()
+  })
+}
 async function freePort(){
   const srv=createServer()
   await new Promise(r=>srv.listen(0,'127.0.0.1',r))
@@ -23,7 +34,7 @@ test('independent local service requires session key and tests local folder with
       BABUNI_TEST_PROFILE_FILE:join(dir,'profiles.json'),BABUNI_UI_PORT:'5180'},stdio:['ignore','pipe','pipe']
   })
   const url='http://127.0.0.1:'+port+'/local-connections-api/'
-  const headers={'X-Babuni-Local':'1','X-Babuni-Service-Key':key,'Content-Type':'application/json'}
+  const headers={'X-Babuni-Local':'1','X-Babuni-Service-Key':key,'Content-Type':'application/json',Origin:'http://127.0.0.1:5180'}
   async function request(path='',init={}) { return fetch(url+path,{...init,headers:{...headers,...init.headers}}) }
   try {
     let up=false
@@ -35,6 +46,8 @@ test('independent local service requires session key and tests local folder with
     assert.ok(up,'service failed to bind')
     assert.equal((await fetch(url)).status,403)
     assert.equal((await fetch(url+'health')).status,403)
+    assert.equal(await requestWithHost(url,headers),403)
+    assert.equal((await request('',{method:'POST',headers:{Origin:''}})).status,403)
     const health=await (await request('health')).json()
     assert.equal(health.ok,true)
     assert.equal(health.mode,'local-only')
@@ -77,6 +90,35 @@ test('independent local service requires session key and tests local folder with
     const rows=(await (await request()).json()).profiles
     assert.equal(rows.length,1)
     assert.equal(rows[0].state,'available')
+    const connected=await request(p.id+'/connect',{method:'POST'})
+    assert.equal(connected.status,200)
+    assert.equal((await connected.json()).status.state,'connected')
+    assert.equal((await (await request()).json()).profiles[0].state,'connected')
+    const disconnected=await request(p.id+'/disconnect',{method:'POST'})
+    assert.equal(disconnected.status,200)
+    assert.equal((await disconnected.json()).status.state,'disconnected')
+    assert.equal((await (await request()).json()).profiles[0].state,'disconnected')
+    const reconnected=await request(p.id+'/reconnect',{method:'POST'})
+    assert.equal(reconnected.status,200)
+    assert.equal((await reconnected.json()).status.state,'connected')
+    const renamed=await request(p.id,{method:'PUT',body:JSON.stringify({
+      displayName:'Renamed Fixture',target:dir,
+    })})
+    assert.equal(renamed.status,200)
+    assert.equal((await renamed.json()).profile.displayName,'Renamed Fixture')
+    assert.equal((await (await request()).json()).profiles[0].state,'connected')
+    const rejectedEdit=await request(p.id,{method:'PUT',body:JSON.stringify({
+      displayName:'Bad',target:dir,projectId:'babuni-dev',
+    })})
+    assert.equal(rejectedEdit.status,400)
+    const moved=await request(p.id,{method:'PUT',body:JSON.stringify({
+      displayName:'Renamed Fixture',target:dir+'/unavailable',
+    })})
+    assert.equal(moved.status,200)
+    assert.equal((await (await request()).json()).profiles[0].state,'not-configured')
+    const cantConnect=await request(p.id+'/connect',{method:'POST'})
+    assert.equal(cantConnect.status,422)
+    assert.equal((await cantConnect.json()).status.code,'DIRECTORY_MISSING')
     const missing=await request('',{method:'POST',body:JSON.stringify({
       projectId:'morkahja',kind:'local-files',displayName:'Missing',target:dir+'/not-found',
     })})
@@ -91,6 +133,8 @@ test('independent local service requires session key and tests local folder with
     const checkRemote=(await (await request(remoteId+'/test',{method:'POST'})).json()).status
     assert.equal(checkRemote.state,'not-configured')
     assert.equal(checkRemote.code,'ADAPTER_NOT_IMPLEMENTED')
+    assert.equal((await request(remoteId+'/connect',{method:'POST'})).status,409)
+    assert.equal((await request(remoteId+'/inspect')).status,403)
     assert.ok(['missing','unavailable'].includes(checkRemote.credential))
     assert.equal((await request(p.id,{method:'DELETE'})).status,200)
     assert.equal((await (await request()).json()).profiles.length,2)

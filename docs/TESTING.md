@@ -74,3 +74,11 @@ Run `npm ci`, `npm run build`, `npm run lint`, `npm test`, `npm run test:integra
 Run `npm run test:connections`. It exercises the loopback service, credential status and storage via a disposable fake `secret-tool` binary, and inspection of temporary Morkahja JSON files including the capitalized `Avatar` key. The synthetic keyring fixture is not evidence that a real Nobara Secret Service collection is available or unlocked.
 
 Run `npm run dev` to inspect the Connections UI. Test performs a manual read-only local directory check; Inspect reports content availability, degradation and structured errors. The health endpoint remains authenticated through the existing loopback proxy. Remote SSH, PostgreSQL, GitHub and publishing checks are not part of these tests.
+
+## Browser Connections workflow and desktop keyring verification (2026-11-04)
+
+`npm run test:connections` exercises immutable profile edits, project/adapter validation, read-only local Connect/Disconnect/Reconnect and rejection of unimplemented remote operations. Synthetic keyring tests cover success, missing utility and locked/unavailable error paths.
+
+The `browser-connections` GitHub Actions job launches an isolated local service and Vite process with a disposable profile registry, then runs `npm run test:browser:connections` against the rendered Connections page. It tests create, test, connect, disconnect, reconnect, inspect, edit and remove, plus absent-session and forged-origin/host denial.
+
+`npm run keyring:verify` is a manual on-PC check: it generates a random synthetic secret, verifies store and private retrieval, then attempts to delete it from Linux Secret Service. This test does not run in CI and should be observed on the actual Nobara desktop before marking credential storage fully verified.

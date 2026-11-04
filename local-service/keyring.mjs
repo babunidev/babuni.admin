@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { timingSafeEqual } from 'node:crypto'
 
 const attributes = id => ['application', 'babuni.admin', 'profile-id', id]
 const isId = id => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)
@@ -64,4 +65,16 @@ export async function clearCredential(profile) {
   if (status !== 'stored') throw new Error('KEYRING_UNAVAILABLE')
   const result = await runSecretTool(['clear', ...attributes(profile.id)])
   if (result.code !== 0) throw new Error('KEYRING_UNAVAILABLE')
+}
+
+/** Used only for an operator-initiated ephemeral self-test; never returns credential bytes. */
+export async function verifyCredential(profile, expected) {
+  if (!requiresCredential(profile) || !isId(profile.id) || typeof expected!=='string') return false
+  try {
+    const result=await runSecretTool(['lookup',...attributes(profile.id)])
+    if (result.code!==0) return false
+    const actual=Buffer.from(result.stdout)
+    const wanted=Buffer.from(expected)
+    return actual.length===wanted.length && timingSafeEqual(actual,wanted)
+  } catch {return false}
 }
