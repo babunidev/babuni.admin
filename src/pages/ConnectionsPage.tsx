@@ -3,6 +3,7 @@ import { PageHeader } from '../shared/components/PageHeader'
 
 type ProjectId = 'morkahja' | 'babuni-dev'
 type Kind = 'local-files' | 'postgres-ssh' | 'github' | 'remote-publish'
+interface ContentReport {files:{name:string;status:string;entries?:number;bytes?:number;reason?:string}[]}
 interface Profile {
   id: string
   projectId: ProjectId
@@ -43,6 +44,7 @@ export function ConnectionsPage() {
   const [displayName, setDisplayName] = useState('')
   const [target, setTarget] = useState('')
   const [busy, setBusy] = useState(false)
+  const [reports,setReports] = useState<Record<string,ContentReport>>({})
   async function reload() {
     try {
       const data = await api()
@@ -76,6 +78,12 @@ export function ConnectionsPage() {
     try { await api('POST', '/' + id + '/test'); await reload() }
     catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to test connection') }
     finally { setBusy(false) }
+  }
+  async function inspect(id: string) {
+    setBusy(true)
+    try {const result=await api('GET','/'+id+'/inspect') as unknown as ContentReport;setReports(old=>({...old,[id]:result}))}
+    catch {setStatus('Inspection failed')}
+    finally {setBusy(false)}
   }
   async function remove(id: string) {
     setBusy(true)
