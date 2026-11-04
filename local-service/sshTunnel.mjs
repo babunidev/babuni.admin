@@ -28,8 +28,8 @@ function stopChild(child) {
   },500)
   timer.unref()
 }
-export function stopAllSshTunnels() {
-  for(const session of liveSessions)stopChild(session.child)
+export async function stopAllSshTunnels() {
+  await Promise.all([...liveSessions].map(session=>session.stop()))
 }
 export async function startSshTunnel(config) {
   const socketDir=await mkdtemp(join(tmpdir(),'babuni-ssh-pg-'))
@@ -66,7 +66,11 @@ export async function startSshTunnel(config) {
   const session={child,socketDir}
   liveSessions.add(session)
   let exited=false
-  child.on('exit',()=>{exited=true;liveSessions.delete(session)})
+  child.on('exit',()=>{
+    exited=true
+    liveSessions.delete(session)
+    void rm(socketDir,{recursive:true,force:true}).catch(()=>{})
+  })
   child.on('error',()=>{exited=true;liveSessions.delete(session)})
   const stop=async()=>{
     if(child.exitCode===null && child.signalCode===null){
@@ -77,6 +81,7 @@ export async function startSshTunnel(config) {
     liveSessions.delete(session)
     await rm(socketDir,{recursive:true,force:true})
   }
+  session.stop=stop
   try {
     for(let n=0;n<35;n++){
       if(exited)throw new Error('SSH_SESSION_FAILED')
