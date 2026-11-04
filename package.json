@@ -15,7 +15,7 @@
     "test:integration": "node --test tests/integration.spec.mjs",
     "test:postgres": "node --test tests/postgres.spec.mjs",
     "test:browser:content": "node --test tests/browser-content.spec.mjs",
-    "test:connections": "node --test tests/connections.test.mjs tests/local-service.test.mjs",
+    "test:connections": "node --test tests/connections.test.mjs tests/keyring.test.mjs tests/local-service.test.mjs",
     "credentials": "node --experimental-strip-types scripts/credentials.mjs"
   },
   "dependencies": {
