@@ -72,7 +72,7 @@ function safeResolve(root: string, urlPath: string): string | null {
     // percent-encoded path escape and symlinks to files outside the project.
     const base = realpathSync(root)
     const decoded = decodeURIComponent(urlPath.split('?')[0])
-    if (decoded.includes('\\0')) return null
+    if (decoded.includes(String.fromCharCode(0))) return null
     const target = resolve(base, decoded.replace(/^\/+/, ''))
     const suffix = relative(base, target)
     if (!suffix || suffix === '..' || suffix.startsWith('..' + sep) || isAbsolute(suffix)) return null
@@ -108,6 +108,7 @@ function serveStatic(
       return
     }
 
+    if (rejectNonLocalRequest(req, res)) return
     res.statusCode = 200
     res.setHeader('Content-Type', contentType(filePath))
     const stream = createReadStream(filePath)
