@@ -18,6 +18,7 @@ test('dataset grants, revisions, backup restore and audit use disposable content
     kind:'local-files',projectId:'morkahja',target:root}
   const oldGrant=process.env.BABUNI_TEST_CONTENT_GRANT_DIR
   const oldLog=process.env.BABUNI_TEST_ACTION_LOG_DIR
+  const oldFailure=process.env.BABUNI_TEST_AUDIT_FAILURE_TYPE
   process.env.BABUNI_TEST_CONTENT_GRANT_DIR=join(root,'grants')
   process.env.BABUNI_TEST_ACTION_LOG_DIR=join(root,'audit')
   try{
@@ -32,6 +33,12 @@ test('dataset grants, revisions, backup restore and audit use disposable content
     assert.throws(()=>saveEntry(profile,'solutions','00002',{
       expectedRevision:'a'.repeat(64),data:{mSolutionTitle:'Edited'},confirm:true,
     }),/CONTENT_WRITE_NOT_AUTHORIZED/)
+    process.env.BABUNI_TEST_AUDIT_FAILURE_TYPE='write-complete'
+    assert.throws(()=>saveEntry(profile,'encounters','00001',{
+      expectedRevision:before.revision,data:{mEncounterTitle:'Should roll back'},confirm:true,
+    }),/WRITE_REVERTED_AUDIT_FAILURE/)
+    assert.equal(readFileSync(file,'utf8'),original)
+    delete process.env.BABUNI_TEST_AUDIT_FAILURE_TYPE
     const saved=saveEntry(profile,'encounters','00001',{
       expectedRevision:before.revision,data:{mEncounterTitle:'Edited'},confirm:true,
     })
@@ -48,6 +55,12 @@ test('dataset grants, revisions, backup restore and audit use disposable content
     assert.throws(()=>restoreEntry(profile,'encounters','00001',{
       expectedRevision:saved.revision,backup:'../../elsewhere',confirm:true,
     }),/CONFIRMATION_REQUIRED/)
+    process.env.BABUNI_TEST_AUDIT_FAILURE_TYPE='restore-complete'
+    assert.throws(()=>restoreEntry(profile,'encounters','00001',{
+      expectedRevision:saved.revision,backup:saved.backup,confirm:true,
+    }),/RESTORE_REVERTED_AUDIT_FAILURE/)
+    assert.equal(JSON.parse(readFileSync(file,'utf8'))['00001'].mEncounterTitle,'Edited')
+    delete process.env.BABUNI_TEST_AUDIT_FAILURE_TYPE
     const restored=restoreEntry(profile,'encounters','00001',{
       expectedRevision:saved.revision,backup:saved.backup,confirm:true,
     })
@@ -73,6 +86,8 @@ test('dataset grants, revisions, backup restore and audit use disposable content
     else process.env.BABUNI_TEST_CONTENT_GRANT_DIR=oldGrant
     if(oldLog===undefined)delete process.env.BABUNI_TEST_ACTION_LOG_DIR
     else process.env.BABUNI_TEST_ACTION_LOG_DIR=oldLog
+    if(oldFailure===undefined)delete process.env.BABUNI_TEST_AUDIT_FAILURE_TYPE
+    else process.env.BABUNI_TEST_AUDIT_FAILURE_TYPE=oldFailure
     rmSync(root,{recursive:true,force:true})
   }
 })
