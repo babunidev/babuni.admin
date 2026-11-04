@@ -33,7 +33,7 @@ export function buildSshArgs(profile,config,port) {
     '-o','BatchMode=yes','-o','PasswordAuthentication=no',
     '-o','KbdInteractiveAuthentication=no','-o','StrictHostKeyChecking=yes',
     '-o','UserKnownHostsFile='+join(homedir(),'.ssh','known_hosts'),
-    '-o','ExitOnForwardFailure=yes','-o','ClearAllForwardings=yes',
+    '-o','ExitOnForwardFailure=yes',
     '-o','ForwardAgent=no','-o','ConnectTimeout=8',
     '-o','ServerAliveInterval=15','-o','ServerAliveCountMax=2',
     '-L',`127.0.0.1:${port}:127.0.0.1:5432`,
