@@ -101,6 +101,7 @@ export function ConnectionsPage() {
   const [target,setTarget]=useState('')
   const [busy,setBusy]=useState(false)
   const [reports,setReports]=useState<Record<string,ContentReport>>({})
+  const [dbPreview,setDbPreview]=useState<Record<string,{id:string;name:string}[]>>({})
   const [editingId,setEditingId]=useState<string|null>(null)
   const [editName,setEditName]=useState('')
   const [editTarget,setEditTarget]=useState('')
@@ -112,7 +113,7 @@ export function ConnectionsPage() {
       ])
       setProfiles(data.profiles||[])
       setHealth(service)
-      setStatus('Profiles are stored on this PC. Remote adapters are not active.')
+      setStatus('Profiles are stored locally. Morkahja SSH/PostgreSQL requires an explicit Connect.')
     } catch(error) {
       setProfiles([])
       setHealth(null)
@@ -124,7 +125,7 @@ export function ConnectionsPage() {
       .then(([data,service])=>{
         setProfiles(data.profiles||[])
         setHealth(service)
-        setStatus('Profiles are stored on this PC. Remote adapters are not active.')
+        setStatus('Profiles are stored locally. Morkahja SSH/PostgreSQL requires an explicit Connect.')
       })
       .catch(()=>{setHealth(null);setStatus('LOCAL_SERVICE_UNAVAILABLE')})
   },[])
@@ -152,6 +153,7 @@ export function ConnectionsPage() {
     await operation(async()=>{
       await api('PUT','/'+id,{displayName:editName,target:editTarget})
       setReports(old=>{const next={...old};delete next[id];return next})
+      setDbPreview(old=>{const next={...old};delete next[id];return next})
       setEditingId(null)
     })
   }
@@ -159,6 +161,12 @@ export function ConnectionsPage() {
     setEditingId(profile.id)
     setEditName(profile.displayName)
     setEditTarget(profile.target)
+  }
+  async function previewPlayers(id:string) {
+    await operation(async()=>{
+      const response=await api<{ok:true;players:{id:string;name:string}[]}>('GET','/'+id+'/database/players')
+      setDbPreview(old=>({...old,[id]:response.players}))
+    })
   }
   async function inspect(id:string) {
     await operation(async()=>{
@@ -170,13 +178,14 @@ export function ConnectionsPage() {
     await operation(async()=>{
       await api('DELETE','/'+id)
       setReports(old=>{const next={...old};delete next[id];return next})
+      setDbPreview(old=>{const next={...old};delete next[id];return next})
       if(editingId===id)setEditingId(null)
     })
   }
 
   const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
   return <div className="max-w-4xl space-y-6">
-    <PageHeader title="Connections" description="Private project profiles and read-only local directory sessions. Remote adapters are not active."/>
+    <PageHeader title="Connections" description="Private profiles, local files and opt-in read-only Morkahja SSH/PostgreSQL. GitHub and publishing adapters are inactive."/>
     <p role="status" className="text-sm text-fog">{status}</p>
     <p className="text-xs text-fog">
       Local service: {health?.service==='available'?'Available (loopback only)':'Not verified'}
@@ -223,7 +232,7 @@ export function ConnectionsPage() {
             <p className="mt-1 text-xs text-fog">Result: {p.code||'NOT_CHECKED'} · Checked: {checkedTime(p.checkedAt)}</p>
             {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last successful check: {checkedTime(p.lastSuccessAt)}</p>}
             {p.kind!=='local-files' && <p className="mt-1 text-xs text-fog">
-              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · Transport not implemented
+              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · {p.kind==='postgres-ssh'?'Read-only SSH/PostgreSQL (manual connect)':'Transport not implemented'}
             </p>}
             <p className="mt-1 text-xs text-fog">Allowed operations: {p.capabilities?.join(', ')||'None (adapter planned)'}</p>
           </div>
@@ -235,7 +244,7 @@ export function ConnectionsPage() {
             <button type="button" disabled={busy} onClick={()=>{
               void operation(()=>api('POST','/'+p.id+'/test'))
             }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Test</button>
-            {p.capabilities?.includes('local:connect') &&
+            {(p.capabilities?.includes('local:connect')||p.capabilities?.includes('db:connect')) &&
               (p.state==='connected'
                 ? <button type="button" disabled={busy} onClick={()=>{
                   void operation(()=>api('POST','/'+p.id+'/disconnect'))
@@ -243,6 +252,9 @@ export function ConnectionsPage() {
                 : <button type="button" disabled={busy} onClick={()=>{
                   void operation(()=>api('POST','/'+p.id+(p.state==='disconnected'?'/reconnect':'/connect')))
                 }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">{p.state==='disconnected'?'Reconnect':'Connect'}</button>)}
+            {p.capabilities?.includes('db:players') && p.state==='connected' && 
+              <button type="button" disabled={busy} onClick={()=>{void previewPlayers(p.id)}}
+                className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Preview players (read-only)</button>}
             <button type="button" disabled={busy} onClick={()=>{void remove(p.id)}}
               className="rounded border border-gold/20 px-3 py-1 text-xs text-fog disabled:opacity-50">Remove</button>
           </div>
@@ -269,6 +281,13 @@ export function ConnectionsPage() {
             {reports[p.id].files.map(file=><li key={file.name}>{file.name}: {file.status==='available'
               ? String(file.entries)+' records, '+String(file.bytes)+' bytes'
               : 'Unavailable ('+file.reason+')'}</li>)}
+          </ul>
+        </section>}
+        {dbPreview[p.id] && p.state==='connected' && <section aria-label="Morkahja live read-only preview"
+          className="mt-3 border-t border-gold/10 pt-3">
+          <h4 className="text-xs text-gold-bright">Live Morkahja — first {dbPreview[p.id].length} players (read-only)</h4>
+          <ul className="mt-2 space-y-1 text-xs text-fog">
+            {dbPreview[p.id].map(player=><li key={player.id}>{player.name||'(unnamed)'} · {player.id}</li>)}
           </ul>
         </section>}
       </article>)}
