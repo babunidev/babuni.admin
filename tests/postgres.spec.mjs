@@ -114,6 +114,12 @@ test('dedicated read-only dashboard returns bounded data without session cleanup
   await pool.query("CREATE ROLE babuni_data_preview_reader LOGIN PASSWORD 'synthetic-read-only-preview'")
   try {
     await pool.query('GRANT USAGE ON SCHEMA public TO '+role)
+    // An otherwise safe, login-capable reader without SELECT grants passes the
+    // metadata health check but must receive a precise denied-read result.
+    const noSelect=await queryMorkahjaReadOnly({
+      dbUser:role,dbName:'babuni_fixture',
+    },5432,password,'overview')
+    assert.deepEqual(noSelect,{ok:false,code:'DB_READ_PERMISSION_DENIED'})
     await pool.query('GRANT SELECT ON players,avatars,sessions,game_events TO '+role)
     await pool.query("INSERT INTO players(id,data) SELECT 'preview-'||n, "+
       "jsonb_build_object('playerName','Preview '||n,'lastPlayedAt',"+(Date.now()-100000)+
