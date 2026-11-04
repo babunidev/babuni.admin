@@ -50,12 +50,12 @@ test('switching workspaces updates rendered header, links, URL, and browser hist
     const chooser = page.getByRole('combobox', { name: 'Select workspace' })
     await chooser.selectOption('morkahja')
     await page.waitForURL(origin + '/')
-    await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link', { name: 'Players' }).waitFor()
+    await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link', { name: 'Moderation' }).waitFor()
     assert.equal(await chooser.inputValue(), 'morkahja')
     await page.getByText('Realm Console').waitFor()
 
     await page.getByRole('navigation', { name: 'Morkahja navigation' })
-      .getByRole('link', { name: 'Players' }).click()
+      .getByRole('link', { name: 'Moderation' }).click()
     await page.waitForURL(origin + '/players')
     await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link', { name: 'Content' }).waitFor()
     assert.equal(await chooser.inputValue(), 'morkahja')
@@ -78,12 +78,12 @@ test('switching workspaces updates rendered header, links, URL, and browser hist
 })
 
 test('legacy Morkahja routes render directly with their original navigation', async () => {
-  for (const route of ['/', '/read-only', '/players', '/content', '/settings']) {
+  for (const route of ['/', '/read-only', '/dashboard', '/players', '/content', '/settings']) {
     const { page, context, unexpectedErrors } = await openPage(route)
     try {
       await page.getByRole('navigation', { name: 'Morkahja navigation' }).waitFor()
       assert.equal(await page.getByRole('combobox', { name: 'Select workspace' }).inputValue(), 'morkahja')
-      assert.equal(await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link').count(), 5)
+      assert.equal(await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link').count(), 4)
       assert.deepEqual(unexpectedErrors, [], 'uncaught browser errors on ' + route)
     } finally {
       await context.close()
