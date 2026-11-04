@@ -35,6 +35,24 @@ const PLAYERS_SQL = [
   ' LIMIT $1 OFFSET $2',
 ].join('\n')
 
+// Expose only stable PostgreSQL SQLSTATE categories; never reveal server errors,
+// table contents, query strings, connection URLs, or credentials to the browser.
+export function classifyReadOnlyError(error) {
+  const code=typeof error?.code==='string'?error.code:''
+  if(code==='42501') return 'DB_READ_PERMISSION_DENIED'
+  if(code==='42P01') return 'DB_READ_TABLE_MISSING'
+  if(code==='42703') return 'DB_READ_COLUMN_MISSING'
+  if(code==='42883' || code==='42804') return 'DB_READ_SCHEMA_MISMATCH'
+  if(code==='22P02' || code==='22003') return 'DB_READ_INVALID_DATA'
+  if(code==='57014') return 'DB_READ_TIMEOUT'
+  if(code==='28P01' || code==='28000') return 'DB_READ_AUTH_FAILED'
+  if(code.startsWith('08') || ['ECONNREFUSED','ECONNRESET','ETIMEDOUT',
+    'EPIPE','ENOTFOUND','57P01','57P02','57P03'].includes(code)) {
+    return 'DB_READ_CONNECTION_FAILED'
+  }
+  return 'REMOTE_READ_FAILED'
+}
+
 function asTimestamp(value) {
   const ms=Number(value)
   return value!==null && Number.isSafeInteger(ms) && ms>=0 &&
@@ -46,7 +64,9 @@ export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1
   if (kind==='players' && (!Number.isInteger(page) || page<1 || page>1000)) {
     throw new Error('INVALID_PAGE')
   }
-  const role=await inspectReadOnlyDatabase(config,endpoint,password)
+  let role
+  try { role=await inspectReadOnlyDatabase(config,endpoint,password) }
+  catch(error) {return {ok:false,code:classifyReadOnlyError(error)}}
   if (!role.ok) return {ok:false,code:role.code}
   const client=new pg.Client({
     host:typeof endpoint==='string'?endpoint:'127.0.0.1',
@@ -81,6 +101,8 @@ export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1
         lastPlayedAt:asTimestamp(row.last_seen_ms),
       })),
     }}
+  } catch(error) {
+    return {ok:false,code:classifyReadOnlyError(error)}
   } finally {
     if(inTransaction) try {await client.query('ROLLBACK')} catch {}
     try {await client.end()} catch {}
