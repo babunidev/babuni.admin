@@ -132,6 +132,8 @@ test('SSH argv enforces pinned host, localhost forwarding and noninteractive aut
   assert.ok(args.includes('ExitOnForwardFailure=yes'))
   assert.ok(args.includes('PasswordAuthentication=no'))
   assert.ok(args.includes('127.0.0.1:51432:127.0.0.1:5432'))
+  assert.ok(args.includes('-L'))
+  assert.equal(args.includes('ClearAllForwardings=yes'),false)
   assert.ok(args.includes('-F'))
   assert.ok(args.includes('/dev/null'))
   assert.equal(args.at(-1),config.sshUser+'@'+profile.target)
