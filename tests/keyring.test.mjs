@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, chmodSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { credentialStatus, storeCredential, clearCredential, keyringHealth, verifyCredential } from '../local-service/keyring.mjs'
+import { credentialStatus, storeCredential, clearCredential, keyringHealth, verifyCredential, readCredential } from '../local-service/keyring.mjs'
 
 test('OS keyring boundary stores secrets only through stdin and returns status, not secret values', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'babuni-keyring-'))
@@ -40,16 +40,19 @@ if (args[0] === 'lookup') {
     assert.equal(await keyringHealth(),'available')
     await storeCredential(profile,'synthetic-test-only-value')
     assert.equal(await credentialStatus(profile),'stored')
+    assert.equal(await readCredential(profile),'synthetic-test-only-value')
     assert.equal(await verifyCredential(profile,'synthetic-test-only-value'),true)
     assert.equal(await verifyCredential(profile,'incorrect-value'),false)
     assert.equal(readFileSync(mockFile,'utf8'),'synthetic-test-only-value')
     assert.equal(readFileSync(mockArguments,'utf8').includes('synthetic-test-only-value'),false)
     await clearCredential(profile)
     assert.equal(await credentialStatus(profile),'missing')
+    await assert.rejects(readCredential(profile),/DB_CREDENTIAL_MISSING/)
     await assert.rejects(storeCredential(profile,'line\npassword'), /INVALID_CREDENTIAL/)
     assert.equal(await credentialStatus({id:profile.id,kind:'local-files'}),'not-required')
     process.env.BABUNI_KEYRING_LOCKED='1'
     assert.equal(await credentialStatus(profile),'unavailable')
+    await assert.rejects(readCredential(profile),/KEYRING_UNAVAILABLE/)
     await assert.rejects(storeCredential(profile,'synthetic'),/KEYRING_UNAVAILABLE/)
     delete process.env.BABUNI_KEYRING_LOCKED
     process.env.BABUNI_SECRET_TOOL_BIN=join(dir,'does-not-exist')

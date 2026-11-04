@@ -162,7 +162,7 @@ export function formatPlayersLoadError(error: unknown): {
       title: 'Cannot reach PostgreSQL on port 5433',
       message:
         'The admin tool is configured for a local SSH tunnel, but nothing is listening on 127.0.0.1:5433.',
-      hint: 'ssh -L 5433:127.0.0.1:5432 morkahja@89.167.120.88',
+      hint: 'Use Connections to establish the protected SSH/PostgreSQL read-only session.'
     }
   }
 
@@ -170,7 +170,7 @@ export function formatPlayersLoadError(error: unknown): {
     return {
       title: 'Database connection failed',
       message: raw,
-      hint: 'Check VITE_DATABASE_URL in .env.local and keep the SSH tunnel open while npm run dev runs.',
+      hint: 'Use the protected Morkahja connection in Connections. Legacy direct database mode is disabled by default.'
     }
   }
 

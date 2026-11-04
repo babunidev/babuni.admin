@@ -15,10 +15,13 @@
     "test:integration": "node --test tests/integration.spec.mjs",
     "test:postgres": "node --test tests/postgres.spec.mjs",
     "test:browser:content": "node --test tests/browser-content.spec.mjs",
-    "test:connections": "node --test tests/connections.test.mjs tests/keyring.test.mjs tests/local-service.test.mjs",
+    "test:connections": "node --test tests/connections.test.mjs tests/keyring.test.mjs tests/local-service.test.mjs tests/morkahja-ssh.test.mjs",
     "credentials": "node --experimental-strip-types scripts/credentials.mjs",
     "test:browser:connections": "node --test tests/browser-connections.spec.mjs",
-    "keyring:verify": "node --experimental-strip-types scripts/verify-keyring.mjs"
+    "keyring:verify": "node --experimental-strip-types scripts/verify-keyring.mjs",
+    "morkahja:configure": "node --experimental-strip-types scripts/configure-morkahja-db.mjs",
+    "morkahja:content-grant": "node --experimental-strip-types scripts/authorize-morkahja-content.mjs",
+    "test:content:scoped": "node --experimental-strip-types --test tests/scoped-content.spec.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",

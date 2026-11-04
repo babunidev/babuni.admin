@@ -11,6 +11,44 @@ import { imageFileToWebpBase64 } from '../utils/imageFileToWebpBase64'
 import { apiPost } from '../../../services/http'
 
 const LOCAL_API = '/local-content-api'
+const protectedContent = import.meta.env.VITE_USE_PROTECTED_CONTENT === 'true'
+const contentProfileId = import.meta.env.VITE_MORKAHJA_PROFILE_ID?.trim() ?? ''
+let localSessionPromise: Promise<string> | null = null
+async function getLocalSession(): Promise<string> {
+  if (!localSessionPromise) {
+    localSessionPromise = fetch('/local-connections-api/session',{
+      cache:'no-store',headers:{'X-Babuni-Local':'1'},
+    }).then(async response=>{
+      if(!response.ok)throw new Error('Local session unavailable')
+      const result=await response.json() as {session?:string}
+      if(!result.session)throw new Error('Local session unavailable')
+      return result.session
+    }).catch(error=>{localSessionPromise=null;throw error})
+  }
+  return localSessionPromise
+}
+async function protectedRequest<T>(method:string,path:string,body?:unknown):Promise<T> {
+  if(!/^[0-9a-f-]{36}$/i.test(contentProfileId))throw new Error('Protected Morkahja local-files profile ID is not configured')
+  const session=await getLocalSession()
+  const response=await fetch('/local-connections-api/'+contentProfileId+path,{
+    method,cache:'no-store',
+    headers:{'X-Babuni-Local':'1','X-Babuni-Session':session,'Content-Type':'application/json'},
+    body:body===undefined?undefined:JSON.stringify(body),
+  })
+  let result:{error?:string;revision?:string}
+  try{result=await response.json() as typeof result}
+  catch{throw new Error('Invalid local service response')}
+  if(!response.ok) {
+    if(response.status===403)localSessionPromise=null
+    throw new Error(result.error||'Protected content operation failed')
+  }
+  return result as T
+}
+async function protectedSave(dataset:string,key:string,data:unknown):Promise<void> {
+  const path='/content/'+dataset+'/'+encodeURIComponent(key)
+  const preview=await protectedRequest<{revision:string}>('GET',path)
+  await protectedRequest('PUT',path,{expectedRevision:preview.revision,data,confirm:true})
+}
 
 async function localGet<T>(path: string): Promise<T> {
   const response = await fetch(`${LOCAL_API}${path}`)
@@ -86,6 +124,7 @@ export async function createEncounter(
   key: string,
   data: EncounterMap[string],
 ): Promise<void> {
+  if (protectedContent) return protectedSave('encounters',key,data)
   if (useLocalContent) {
     await localPost('/encounters', { key, data })
     return
@@ -97,6 +136,7 @@ export async function createSolution(
   key: string,
   data: SolutionMap[string],
 ): Promise<void> {
+  if (protectedContent) return protectedSave('solutions',key,data)
   if (useLocalContent) {
     await localPost('/solutions', { key, data })
     return
@@ -108,6 +148,7 @@ export async function createExpansion(
   key: string,
   data: ExpansionData,
 ): Promise<void> {
+  if (protectedContent) return protectedSave('expansions',key,data)
   if (useLocalContent) {
     await localPost('/expansions', { key, data })
     return
@@ -118,6 +159,7 @@ export async function createExpansion(
 export async function createFrame(
   data: NonNullable<FramesDataFile['Frames'][number]>,
 ): Promise<void> {
+  if (protectedContent) return protectedSave('frames',String(data.frameID),data)
   if (useLocalContent) {
     await localPost('/frames', data)
     return
@@ -128,6 +170,7 @@ export async function createFrame(
 export async function createPortrait(
   data: NonNullable<PortraitsDataFile['Avatar'][number]>,
 ): Promise<void> {
+  if (protectedContent) return protectedSave('portraits',String(data.avatarID),data)
   if (useLocalContent) {
     await localPost('/portraits', data)
     return
@@ -139,6 +182,7 @@ export async function uploadEncounterImage(
   fileName: string,
   file: File,
 ): Promise<void> {
+  if (protectedContent) throw new Error('Scoped image upload is not implemented; game files remain unchanged.')
   if (!useLocalContent) {
     throw new Error('Image upload only available with local content enabled')
   }
@@ -153,6 +197,7 @@ export async function uploadEncounterImageFromTitle(
   encounterId: number,
   file: File,
 ): Promise<string> {
+  if (protectedContent) throw new Error('Scoped image upload is not implemented; game files remain unchanged.')
   if (!useLocalContent) {
     throw new Error('Image upload only available with local content enabled')
   }
@@ -176,6 +221,7 @@ export async function uploadSolutionImage(
   fileName: string,
   file: File,
 ): Promise<void> {
+  if (protectedContent) throw new Error('Scoped image upload is not implemented; game files remain unchanged.')
   if (!useLocalContent) {
     throw new Error('Image upload only available with local content enabled')
   }

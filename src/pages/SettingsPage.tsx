@@ -106,13 +106,9 @@ export function SettingsPage() {
               PostgreSQL (local dev)
             </h2>
             <p className="mt-3 text-sm text-fog">
-              Real player accounts load only when an SSH tunnel forwards your VPS
-              database to <code className="text-gold-bright">127.0.0.1:5433</code>.
-              Keep that terminal open while <code className="text-gold-bright">npm run dev</code> runs.
+              The legacy direct PostgreSQL path is disabled in normal development. Configure a protected, read-only Morkahja connection in Connections instead.
             </p>
-            <pre className="mt-3 overflow-x-auto rounded border border-gold/15 bg-void/60 p-3 text-xs text-gold-bright">
-              ssh -L 5433:127.0.0.1:5432 morkahja@89.167.120.88
-            </pre>
+
           </section>
         )}
         {settingsSections.map((section) => (

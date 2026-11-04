@@ -1,5 +1,15 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Protected Morkahja SSH reader and scoped JSON editing
+
+- Implemented per-profile private non-secret SSH/DB settings, strict known_hosts verification and SSH-agent/optional identity file tunneling to PostgreSQL through a localhost-only forward.
+- Added server-only Linux-keyring password retrieval, fixed `BEGIN READ ONLY` role/health/player-preview queries, explicit connection cleanup and denial of unsafe or unsupported access.
+- Added an opt-in preview of up to 25 live player IDs/names through Connections; the legacy moderation/dashboard adapter remains separate.
+- Added a 15-minute operator-issued, dataset-scoped local content grant, authenticated revision-checked JSON saves and restores, retained backups, and a private metadata audit log.
+- Disabled unscoped Vite administrative and content mutations during normal development; historical test middleware is retained only under explicit fixture opt-ins.
+- Expanded fake SSH, least-privileged PostgreSQL, scoped JSON edit, conflict, rollback and API fixture coverage. Live Morkahja SSH/DB use and live content changes were not tested.
+
+
 ## 2026-11-04 — Local connection lifecycle and UI session hardening
 
 - Added non-secret profile editing with immutable project, adapter and credential identity.

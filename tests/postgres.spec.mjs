@@ -105,3 +105,37 @@ test('ban and unban SQL operations commit and missing players never succeed', as
   state=(await pool.query('SELECT data FROM players WHERE id=$1',['fixture-a'])).rows[0].data
   assert.equal(state.moderation.banned,false)
 })
+
+test('protected PostgreSQL adapter accepts a least-privileged reader and rejects writes',async()=>{
+  // CI database only. The dedicated reader has SELECT on players but no table write privileges.
+  const role='babuni_fixture_reader'
+  await pool.query("CREATE ROLE babuni_fixture_reader LOGIN PASSWORD 'fixture-reader-only'")
+  await pool.query('GRANT CONNECT ON DATABASE babuni_fixture TO babuni_fixture_reader')
+  await pool.query('GRANT USAGE ON SCHEMA public TO babuni_fixture_reader')
+  await pool.query('GRANT SELECT ON public.players TO babuni_fixture_reader')
+  const client=new pg.Client({
+    host:'127.0.0.1',port:5432,database:'babuni_fixture',
+    user:role,password:'fixture-reader-only',ssl:false,
+  })
+  try{
+    await client.connect()
+    const protectedQueries=await import('../local-service/morkahjaReadonly.mjs')
+    const identity=await protectedQueries.verifyReadonlyRole(client)
+    assert.deepEqual(identity,{database:'babuni_fixture',readOnly:true,roleVerified:true})
+    assert.equal((await protectedQueries.readDatabaseHealth(client)).readOnly,true)
+    const players=await protectedQueries.readPlayerPreview(client)
+    assert.ok(players.length>0)
+    assert.ok(players.length<=25)
+    await client.query('BEGIN READ ONLY')
+    await assert.rejects(()=>client.query(
+      "UPDATE public.players SET data=jsonb_set(data,'{playerName}','\"forbidden\"')"),
+      /read-only|permission denied/i)
+    await client.query('ROLLBACK')
+  }finally{
+    await client.end().catch(()=>{})
+    await pool.query('REVOKE SELECT ON public.players FROM babuni_fixture_reader')
+    await pool.query('REVOKE USAGE ON SCHEMA public FROM babuni_fixture_reader')
+    await pool.query('REVOKE CONNECT ON DATABASE babuni_fixture FROM babuni_fixture_reader')
+    await pool.query('DROP ROLE babuni_fixture_reader')
+  }
+})

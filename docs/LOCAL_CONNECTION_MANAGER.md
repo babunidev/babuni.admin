@@ -1,6 +1,6 @@
 # Shared local connection manager — Phase 2 design
 
-**Status:** Architecture design with a local profile registry, terminal-only Linux keyring storage and read-only health/inspection slices implemented. No outbound SSH, PostgreSQL, GitHub or publishing adapter is implemented.
+**Status:** Local profile registry, keyring storage, read-only inspection, and opt-in Morkahja SSH/PostgreSQL reader are implemented; scoped JSON editing is available behind short-lived local grants. The actual Morkahja VPS, full dashboard migration and protected image uploads remain unverified. GitHub/publishing adapters are not implemented.
 
 ## Purpose and deployment boundary
 
@@ -129,3 +129,11 @@ Manual local Connect verifies directory access and records an ephemeral `connect
 
 The Vite proxy checks local Host/Origin/Fetch Metadata and an ephemeral browser session capability in memory before injecting its own independent service key. This guards against cross-site browser requests; it cannot distinguish arbitrary same-user local programs. A real Linux keyring check is provided as `npm run keyring:verify`, using a disposable synthetic secret. CI tests use a fake keyring and disposable files, so actual Nobara keyring behavior remains unverified.
 
+
+## 2026-11-04 — Protected Morkahja read-only access and dataset-scoped editing
+
+The Morkahja `postgres-ssh` adapter now validates the SSH host against the operator-pinned known_hosts file before opening a non-shell, loopback-bound SSH forward. A separate private non-secret config identifies the SSH and DB users; the database password remains in the OS keyring. Only a DB role lacking elevated and player-table write privileges can connect. Fixed SQL uses read-only transactions and returns minimal player previews; the old direct adapter remains separate because some of its read paths modify sessions.
+
+Content writes use a separate trust boundary: only a CLI-issued, 15-minute grant for one local-files profile and one JSON dataset can authorize a revision-checked, confirmed save or restore. Each replacement is backed up and action metadata is logged privately. The historical Vite mutation paths are disabled outside disposable compatibility tests, and the protected adapter does not permit image uploads.
+
+Fixture verification exercises simulated SSH success/failure, disposable PostgreSQL read privileges, content permission denial, conflicting revisions, backup restoration and symlink rejection. Real server access, full application data migration, production schema compatibility, external-writer races and backup retention remain pending.

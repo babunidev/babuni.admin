@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Reaching Morkahja without giving the tool unrestricted authority
+
+After the connection manager began working locally, I wanted it to reach Morkahja through a verified outbound SSH connection rather than through browser-facing database settings. AI built a separate PostgreSQL reader with strict host-key checks, a least-privileged database role, fixed read-only queries and manual connection controls. For the game files, AI added short-lived permissions limited to one dataset, plus revision checks, backups and recovery tests; the older unscoped write endpoints are no longer part of ordinary development. Disposable PostgreSQL and filesystem fixtures establish the behavior, while the live Morkahja server and current game files still need their own operator-controlled verification.
+
+
 ## 2026-11-04 — The desktop keyring works
 
 With the synthetic keyring checks already passing in CI, the remaining question was whether the same storage flow worked in my actual Nobara session. After pulling the latest code, I ran `npm run keyring:verify` locally and received successful confirmation of temporary credential storage, retrieval and cleanup. The report establishes an unlocked desktop keyring round trip, not locked-keyring behavior or any working remote connection; no existing SSH keys were used.

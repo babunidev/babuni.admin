@@ -69,7 +69,7 @@ before(async () => {
   mockContentClient = await server.ssrLoadModule('/src/features/morkahja/services/contentApi.ts')
   const handlers = []
   const harness = { middlewares: { use: handler => handlers.push(handler) } }
-  content.morkahjaLocalContentPlugin(tempRoot).configureServer(harness)
+  content.morkahjaLocalContentPlugin(tempRoot, true).configureServer(harness)
   admin.morkahjaLocalAdminPlugin('fixture-only-no-database', operations).configureServer(harness)
   apiServer = createHttpServer((req, res) => {
     let index = 0

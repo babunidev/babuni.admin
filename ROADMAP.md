@@ -60,15 +60,20 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Add a read-only local directory test with verified available/error status; non-local adapters explicitly remain unconfigured.
 - [x] Add manual local-file Connect, Disconnect and Reconnect through read-only probes without background retries.
 - [x] Strengthen local Vite proxy Host/Origin/Fetch Metadata checks and add a per-run browser session capability while keeping the service key server-side.
-- [ ] Implement SSH/GitHub remote checks, transport lifecycle and independent project authorization.
-- [ ] Connect Morkahja PostgreSQL through a protected outbound tunnel with least privilege.
+- [x] Implement explicit SSH transport management for Morkahja PostgreSQL with strict pinned known_hosts verification, no shell execution, SSH-agent/optional identity file, and controlled tunnel cleanup. Synthetic tests pass; actual VPS access is unverified.
+- [ ] Implement GitHub transport and project-specific remote authorization checks.
+- [x] Implement localhost-only SSH forwarding and a fixed-query Morkahja PostgreSQL reader; verify the reader role cannot modify player data. A disposable PostgreSQL role and simulated SSH process are tested.
+- [x] Add manual read-only database health and limited live player-name/ID preview in Connections, with no fallback to the legacy session-mutating admin adapter.
+- [ ] Verify a real Morkahja SSH and database connection with the creative's existing keys and authorized read-only DB role; migrate full dashboard/player detail afterward.
 - [x] Add read-only inspection of five known Morkahja JSON datasets through the local service; file counts and status only, using isolated fixtures.
 - [x] Add local service/keyring health, per-profile timestamps and structured error codes; distinguish complete, degraded and failed content inspection without claiming remote connectivity.
 - [x] Correct the portrait JSON key to `Avatar` and add regression coverage for its real-shape fixture.
 - [x] Add `npm run keyring:verify`, an opt-in synthetic real-keyring store/compare/delete check.
 - [x] Verify the actual Nobara desktop's unlocked keyring: the creative ran `npm run keyring:verify` and reported successful synthetic store, retrieve and cleanup on 2026-11-04.
 - [ ] Verify actual locked and unavailable desktop keyring behavior; CI currently simulates these conditions.
-- [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
+- [x] Implement 15-minute local-files grants restricted to one canonical root and dataset, revision-checked JSON editor saves, backup/restore endpoints, and private audit metadata. Legacy unscoped Vite write APIs now run only in disposable test mode.
+- [x] Add fixture verification for denied writes, revision conflicts, backup recovery, symlinks and the protected service routes.
+- [ ] Verify end-to-end editing/rollback on disposable copies of the current real Morkahja datasets, review concurrency/retention policy, and implement protected image uploads. Live content mutations remain unverified.
 - [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
 - [ ] Enforce origin/session validation, project-scoped operations, read-only defaults, action attribution, and recovery before real mutations.
 - [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.

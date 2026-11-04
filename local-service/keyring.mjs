@@ -78,3 +78,18 @@ export async function verifyCredential(profile, expected) {
     return actual.length===wanted.length && timingSafeEqual(actual,wanted)
   } catch {return false}
 }
+
+/** Server-only. Returns credential bytes to the protected local service, never the HTTP client.
+ * No secret may be passed via shell arguments, environment or logs. */
+export async function readCredential(profile) {
+  if (!requiresCredential(profile) || !isId(profile.id)) throw Error('INVALID_PROFILE')
+  let value
+  try { value=await runSecretTool(['lookup',...attributes(profile.id)]) }
+  catch {throw Error('KEYRING_UNAVAILABLE')}
+  if(value.code===1)throw Error('DB_CREDENTIAL_MISSING')
+  if(value.code!==0)throw Error('KEYRING_UNAVAILABLE')
+  // secret-tool emits one terminal newline; passwords themselves cannot contain a newline.
+  const secret=value.stdout.endsWith('\n')?value.stdout.slice(0,-1):value.stdout
+  if(!secret)throw Error('DB_CREDENTIAL_MISSING')
+  return secret
+}
