@@ -155,6 +155,13 @@ test('dedicated read-only dashboard returns bounded data without session cleanup
     },5432,password,'overview')
     assert.deepEqual(overprivileged,{ok:false,code:'DB_ROLE_RAW_READ_ACCESS'})
     await pool.query('REVOKE SELECT ON public.sessions FROM '+role)
+    // Column-specific SELECT can also expose session data; deny it as well.
+    await pool.query('GRANT SELECT (data) ON public.sessions TO '+role)
+    const columnReader=await queryMorkahjaReadOnly({
+      dbUser:role,dbName:'babuni_fixture',
+    },5432,password,'overview')
+    assert.deepEqual(columnReader,{ok:false,code:'DB_ROLE_RAW_READ_ACCESS'})
+    await pool.query('REVOKE SELECT (data) ON public.sessions FROM '+role)
     await pool.query("INSERT INTO players(id,data) SELECT 'preview-'||n, "+
       "jsonb_build_object('playerName','Preview '||n,'lastPlayedAt',"+(Date.now()-100000)+
       "+n,'identityPublicKey','HIDDEN_KEY','activeSessionId',NULL) "+
