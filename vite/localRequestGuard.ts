@@ -8,14 +8,19 @@ export function rejectNonLocalRequest(req: IncomingMessage, res: ServerResponse)
   const remote = req.socket.remoteAddress
   const localPeer = ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(remote ?? '')
   const origin = req.headers.origin
-  let sameOrigin = true
+  const readonly = req.method === 'GET' || req.method === 'HEAD'
+  // Mutations require an explicit, exact HTTP loopback Origin.
+  let sameOrigin = readonly && !origin
   if (origin) {
     try {
       const parsed = new URL(origin)
-      sameOrigin = ['http:', 'https:'].includes(parsed.protocol) && parsed.host.toLowerCase() === hostHeader
+      sameOrigin = parsed.protocol === 'http:' && parsed.host.toLowerCase() === hostHeader &&
+        parsed.pathname === '/' && !parsed.username && !parsed.password
     } catch { sameOrigin = false }
   }
-  if (!localHost || !localPeer || !sameOrigin || req.headers['sec-fetch-site'] === 'cross-site') {
+  const fetchSite = req.headers['sec-fetch-site']
+  if (!localHost || !localPeer || !sameOrigin ||
+      (fetchSite && !['same-origin','none'].includes(fetchSite))) {
     res.statusCode = 403
     res.setHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({ error: 'LOCAL_ONLY' }))
