@@ -1,10 +1,10 @@
 export type ProjectId = 'morkahja' | 'babuni-dev'
 export type ConnectionKind = 'local-files' | 'postgres-ssh' | 'github' | 'remote-publish'
-export type Capability = 'local:test' | 'local:inspect' | 'local:connect'
+export type Capability = 'local:test' | 'local:inspect' | 'local:connect' | 'db:connect' | 'db:health' | 'db:players'
 export interface AdapterSpec {
   projectId: ProjectId
   kind: ConnectionKind
-  transport: 'local' | 'planned'
+  transport: 'local' | 'ssh' | 'planned'
   requiresCredential: boolean
   capabilities: readonly Capability[]
 }
@@ -16,8 +16,8 @@ export const adapterSpecs: Record<ConnectionKind, AdapterSpec> = {
     requiresCredential: false, capabilities: ['local:test','local:inspect','local:connect'],
   },
   'postgres-ssh': {
-    projectId: 'morkahja', kind: 'postgres-ssh', transport: 'planned',
-    requiresCredential: true, capabilities: [],
+    projectId: 'morkahja', kind: 'postgres-ssh', transport: 'ssh',
+    requiresCredential: true, capabilities: ['db:connect','db:health','db:players'],
   },
   github: {
     projectId: 'babuni-dev', kind: 'github', transport: 'planned',
