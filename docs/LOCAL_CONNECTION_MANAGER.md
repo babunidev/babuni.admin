@@ -1,6 +1,6 @@
 # Shared local connection manager — Phase 2 design
 
-**Status:** Local profile/keyring/inspection slices and an offline Morkahja SSH known-host preflight are implemented. No outbound SSH, PostgreSQL, GitHub or publishing transport is enabled.
+**Status:** Local profile/keyring/inspection slices, offline SSH host-key preflight and an explicitly operator-gated, disabled-by-default temporary Morkahja SSH/PostgreSQL health probe are implemented. Live Morkahja verification, persistent sessions, arbitrary SQL, GitHub and publishing remain unavailable.
 
 ## Purpose and deployment boundary
 
@@ -74,9 +74,13 @@ These adapter implementations are milestones, not functionality present today. O
 
 ## Offline Morkahja SSH trust preflight — implemented 2026-11-04
 
-The Morkahja `postgres-ssh` adapter permits only `ssh:preflight`. Pressing **Test** checks that its single hostname has an **exact** public host-key entry in `~/.config/babuni-admin/ssh_known_hosts` (or a server-process-only `BABUNI_SSH_KNOWN_HOSTS` absolute override). The file must be a non-symlink regular file owned by the local user, no more than 1 MiB and not writable by group or others. Wildcards, host lists, hash-only entries and SSH certificate-authority entries do not satisfy this initial exact-host contract. `ssh-keygen -F` is used to confirm that OpenSSH can find the host in that file. The check never contacts a remote address, accepts an unknown key, invokes `ssh-keyscan`, prompts for credentials, opens a tunnel or claims the remote fingerprint matches the stored value. No SSH username, port or database settings are accepted yet; the online transport needs a separately validated profile schema and independent operator-approved fingerprint verification.
+The Morkahja `postgres-ssh` adapter permits the offline `ssh:preflight` action and a separately gated `ssh:probe` action. Pressing **Test** checks that its single hostname has an **exact** public host-key entry in `~/.config/babuni-admin/ssh_known_hosts` (or a server-process-only `BABUNI_SSH_KNOWN_HOSTS` absolute override). The file must be a non-symlink regular file owned by the local user, no more than 1 MiB and not writable by group or others. Wildcards, host lists, hash-only entries and SSH certificate-authority entries do not satisfy this initial exact-host contract. `ssh-keygen -F` is used to confirm that OpenSSH can find the host in that file. The check never contacts a remote address, accepts an unknown key, invokes `ssh-keyscan`, prompts for credentials, opens a tunnel or claims the remote fingerprint matches the stored value. No SSH username, port or database settings are accepted by the browser profile: the separate, operator-owned private configuration now supplies them for the explicitly opt-in health probe.
 
-Possible results include `SSH_TRUST_STORE_MISSING`, `SSH_TRUST_STORE_UNSAFE`, `SSH_HOST_NOT_PINNED` and `SSH_HOST_KEY_PINNED_OFFLINE`. Even the last result retains `not-configured` state, no last-successful-connection timestamp and no Connect capability. The operator must verify the server's fingerprint through a trusted independent channel *before* adding its exact host key to this trust file. An entry in the file alone is not evidence that this happened; online verification is a separate milestone.
+Possible results include `SSH_TRUST_STORE_MISSING`, `SSH_TRUST_STORE_UNSAFE`, `SSH_HOST_NOT_PINNED` and `SSH_HOST_KEY_PINNED_OFFLINE`. Even the last offline result retains `not-configured` state, no last-successful-connection timestamp and no Connect capability. The operator must verify the server's fingerprint through a trusted independent channel *before* adding its exact host key to this trust file. An entry in the file alone is not evidence that this happened; online verification is a separate milestone.
+
+## Optional Morkahja health probe — implemented as a guarded capability, not a live authorization
+
+`local-service/remoteProbeConfig.mjs`, `sshTunnel.mjs` and `sshPostgresProbe.mjs` implement a separate `POST /:id/probe` endpoint. The private config and local service environment must **both** opt in; the profile hostname, approved SHA256 fingerprint and dedicated identity file must match. A positively unlocked Secret Service collection and stored per-profile database password are mandatory. The process uses strict pinned-key OpenSSH, a temporary `127.0.0.1` forward and a fixed read-only transaction that rejects write-capable database roles. It always tears down the SSH child; success is reported as **disconnected after health check**, never as a persistent session. Only disposable SSH and PostgreSQL fixture tests establish behavior so far. [Complete contract and operator-only configuration](MORKAHJA_SSH_READONLY_PROBE.md).
 
 ## Design acceptance criteria
 
