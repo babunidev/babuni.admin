@@ -59,7 +59,8 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Add a read-only local directory test with verified available/error status; non-local adapters explicitly remain unconfigured.
 - [ ] Add SSH/GitHub checks, keyring storage, safe connect/disconnect, reconnection and project capability authorization.
 - [ ] Connect Morkahja PostgreSQL through a protected outbound tunnel with least privilege.
-- [ ] Connect Morkahja content to allowlisted local files or a scoped remote transport.
+- [x] Add read-only inspection of five known Morkahja JSON datasets through the local service; file counts and status only, using isolated fixtures.
+- [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
 - [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
 - [ ] Enforce origin/session validation, project-scoped operations, read-only defaults, action attribution, and recovery before real mutations.
 - [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.
