@@ -1,5 +1,11 @@
 # Testing Babuni Admin
 
+## First live read failure — sanitized diagnosis (2026-11-04)
+
+The creative's first attempted `/read-only` snapshot returned `REMOTE_READ_FAILED`. This confirms a request was unsuccessful but not whether the cause is insufficient SELECT permission, schema incompatibility, a network issue or something else. `classifyReadOnlyError()` now converts PostgreSQL SQLSTATE values into safe codes: `DB_READ_PERMISSION_DENIED`, `DB_READ_TABLE_MISSING`, `DB_READ_COLUMN_MISSING`, `DB_READ_SCHEMA_MISMATCH`, `DB_READ_INVALID_DATA`, `DB_READ_TIMEOUT`, `DB_READ_AUTH_FAILED` and `DB_READ_CONNECTION_FAILED`. Unknown errors retain the generic code. Raw database diagnostics are deliberately not returned to the browser or logged.
+
+The disposable PostgreSQL test now checks **before** SELECT grants that a non-write-capable role may pass the metadata health check but fail actual table reads with `42501`; this must produce `DB_READ_PERMISSION_DENIED` rather than the unhelpful generic failure. All PostgreSQL fixture modifications remain restricted to disposable CI databases. The actual live failure category has not yet been verified.
+
 ## Morkahja read-only data dashboard — 2026-11-04
 
 `npm test` covers strict 1–1000 page bounds, exactly 20 results per page, fixed approved response fields, disabled-by-default private data permissions, shared SSH single-flight handling and cleanup, and denied cross-project/local-service requests. The isolated local service also rejects unwanted JSON keys and forged Origins before attempting SSH.
