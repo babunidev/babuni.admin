@@ -106,6 +106,24 @@ const content = kind => '/local-content-api/' + kind
 const admin = path => '/local-admin-api/' + path
 const onDisk = async file => JSON.parse(await readFile(join(tempRoot, 'game', file), 'utf8'))
 
+
+test('legacy static asset serving rejects symlinks to files outside the project root', async () => {
+  const privateFile = join(tempRoot, 'private-fixture.txt')
+  const alias = join(tempRoot, 'game', 'outside-alias.txt')
+  await writeFile(privateFile, 'DISPOSABLE_PRIVATE_FIXTURE')
+  await symlink(privateFile, alias)
+  try {
+    const forbidden = await fetch(base + '/game/outside-alias.txt')
+    assert.equal(forbidden.status, 404)
+    assert.equal((await forbidden.text()).includes('DISPOSABLE_PRIVATE_FIXTURE'), false)
+    assert.equal((await fetch(base + '/game/portraits.json')).status, 200)
+    assert.equal((await fetch(base + '/gameevil/portraits.json')).status, 404)
+  } finally {
+    await rm(alias, {force:true})
+    await rm(privateFile, {force:true})
+  }
+})
+
 test('isolated player inspection and moderation routes support timeout, ban and unban', async () => {
   const beforePlayer = await request(admin('players/fixture-1'))
   assert.equal(beforePlayer.status, 200)
