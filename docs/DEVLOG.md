@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Diagnosing the first read-only database failure
+
+The first attempt to load real Morkahja dashboard information returned only `REMOTE_READ_FAILED`. My earlier SSH/database health probe had worked, so this could be a table-permission or schema problem rather than a failed login, but the screenshot alone could not establish which. AI revised the read adapter to translate PostgreSQL error codes into safe categories and added a disposable test for a reader lacking SELECT grants. No new permissions were granted or live data modified; identifying the actual error remains the next verification step.
+
 ## 2026-11-04 — Making the first database information useful without changing anything
 
 With the Morkahja SSH/database health probe finally succeeding on my PC, the next step was to see actual information safely. My requirement was a small database overview and a paginated player list, with no secrets, session cleanup or administrative writes. AI built a separate, manually loaded dashboard and fixed read-only SQL behind an additional owner-controlled permission; the original admin screens were left untouched because their older data path includes maintenance actions. Disposable PostgreSQL and service fixtures exercised the new boundary, while live player-data verification remains separate from the successful SSH health check.
