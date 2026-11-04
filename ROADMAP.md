@@ -2,7 +2,7 @@
 
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  
-**Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Read-only profile checks, structured local connection status and terminal-only Linux keyring storage are implemented slices. Live outbound adapters remain planned. The creative has verified the unlocked Nobara desktop keyring with a synthetic credential round trip; locked/unavailable behavior remains unverified.
+**Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Read-only profile checks, structured local connection status and terminal-only Linux keyring storage are implemented slices. Live outbound adapters remain planned. The creative has verified the unlocked Nobara desktop keyring with a synthetic credential round trip; a deliberately unreachable D-Bus session bus was verified in an isolated child process on Nobara; the actual locked default keyring remains unverified.
 
 ## Initial restructuring completed (verification scope detailed below)
 
@@ -69,7 +69,9 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Verify the actual Nobara desktop's unlocked keyring: the creative ran `npm run keyring:verify` and reported successful synthetic store, retrieve and cleanup on 2026-11-04.
 - [x] Add read-only D-Bus default-collection lock detection, explicit `locked` status and fail-closed credential operations, with disposable busctl/secret-tool tests.
 - [x] Add `npm run keyring:inspect` and an isolated unavailable-bus check, `npm run keyring:verify-unavailable`, without locking or modifying the desktop's existing credentials.
-- [ ] Run and record actual Nobara locked-keyring and unavailable-bus checks; these new commands are implemented, **not yet operator-verified**.
+- [x] Verify default-collection inspection on the actual Nobara desktop: `unlocked`, keyring `available`, nonexistent profile `missing`; operator-reported output on 2026-11-04.
+- [x] Verify unavailable Secret Service bus on Nobara using `npm run keyring:verify-unavailable` with an unreachable D-Bus address isolated to a child process; operator-reported success on 2026-11-04. This is **not** a test of locking the normal login keyring or stopping the desktop's actual bus.
+- [ ] Verify real locked default-collection behavior on Nobara through a safely controlled lock/unlock cycle; fixture tests do not establish that desktop result.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
 - [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
 - [x] Audit current connection and legacy static middleware boundaries; add project-scope/denied-operation tests and prevent local asset symlink escapes. [Review](docs/PHASE2_SECURITY_REVIEW_2026-11-04.md).
