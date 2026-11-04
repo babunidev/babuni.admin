@@ -1,5 +1,14 @@
 # Babuni Admin — Architecture
 
+## Phase 2 — Fail-closed keyring diagnostics and legacy static containment (2026-11-04)
+
+`local-service/keyring.mjs` performs a read-only `busctl --user` Secret Service `ReadAlias(default)` and `Collection.Locked` query. A positively identified lock yields `locked` and prevents credential stores or clears without asking the provider to unlock. The `unknown` introspection result is not treated as proof of an unlocked collection; providers without busctl support fall back to the original `secret-tool` status logic. The existing unlocked Nobara round-trip was operator-verified, but the locked desktop case has not been reported.
+
+`scripts/verify-keyring-conditions.mjs` provides `inspect` (read-only default collection status and random nonexistent profile) and `unavailable` (an unreachable D-Bus address injected only into a child process). Neither operation locks, unlocks, stores nor clears existing secrets. The unavailable check must still be run on the real PC.
+
+The opt-in legacy `vite/localContentPlugin.ts` static route now verifies real path containment and disallows file symlinks, malformed paths and cross-site requests. The static route hardening does not grant live write authority to the old Vite middleware. Full release findings: [Phase 2 security review](PHASE2_SECURITY_REVIEW_2026-11-04.md).
+
+
 ## Phase 2 — Profile editing, local lifecycle and browser session (2026-11-04)
 
 `vite/connectionAdapters.ts` contains a static server-side project/adapter capability allowlist. Only Morkahja `local-files` has active read-only permissions; SSH, GitHub and publishing transports remain unavailable. Profile edits can change the name or target, not the project, adapter or credential UUID. A target change invalidates previous checks.
