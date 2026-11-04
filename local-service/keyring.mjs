@@ -59,6 +59,9 @@ export async function storeCredential(profile, secret) {
 export async function clearCredential(profile) {
   if (!requiresCredential(profile)) return
   if (!isId(profile.id)) throw new Error('INVALID_PROFILE')
+  const status = await credentialStatus(profile)
+  if (status === 'missing') return
+  if (status !== 'stored') throw new Error('KEYRING_UNAVAILABLE')
   const result = await runSecretTool(['clear', ...attributes(profile.id)])
   if (result.code !== 0) throw new Error('KEYRING_UNAVAILABLE')
 }
