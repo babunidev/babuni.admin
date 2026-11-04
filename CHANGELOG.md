@@ -9,6 +9,8 @@
 - Documented unresolved authentication, remote permission, live write and recovery gates; **no production access authorized**.
 
 
+- Tightened opt-in legacy content/moderation HTTP guards to require an exact HTTP origin for mutations and reject same-site cross-origin requests; fixture requests now supply an explicit origin.
+
 ## 2026-11-04 — Local connection lifecycle and UI session hardening
 
 - Added non-secret profile editing with immutable project, adapter and credential identity.
