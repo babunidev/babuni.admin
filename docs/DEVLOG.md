@@ -2,7 +2,7 @@
 
 ## 2026-11-04 — Checking a host key without reaching the server
 
-After verifying the local credential store on Nobara, my next priority was Morkahja's SSH connection. Rather than opening a tunnel immediately, I asked AI to build a local trust check that rejects missing or unsafe host-key entries while keeping network access disabled. The result allows a profile to report whether a privately maintained known-host record exists, but it deliberately cannot claim the actual remote server was verified or that live game data is accessible.
+After verifying the local credential store on Nobara, my next priority was Morkahja's SSH connection. Rather than opening a tunnel immediately, I asked AI to build a local trust check that rejects missing or unsafe host-key entries while keeping network access disabled. The result allows a profile to report whether a privately maintained known-host record exists, but it deliberately cannot claim the actual remote server was verified or that live game data is accessible. An initial integration-test attempt to delete the disposable SSH profile without an available keyring was correctly refused; the test was corrected without weakening that fail-closed behavior.
 
 
 ## 2026-11-04 — Confirming the lock and recovery cycle
