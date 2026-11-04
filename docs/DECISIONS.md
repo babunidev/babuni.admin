@@ -1,5 +1,13 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Keep the first remote connection transient and opt-in
+
+**Creative direction:** Continue from the completed local SSH trust check toward Morkahja connectivity, while keeping Babuni Admin local and avoiding unverified live writes.
+
+**AI implementation choice:** Instead of making remote Connect or general SQL available, add a distinct, disabled-by-default `ssh:probe` operation. It needs both process-level and owner-private file approval of the exact host, SSH identity, approved host-key fingerprint and database role. PostgreSQL is queried only through a user-private Unix-domain SSH forward, inside a fixed read-only transaction; effective write privileges cause rejection. The tunnel is closed immediately afterward, with no background reconnect or browser-side credentials.
+
+**Verification:** Disposable OpenSSH command and PostgreSQL 16 fixtures can verify the structure and failure paths, but cannot validate the real Morkahja server's identity, role memberships or network. Live authorization and the full remote read/write lifecycle are still pending. See [probe contract](MORKAHJA_SSH_READONLY_PROBE.md).
+
 ## 2026-11-04 — Keep keyring failure tests non-disruptive
 
 **Creative direction:** Verify locked and unavailable Nobara keyring conditions, then review security before allowing live operations.

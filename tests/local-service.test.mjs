@@ -156,7 +156,12 @@ test('independent local service requires session key and tests local folder with
     assert.equal((await request(sshProfile.id+'/connect',{method:'POST'})).status,409)
     assert.equal((await request(sshProfile.id+'/inspect')).status,403)
     const listedSsh=(await (await request()).json()).profiles.find(row=>row.id===sshProfile.id)
-    assert.deepEqual(listedSsh.capabilities,['ssh:preflight'])
+    assert.deepEqual(listedSsh.capabilities,['ssh:preflight','ssh:probe'])
+    const liveDisabled=await (await request(sshProfile.id+'/probe',{method:'POST'})).json()
+    assert.equal(liveDisabled.status.code,'REMOTE_PROBE_DISABLED')
+    assert.equal(liveDisabled.status.state,'not-configured')
+    assert.equal((await request(remoteId+'/probe',{method:'POST'})).status,403)
+    assert.equal((await request(p.id+'/probe',{method:'POST'})).status,403)
     assert.equal(listedSsh.state,'not-configured')
     // The disposable CI service may have no Secret Service keyring.
     // Remote profile deletion fails closed in that situation; leave its

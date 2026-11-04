@@ -1,5 +1,11 @@
 # Babuni Admin — Architecture
 
+## Phase 2 — Operator-gated SSH/PostgreSQL read-only health probe (2026-11-04)
+
+The local service now has a separate `ssh:probe` capability for Morkahja `postgres-ssh` profiles. It rejects all requests by default until an explicit process environment opt-in **and** owner-private configuration authorize an exact host, independently approved pinned host-key fingerprint, SSH identity and database role. It retrieves the per-profile DB password from an unlocked Linux Secret Service only inside the local service. `sshTunnel.mjs` spawns noninteractive OpenSSH with strict known-host checking, isolated child environment, owner-private temporary Unix-socket `-L` forwarding to remote loopback, no remote shell, and bounded cleanup. `sshPostgresProbe.mjs` executes only a fixed PostgreSQL metadata/privilege query in a READ ONLY transaction, then closes the tunnel; no general SQL, player data, persistent remote Connect or writes are exposed. A successful probe is `disconnected` with a last-health-check timestamp, not connected.
+
+This code is verified against non-network SSH fixtures and disposable PostgreSQL 16. **No live Morkahja host, SSH credential, remote DB or role has been inspected.** The fixed privilege query does not replace a separate role-membership and default-privilege audit. [Probe contract](MORKAHJA_SSH_READONLY_PROBE.md).
+
 ## Phase 2 — Fail-closed keyring diagnostics and legacy static containment (2026-11-04)
 
 `local-service/keyring.mjs` performs a read-only `busctl --user` Secret Service `ReadAlias(default)` and `Collection.Locked` query. A positively identified lock yields `locked` and prevents credential stores or clears without asking the provider to unlock. The `unknown` introspection result is not treated as proof of an unlocked collection; providers without busctl support fall back to the original `secret-tool` status logic. The existing unlocked Nobara round-trip was operator-verified, but the locked desktop case has not been reported.
@@ -13,11 +19,11 @@ Legacy local admin/content mutation requests now require an explicit exact HTTP 
 
 ## Phase 2 — Offline Morkahja SSH trust preflight (2026-11-04)
 
-`local-service/sshHostPreflight.mjs` performs a local-only OpenSSH known-host check for a Morkahja `postgres-ssh` profile. It requires an exact hostname entry in a dedicated user-owned, non-symlink, non-group/world-writable trust file, and verifies the entry is discoverable by `ssh-keygen -F`. No network request is made and no credentials are retrieved. The service routes this under existing authenticated `POST /local-connections-api/:id/test`; `vite/connectionAdapters.ts` grants only `ssh:preflight`, not SSH Connect or database reads. The profile remains `not-configured` even when a local entry is found. Online SSH host-key matching, a tunnel and PostgreSQL access are **not implemented**.
+`local-service/sshHostPreflight.mjs` performs a local-only OpenSSH known-host check for a Morkahja `postgres-ssh` profile. It requires an exact hostname entry in a dedicated user-owned, non-symlink, non-group/world-writable trust file, and verifies the entry is discoverable by `ssh-keygen -F`. No network request is made and no credentials are retrieved. The service routes this under existing authenticated `POST /local-connections-api/:id/test`; `vite/connectionAdapters.ts` grants offline `ssh:preflight` and separately operator-gated `ssh:probe`, but not persistent SSH Connect or general database reads. The profile remains `not-configured` even when a local entry is found. The separately approved probe now implements strict SSH host-key matching, a temporary tunnel and a fixed database health query; these are **not** enabled by default or verified against real Morkahja.
 
 ## Phase 2 — Profile editing, local lifecycle and browser session (2026-11-04)
 
-`vite/connectionAdapters.ts` contains a static server-side project/adapter capability allowlist. Only Morkahja `local-files` has active read-only permissions; SSH, GitHub and publishing transports remain unavailable. Profile edits can change the name or target, not the project, adapter or credential UUID. A target change invalidates previous checks.
+`vite/connectionAdapters.ts` contains a static server-side project/adapter capability allowlist. Only Morkahja `local-files` has ungated read-only permissions; SSH health checks require private operator authorization. GitHub and publishing transports remain unavailable. Profile edits can change the name or target, not the project, adapter or credential UUID. A target change invalidates previous checks.
 
 `local-service/connectionLifecycle.mjs` adds manual local Connect, Disconnect and Reconnect. A successful Connect only establishes an ephemeral in-process read-only status after a directory probe: it holds no file handles, opens no tunnel and grants no write permission. Remote connection operations return `ADAPTER_NOT_IMPLEMENTED`.
 

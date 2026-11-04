@@ -13,6 +13,14 @@ These checks add to the already verified local-only listener, independent server
 
 The legacy opt-in admin/content guards now also require an exact HTTP Origin for mutations (not merely a matching Host) and reject `same-site` requests. These guards reduce CSRF exposure but are still not administrator authentication.
 
+## Follow-on Phase 2 SSH health probe — implemented later on 2026-11-04
+
+After the original review, a separate `ssh:probe` capability was added for **Morkahja only**. This is inert unless both the local process environment and owner-private configuration explicitly enable it. It requires an exact, independently approved host-key fingerprint, privately owned SSH identity, unlocked keyring and stored database credential; opens a temporary SSH forward through a **private Unix-domain socket**; performs one fixed PostgreSQL role/privilege check in a read-only transaction; and closes the SSH child. No player data or project mutations are exposed by this endpoint. Fixture CI checks configuration and role denial, not the real Morkahja server.
+
+The original security table below describes the earlier review; it is **not** evidence that all remote capabilities remain structurally absent. The new opt-in health probe is implemented but disabled by default, while general SSH Connect, arbitrary SQL, moderation, content writes, GitHub and publishing remain unavailable. Before an actual Morkahja probe, the operator must independently validate endpoint ownership and host fingerprint, provision and audit the remote read-only DB role (including role membership and future grants), and review same-user local-process access. A successful metadata probe cannot authorize live administration or writes.
+
+See [operator-only health probe contract](MORKAHJA_SSH_READONLY_PROBE.md).
+
 ## Security status and remaining blockers
 
 | Area | Verified or observed | Remaining live-operation gate |

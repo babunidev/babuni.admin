@@ -116,6 +116,22 @@ export async function clearCredential(profile) {
   if (result.code !== 0) throw new Error('KEYRING_UNAVAILABLE')
 }
 
+/** Privileged local service only: returns a DB password for an in-process
+ * health probe. Never send it to the browser, logs or child-process argv. */
+export async function readCredentialForService(profile) {
+  if (!requiresCredential(profile) || !isId(profile.id)) throw new Error('KEYRING_UNAVAILABLE')
+  const lock=await defaultCollectionLockState()
+  if (lock==='locked') throw new Error('KEYRING_LOCKED')
+  if (lock!=='unlocked') throw new Error('KEYRING_UNKNOWN')
+  let result
+  try { result=await runSecretTool(['lookup',...attributes(profile.id)]) }
+  catch { throw new Error('KEYRING_UNAVAILABLE') }
+  if (result.code===1 && !result.stdout) throw new Error('KEYRING_CREDENTIAL_MISSING')
+  if (result.code!==0 || result.stdout.length<1 || result.stdout.length>4096 ||
+      /[\r\n\0]/.test(result.stdout)) throw new Error('KEYRING_UNAVAILABLE')
+  return result.stdout
+}
+
 /** Used only for an operator-initiated ephemeral self-test; never returns credential bytes. */
 export async function verifyCredential(profile, expected) {
   if (!requiresCredential(profile) || !isId(profile.id) || typeof expected!=='string') return false
