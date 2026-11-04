@@ -1,5 +1,11 @@
 # Testing Babuni Admin
 
+## Morkahja SSH offline trust tests — 2026-11-04
+
+`tests/ssh-preflight.test.mjs` generates an ephemeral fixture key locally with `ssh-keygen` and verifies absence of a trust file, absent/incorrect/wildcard entries, explicitly pinned exact entries, unsafe permissions, symlink rejection, disallowed target values and cross-project denial. `tests/local-service.test.mjs` covers the service's `POST /test` path with a disposable trust file and verifies that Connect and Inspect remain unavailable for PostgreSQL-via-SSH profiles. No live host or database is contacted.
+
+Run `npm run test:connections` for the service tests; `npm test` includes the dedicated SSH preflight test. An observed `SSH_HOST_KEY_PINNED_OFFLINE` does not establish the real server's identity, SSH connectivity or database availability.
+
 ## Failure-mode checks and security regression suite — 2026-11-04
 
 The synthetic keyring test now uses a disposable mock D-Bus tool to verify `locked`, `unlocked`, `unknown`, unavailable and denied credential operations, without touching the machine's default collection. The regression suite tests server-owned adapter permissions and the legacy local HTTP request guard, including denial of cross-project and remote capabilities. The local-content middleware additionally has fixture tests for rejecting symlinked files outside the game asset root and cross-site reads.
