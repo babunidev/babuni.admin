@@ -1,5 +1,12 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Live restricted-view read confirmed
+
+**Operator verification:** Two screenshots of the local Morkahja `/read-only` dashboard show a successful live overview (62 players, 90 avatars, zero active sessions and zero events in the previous 24 hours) and a player preview with the three approved visible fields. The interface reports that the temporary SSH tunnel disconnected after the snapshot. No identity keys or session tokens are visible in these results.
+
+**Boundary:** This establishes real data retrieval through the operator-created restricted views, not independent validation of the zero counts, complete pagination navigation, interruption recovery or authorization to write to the database. The observed personal player details are intentionally excluded from the public record. No code or server permissions were changed as part of this verification checkpoint.
+
+
 ## 2026-11-04 — Restrict dashboard access at the database boundary
 
 **Creative direction:** Continue the live read-only Morkahja dashboard after identifying a missing SELECT permission, without giving the dashboard unrestricted access to player and session tables.

@@ -1,29 +1,36 @@
 # Babuni Admin — Development Roadmap
 
-## 2026-11-04 — Diagnose first live Morkahja dashboard read failure
+## 2026-11-04 — First successful live read-only Morkahja snapshots
+
+- [x] Verify the updated `/read-only` overview through the actual configured SSH/PostgreSQL connection on Nobara. Operator screenshots report 62 players, 90 avatars, 0 active sessions and 0 game events in the prior 24 hours.
+- [x] Verify a real player preview displays approved fields (display name, avatar count and last-played time) without internal IDs, identity keys or session tokens in the visible UI.
+- [x] Observe success states and UI confirmation that the temporary SSH tunnel closes after each snapshot.
+- [ ] Verify clicking Next and Previous through multiple player pages on the live system; inspect counts under actual game activity and exercise interrupted/error recovery separately. Zero active sessions and zero recent events were observed but not independently reconciled with gameplay.
+
+
 ## 2026-11-04 — Align application reads with restricted live PostgreSQL views
 
 - [x] Operator created `babuni_admin_ro.overview` and `babuni_admin_ro.player_preview` on the live Morkahja database, committed the transaction, and verified SELECT access for `babuni_admin_probe` with raw `public.players` and `public.sessions` SELECT denied.
 - [x] Change the dashboard read adapter to use only these fixed views. Preserve 20-row bounded pagination, the approved three-field output, read-only transactions and SSH tunnel teardown.
 - [x] Reject unexpected direct SELECT privileges on the four underlying tables, independently of the existing write-privilege health gate.
 - [x] Extend disposable PostgreSQL fixture tests to mirror view access and verify denial without view grants, raw-table privilege rejection, pagination and no session mutation.
-- [ ] Verify the dashboard overview and player preview end-to-end on the real Morkahja server after this code update and record actual observed behavior; do not count the view's aggregate access check as an application test.
+- [x] Verify dashboard overview and first player preview end-to-end on the real Morkahja server using the operator's Nobara screenshots; see successful live snapshot checkpoint above.
 
 [View and access contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
 
-
+## 2026-11-04 — Diagnose first live Morkahja dashboard read failure
 
 - [x] Record operator screenshot: `/read-only` shows `REMOTE_READ_FAILED` when requesting data after successful SSH/database health checking. The actual PostgreSQL error is **not yet known**.
 - [x] Classify trusted PostgreSQL SQLSTATE errors without exposing raw error messages, internal schema details or credentials. UI distinguishes missing SELECT grants, missing tables/columns, invalid data, timeouts, login and connection failures.
 - [x] Extend the disposable PostgreSQL fixture to reproduce a metadata-health-passing reader that lacks SELECT permission on game tables.
-- [ ] Re-run the real dashboard after this change and identify its newly categorized result; **no live database grant or schema modification is authorized by this diagnosis**.
+- [x] Re-run the live dashboard and identify `DB_READ_PERMISSION_DENIED`; the operator subsequently created narrowly scoped owner-controlled views and verified the read role's access without granting raw table access.
 
 ## 2026-11-04 — Morkahja read-only dashboard
 
 - [x] Implement a separate, manual Morkahja dashboard for database counts and 20-row player preview pages.
 - [x] Add fixed SELECT-only queries, repeated role verification, limited response fields and a shared single-flight SSH tunnel lifecycle.
 - [x] Require a second operator-only data-read opt-in and exact `displayName`, `avatarCount`, `lastPlayedAt` field list; browser requests cannot select arbitrary data or queries.
-- [ ] Verify the new read-only snapshot and approved field list on the actual Morkahja server after disposable fixture/CI tests pass. No live player data was read during implementation. [Data contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
+- [x] Verify the new read-only snapshot and visible approved fields on the actual Morkahja server after fixture tests and the restricted-view adapter update. No live player data was read during AI implementation; the operator subsequently verified successful reads. [Data contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 **Observed on the operator's Nobara PC:** The Morkahja SSH/database health probe returned `REMOTE_DB_HEALTHY_READ_ONLY` at 20:59 on 2026-11-04. This validates the configured health path, not general data-reading or write authority.
 
@@ -31,7 +38,7 @@
 
 - [x] Remove unsupported client option `PermitTTY` while retaining `-T`.
 - [x] Validate the production argument builder with real OpenSSH in offline `-G` mode.
-- [ ] Verify the corrected application health probe and cleanup on the target desktop.
+- [x] Verify the corrected SSH/database health probe on the target Nobara desktop; the operator reported `REMOTE_DB_HEALTHY_READ_ONLY` after the OpenSSH correction.
 
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  

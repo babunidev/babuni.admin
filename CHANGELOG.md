@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Live Morkahja read-only verification recorded
+
+- Recorded operator screenshot evidence of successful live `/read-only` overview and player-preview requests through the restricted PostgreSQL views: 62 players, 90 avatars, 0 active sessions and 0 events in the preceding 24 hours.
+- Confirmed that the UI displays only the approved player-preview fields and reports that its temporary SSH tunnel is disconnected after the snapshot.
+- Marked pagination navigation, activity-count reconciliation and failure-recovery scenarios as still requiring real-system verification. This is a documentation-only checkpoint; no application code, live schema, database privileges or game records were changed.
+
+
 ## 2026-11-04 — Read Morkahja through restricted database views
 
 - Updated `local-service/morkahjaReadOnly.mjs` to SELECT from `babuni_admin_ro.overview` and `babuni_admin_ro.player_preview`, matching the operator-created live PostgreSQL views.
