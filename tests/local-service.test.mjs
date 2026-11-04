@@ -6,7 +6,18 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'node:net'
 import { randomBytes } from 'node:crypto'
+import { request as httpRequest } from 'node:http'
 
+function requestWithHost(url, headers) {
+  return new Promise((resolve,reject)=>{
+    const req=httpRequest(url,{headers:{...headers,Host:'attacker.invalid'}},res=>{
+      res.resume()
+      res.on('end',()=>resolve(res.statusCode))
+    })
+    req.on('error',reject)
+    req.end()
+  })
+}
 async function freePort(){
   const srv=createServer()
   await new Promise(r=>srv.listen(0,'127.0.0.1',r))
@@ -35,7 +46,7 @@ test('independent local service requires session key and tests local folder with
     assert.ok(up,'service failed to bind')
     assert.equal((await fetch(url)).status,403)
     assert.equal((await fetch(url+'health')).status,403)
-    assert.equal((await request('',{headers:{Host:'evil.invalid'}})).status,403)
+    assert.equal(await requestWithHost(url,headers),403)
     assert.equal((await request('',{method:'POST',headers:{Origin:''}})).status,403)
     const health=await (await request('health')).json()
     assert.equal(health.ok,true)
