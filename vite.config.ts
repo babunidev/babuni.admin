@@ -20,7 +20,10 @@ export default defineConfig(({ mode }) => {
   const adminApiKey = env.ADMIN_API_KEY?.trim()
   const morkahjaPublic = resolveMorkahjaPublicRoot(env)
   const databaseUrl = env.DATABASE_URL?.trim() ?? ''
-  const enableLocalContent = env.VITE_USE_LOCAL_CONTENT === 'true' && env.LOCAL_CONTENT_WRITES === 'true'
+  const enableLocalContent = env.VITE_USE_LOCAL_CONTENT === 'true'
+  // Only isolated compatibility fixtures may reach the historical unscoped mutation middleware.
+  const fixtureContentWrites = Boolean(env.BABUNI_TEST_PROFILE_FILE) &&
+    env.BABUNI_LEGACY_CONTENT_FIXTURE_WRITES === 'true' && env.LOCAL_CONTENT_WRITES === 'true'
   const devPort = Number(env.DEV_PORT) || Number(env.BABUNI_UI_PORT) || 5180
   const previewPort = Number(env.PREVIEW_PORT) || 4180
 
@@ -55,8 +58,9 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       ...(env.BABUNI_LOCAL_SERVICE_TOKEN && env.BABUNI_UI_SESSION_TOKEN
         ? [localSessionGuard(env.BABUNI_UI_SESSION_TOKEN, devPort)] : []),
-      ...(enableLocalContent ? [morkahjaLocalContentPlugin(morkahjaPublic)] : []),
-      ...(databaseUrl ? [morkahjaLocalAdminPlugin(databaseUrl)] : []),
+      ...(enableLocalContent ? [morkahjaLocalContentPlugin(morkahjaPublic, fixtureContentWrites)] : []),
+      ...(databaseUrl && env.BABUNI_LEGACY_ADMIN_FIXTURE === 'true' && env.BABUNI_TEST_PROFILE_FILE
+        ? [morkahjaLocalAdminPlugin(databaseUrl)] : []),
     ],
     server: {
       proxy: {
