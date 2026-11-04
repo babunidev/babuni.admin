@@ -1,5 +1,14 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Separate real data reads from the legacy admin adapter
+
+**Creative direction:** After the SSH and PostgreSQL health probe worked on the actual Nobara desktop, the next useful milestone was to display database counts and a paginated player preview, without exposing secrets or changing live records.
+
+**Decision implemented by AI:** Create `/read-only` with dedicated fixed SELECT queries, a bounded three-field player response, manual loading, a separate server-side `ssh:read` capability and a second operator-only configuration approval. Reuse the existing host-key verification, keyring login and short-lived private Unix-socket SSH tunnel. The older `vite/postgresAdmin.ts` query path was deliberately not reused because it can alter expired sessions during player listing. A browser profile selection alone grants no data permissions.
+
+**Verification:** Source, service and disposable PostgreSQL fixtures validate the data-shaping and no-session-mutation behavior. The operator separately observed a successful live SSH/database health check; no live player-data pages were requested by AI. Read-role membership and actual schema compatibility must still be checked before enabling live data reads. [Read contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
+
+
 ## 2026-11-04 — Keep the first remote connection transient and opt-in
 
 **Creative direction:** Continue from the completed local SSH trust check toward Morkahja connectivity, while keeping Babuni Admin local and avoiding unverified live writes.
