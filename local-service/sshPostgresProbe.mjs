@@ -76,7 +76,7 @@ export async function probeMorkahjaPostgres(profile, deps={}) {
       ? error.message:'REMOTE_PROBE_FAILED'
     return status(code,'Remote probe did not complete. No remote edits were attempted.')
   }finally {
-    try { tunnel?.stop() }catch { /* closing an ephemeral tunnel is best effort */ }
+    try { await tunnel?.stop() }catch { /* closing an ephemeral tunnel is best effort */ }
     inFlight=false
   }
 }
