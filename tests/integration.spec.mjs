@@ -118,6 +118,10 @@ test('legacy static asset serving rejects symlinks to files outside the project 
     assert.equal((await forbidden.text()).includes('DISPOSABLE_PRIVATE_FIXTURE'), false)
     assert.equal((await fetch(base + '/game/portraits.json')).status, 200)
     assert.equal((await fetch(base + '/gameevil/portraits.json')).status, 404)
+    const foreign = await fetch(base + '/game/portraits.json', {
+      headers: {Origin:'https://attacker.invalid','Sec-Fetch-Site':'cross-site'},
+    })
+    assert.equal(foreign.status, 403)
   } finally {
     await rm(alias, {force:true})
     await rm(privateFile, {force:true})
