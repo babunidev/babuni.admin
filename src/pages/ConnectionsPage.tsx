@@ -3,6 +3,7 @@ import { PageHeader } from '../shared/components/PageHeader'
 
 type ProjectId = 'morkahja' | 'babuni-dev'
 type Kind = 'local-files' | 'postgres-ssh' | 'github' | 'remote-publish'
+interface ContentReport {files:{name:string;status:string;entries?:number;bytes?:number;reason?:string}[]}
 interface Profile {
   id: string
   projectId: ProjectId
@@ -43,6 +44,7 @@ export function ConnectionsPage() {
   const [displayName, setDisplayName] = useState('')
   const [target, setTarget] = useState('')
   const [busy, setBusy] = useState(false)
+  const [reports,setReports] = useState<Record<string,ContentReport>>({})
   async function reload() {
     try {
       const data = await api()
@@ -76,6 +78,12 @@ export function ConnectionsPage() {
     try { await api('POST', '/' + id + '/test'); await reload() }
     catch (error) { setStatus(error instanceof Error ? error.message : 'Unable to test connection') }
     finally { setBusy(false) }
+  }
+  async function inspect(id: string) {
+    setBusy(true)
+    try {const result=await api('GET','/'+id+'/inspect') as unknown as ContentReport;setReports(old=>({...old,[id]:result}))}
+    catch {setStatus('Inspection failed')}
+    finally {setBusy(false)}
   }
   async function remove(id: string) {
     setBusy(true)
@@ -124,9 +132,16 @@ export function ConnectionsPage() {
           <div><h3 className="text-parchment">{p.displayName}</h3><p className="mt-1 text-xs text-fog">{p.projectId} · {p.kind} · {p.target}</p>
             <p className="mt-2 text-xs text-fog">{p.state === 'available' ? 'Directory available (read-only check)' : p.state === 'error' ? 'Connection check failed' : 'Not connected — profile only.'} {p.detail}</p></div>
           <div className="flex gap-2">
+          <button type="button" disabled={busy} onClick={()=>{ void inspect(p.id) }}>Inspect</button>
           <button type="button" disabled={busy} onClick={()=>{ void testProfile(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Test</button>
           <button type="button" disabled={busy} onClick={()=>{ void remove(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-fog disabled:opacity-50">Remove</button></div>
         </div>
+        {reports[p.id] && <section aria-label="Read-only content report" className="mt-3 border-t border-gold/10 pt-3">
+          <h4 className="text-xs text-gold-bright">Game content — read-only</h4>
+          <ul className="mt-2 space-y-1 text-xs text-fog">
+            {reports[p.id].files.map(file => <li key={file.name}>{file.name}: {file.status === 'available' ? String(file.entries) + ' records, ' + String(file.bytes) + ' bytes' : 'Unavailable (' + file.reason + ')'}</li>)}
+          </ul>
+        </section>}
       </article>)}
     </section>
   </div>

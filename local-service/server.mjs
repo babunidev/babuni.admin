@@ -1,6 +1,7 @@
 import { createServer } from 'node:http'
 import { randomBytes, timingSafeEqual } from 'node:crypto'
 import { stat, realpath } from 'node:fs/promises'
+import { inspectContent } from './inspectContent.mjs'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
 
 const PORT = Number(process.env.BABUNI_LOCAL_SERVICE_PORT || '5191')
@@ -63,7 +64,7 @@ const server = createServer(async (req,res) => {
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match = /^\/([0-9a-f-]{36})(?:\/(test))?$/i.exec(path)
+    const match = /^\/([0-9a-f-]{36})(?:\/(test|inspect))?$/i.exec(path)
     if (match && req.method === 'DELETE' && !match[2]) {
       states.delete(match[1])
       const ok=registry.remove(match[1])
@@ -75,6 +76,12 @@ const server = createServer(async (req,res) => {
       const status=await probe(profile)
       states.set(profile.id,status)
       return send(res,200,{status})
+    }
+    if (match && req.method === 'GET' && match[2] === 'inspect') {
+      const profile = registry.list().find(p=>p.id===match[1])
+      if (!profile) return send(res,404,{error:'NOT_FOUND'})
+      const report = await inspectContent(profile)
+      return send(res, report.ok ? 200 : 422, report)
     }
     return send(res,404,{error:'NOT_FOUND'})
   } catch(error) {
