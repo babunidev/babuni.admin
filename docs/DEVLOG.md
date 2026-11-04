@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Verifying the unavailable-bus case on Nobara
+
+With the earlier unlocked keyring test working, I ran the new diagnostics on my actual desktop. The default collection reported unlocked and available, with the synthetic unused profile correctly missing; an isolated child process then confirmed that an unreachable D-Bus address fails closed without changing existing credentials. AI documented the observed output separately from the fixture tests. The real locked-collection case remains untested, and live Morkahja operations are still blocked.
+
 ## 2026-11-04 — Checking failure without touching existing keys
 
 After a successful credential round trip on my Nobara desktop, the remaining keyring question concerned what happens when access is locked or unavailable. AI added a read-only collection-status check and a separate process-isolated bus-failure test, along with stricter path checks for the older Morkahja asset server. The automated fixtures can exercise denied operations, but my actual locked-keyring behavior still needs observation on the PC. Live project editing remains outside the tested security boundary.
