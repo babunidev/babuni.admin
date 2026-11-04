@@ -29,21 +29,26 @@ test('legacy opt-in HTTP guards reject untrusted host, peer and origins',async()
   const vite=await createServer({configFile:false,server:{middlewareMode:true},logLevel:'error'})
   try {
     const {rejectNonLocalRequest}=await vite.ssrLoadModule('/vite/localRequestGuard.ts')
-    function check(headers,remoteAddress='127.0.0.1') {
+    function check(headers,remoteAddress='127.0.0.1',method='GET') {
       const response={statusCode:200,setHeader(){},end(body){this.body=body}}
       const rejected=rejectNonLocalRequest({
         headers:{host:'127.0.0.1:5180',...headers},
         socket:{remoteAddress},
+        method,
       },response)
       return {rejected,status:response.statusCode}
     }
     assert.equal(check({}).rejected,false)
     assert.equal(check({origin:'http://127.0.0.1:5180'}).rejected,false)
+    assert.equal(check({origin:'http://127.0.0.1:5180'},'127.0.0.1','POST').rejected,false)
+    assert.equal(check({},'127.0.0.1','POST').rejected,true)
+    assert.equal(check({origin:'https://127.0.0.1:5180'},'127.0.0.1','POST').rejected,true)
     for(const invalid of [
       {host:'evil.invalid:5180'},
       {host:'evil.invalid:5180',origin:'http://evil.invalid:5180'},
       {origin:'https://attacker.invalid'},
       {'sec-fetch-site':'cross-site'},
+      {'sec-fetch-site':'same-site'},
     ]) {
       const outcome=check(invalid)
       assert.equal(outcome.rejected,true)
