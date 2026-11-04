@@ -8,6 +8,8 @@ import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
 import { MorkahjaTunnelManager } from './morkahjaTunnel.mjs'
 import { removeMorkahjaConfig } from './morkahjaConfig.mjs'
+import { revokeAllContentGrants } from './contentGrant.mjs'
+import { previewEntry, saveEntry, restoreEntry } from './scopedGameEdits.mjs'
 
 const PORT = Number(process.env.BABUNI_LOCAL_SERVICE_PORT || '5191')
 const TOKEN = process.env.BABUNI_LOCAL_SERVICE_TOKEN
@@ -30,11 +32,11 @@ function validKey(supplied) {
   const b = Buffer.from(TOKEN)
   return a.length === b.length && timingSafeEqual(a,b)
 }
-async function body(req) {
+async function body(req, maxBytes=4096) {
   let content = ''
   for await (const part of req) {
     content += part.toString('utf8')
-    if (Buffer.byteLength(content)>4096) throw Object.assign(new Error('TOO_LARGE'),{status:413})
+    if (Buffer.byteLength(content)>maxBytes) throw Object.assign(new Error('TOO_LARGE'),{status:413})
   }
   try { return JSON.parse(content) } catch { throw Object.assign(new Error('INVALID_JSON'),{status:400}) }
 }
@@ -81,6 +83,38 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
+    const editMatch=/^\/([0-9a-f-]{36})\/content\/(encounters|solutions|expansions|frames|portraits)\/([a-zA-Z0-9_-]{1,100})(?:\/(restore))?$/i.exec(path)
+    if(editMatch){
+      const profile=registry.list().find(p=>p.id===editMatch[1])
+      if(!profile)return send(res,404,{error:'NOT_FOUND'})
+      if(!hasCapability(profile,'local:inspect'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      try {
+        const dataset=editMatch[2],key=editMatch[3],rollback=editMatch[4]
+        if(req.method==='GET'&&!rollback)return send(res,200,previewEntry(profile,dataset,key))
+        if(req.method==='PUT'&&!rollback){
+          const result=saveEntry(profile,dataset,key,await body(req,512*1024))
+          return send(res,200,result)
+        }
+        if(req.method==='POST'&&rollback){
+          const result=restoreEntry(profile,dataset,key,await body(req,2048))
+          return send(res,200,result)
+        }
+        return send(res,405,{error:'METHOD_NOT_ALLOWED'})
+      } catch(error) {
+        const code=error?.message
+        if(code==='CONTENT_WRITE_NOT_AUTHORIZED')return send(res,403,{error:code})
+        if(code==='REVISION_CONFLICT'||code==='CONTENT_OPERATION_BUSY')
+          return send(res,409,{error:code})
+        if(['INVALID_RECORD_KEY','INVALID_RECORD_DATA','RECORD_ID_MISMATCH',
+          'CONFIRMATION_REQUIRED','INVALID_BACKUP_PATH','INVALID_BACKUP_FILE'].includes(code))
+          return send(res,400,{error:code})
+        if(['INVALID_GAME_JSON','INVALID_GAME_STRUCTURE','GAME_FILE_TOO_LARGE',
+          'UNSAFE_GAME_FILE','UNSAFE_GAME_DIRECTORY','CONTENT_SCOPE_DENIED'].includes(code))
+          return send(res,422,{error:code})
+        return send(res,500,{error:['WRITE_REVERTED_AUDIT_FAILURE',
+          'PARTIAL_WRITE_NEEDS_RECOVERY'].includes(code)?code:'CONTENT_OPERATION_FAILED'})
+      }
+    }
     const dbMatch=/^\/([0-9a-f-]{36})\/database\/(health|players)$/i.exec(path)
     if (dbMatch && req.method==='GET') {
       const profile=registry.list().find(p=>p.id===dbMatch[1])
@@ -106,6 +140,7 @@ const server=createServer(async(req,res)=>{
       const updated=registry.update(id,await body(req))
       if (previous!==updated.target) {
         await morkahja.disconnect(id)
+        revokeAllContentGrants(profile)
         states.delete(id)
       }
       return send(res,200,{profile:await listedProfile(updated)})
@@ -117,6 +152,7 @@ const server=createServer(async(req,res)=>{
       }
       await morkahja.disconnect(id)
       removeMorkahjaConfig(profile)
+      revokeAllContentGrants(profile)
       const ok=registry.remove(id)
       if (ok) states.delete(id)
       return send(res,ok?200:404,{ok})
