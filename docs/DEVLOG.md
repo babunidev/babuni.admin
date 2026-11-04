@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Checking failure without touching existing keys
+
+After a successful credential round trip on my Nobara desktop, the remaining keyring question concerned what happens when access is locked or unavailable. AI added a read-only collection-status check and a separate process-isolated bus-failure test, along with stricter path checks for the older Morkahja asset server. The automated fixtures can exercise denied operations, but my actual locked-keyring behavior still needs observation on the PC. Live project editing remains outside the tested security boundary.
+
+
 ## 2026-11-04 — The desktop keyring works
 
 With the synthetic keyring checks already passing in CI, the remaining question was whether the same storage flow worked in my actual Nobara session. After pulling the latest code, I ran `npm run keyring:verify` locally and received successful confirmation of temporary credential storage, retrieval and cleanup. The report establishes an unlocked desktop keyring round trip, not locked-keyring behavior or any working remote connection; no existing SSH keys were used.

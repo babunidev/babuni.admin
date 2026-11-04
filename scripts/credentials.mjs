@@ -66,6 +66,7 @@ try {
   // Error codes only: no credential content or underlying keyring stderr is printed.
   console.error('Credential operation failed:', error.message === 'CANCELLED' ? 'CANCELLED' :
     error.message === 'INTERACTIVE_TERMINAL_REQUIRED' ? 'INTERACTIVE_TERMINAL_REQUIRED' :
-    error.message === 'INVALID_CREDENTIAL' ? 'INVALID_CREDENTIAL' : 'KEYRING_UNAVAILABLE')
+    error.message === 'INVALID_CREDENTIAL' ? 'INVALID_CREDENTIAL' :
+    error.message === 'KEYRING_LOCKED' ? 'KEYRING_LOCKED' : 'KEYRING_UNAVAILABLE')
   process.exitCode = 1
 }

@@ -1,5 +1,16 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Keyring lock diagnostics and local asset containment
+
+- Added read-only default Secret Service collection lock detection; a confirmed locked state blocks storing, clearing and verifying credentials.
+- Added CLI commands to inspect real keyring state without reading credentials and to simulate D-Bus unavailability in a disposable child process.
+- Added project-capability denial tests and regression coverage for legacy local request guards.
+- Hardened opt-in legacy Morkahja static file routes against symlink/realpath escapes and cross-site requests, with disposable asset tests.
+- Documented unresolved authentication, remote permission, live write and recovery gates; **no production access authorized**.
+
+
+- Tightened opt-in legacy content/moderation HTTP guards to require an exact HTTP origin for mutations and reject same-site cross-origin requests; fixture requests now supply an explicit origin.
+
 ## 2026-11-04 — Local connection lifecycle and UI session hardening
 
 - Added non-secret profile editing with immutable project, adapter and credential identity.

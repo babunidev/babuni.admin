@@ -4,7 +4,7 @@ import { PageHeader } from '../shared/components/PageHeader'
 type ProjectId = 'morkahja' | 'babuni-dev'
 type Kind = 'local-files' | 'postgres-ssh' | 'github' | 'remote-publish'
 type ProfileState = 'not-configured' | 'available' | 'connected' | 'disconnected' | 'degraded' | 'error'
-type CredentialState = 'not-required' | 'stored' | 'missing' | 'unavailable'
+type CredentialState = 'not-required' | 'stored' | 'missing' | 'locked' | 'unavailable'
 interface ContentReport {
   files: {name:string;status:string;entries?:number;bytes?:number;reason?:string}[]
 }
@@ -26,7 +26,7 @@ interface Health {
   ok:boolean
   service:string
   mode:string
-  keyring:'available'|'unavailable'
+  keyring:'available'|'locked'|'unavailable'
   checkedAt:string
 }
 const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
@@ -87,6 +87,7 @@ function checkedTime(value?:string) {
 function credentialLabel(value?:CredentialState) {
   if (value==='stored') return 'Stored in Linux keyring'
   if (value==='missing') return 'Not stored'
+  if (value==='locked') return 'Keyring locked — unlock required'
   if (value==='unavailable') return 'Keyring unavailable'
   return 'Not required'
 }
@@ -180,7 +181,7 @@ export function ConnectionsPage() {
     <p role="status" className="text-sm text-fog">{status}</p>
     <p className="text-xs text-fog">
       Local service: {health?.service==='available'?'Available (loopback only)':'Not verified'}
-      {' · '}OS keyring: {health?.keyring==='available'?'Responding (not a credential round-trip)':'Unavailable or not checked'}
+      {' · '}OS keyring: {health?.keyring==='available'?'Responding (not a credential round-trip)':health?.keyring==='locked'?'Locked (credential access denied)':'Unavailable or not checked'}
       {' · '}Last service check: {checkedTime(health?.checkedAt)}
     </p>
     <section className="rounded-lg border border-gold/20 bg-slate/50 p-5">

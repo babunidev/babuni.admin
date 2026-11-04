@@ -67,10 +67,13 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Correct the portrait JSON key to `Avatar` and add regression coverage for its real-shape fixture.
 - [x] Add `npm run keyring:verify`, an opt-in synthetic real-keyring store/compare/delete check.
 - [x] Verify the actual Nobara desktop's unlocked keyring: the creative ran `npm run keyring:verify` and reported successful synthetic store, retrieve and cleanup on 2026-11-04.
-- [ ] Verify actual locked and unavailable desktop keyring behavior; CI currently simulates these conditions.
+- [x] Add read-only D-Bus default-collection lock detection, explicit `locked` status and fail-closed credential operations, with disposable busctl/secret-tool tests.
+- [x] Add `npm run keyring:inspect` and an isolated unavailable-bus check, `npm run keyring:verify-unavailable`, without locking or modifying the desktop's existing credentials.
+- [ ] Run and record actual Nobara locked-keyring and unavailable-bus checks; these new commands are implemented, **not yet operator-verified**.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
 - [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
-- [ ] Enforce origin/session validation, project-scoped operations, read-only defaults, action attribution, and recovery before real mutations.
+- [x] Audit current connection and legacy static middleware boundaries; add project-scope/denied-operation tests and prevent local asset symlink escapes. [Review](docs/PHASE2_SECURITY_REVIEW_2026-11-04.md).
+- [ ] Complete operator authentication/authorization, project-scoped live operations, action attribution, recoverable writes and remaining security release gates. Browser origin/session guards alone are insufficient.
 - [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.
 - [ ] Fix Vite config import-extension warnings as an independent maintenance task.
 

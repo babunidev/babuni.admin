@@ -3,8 +3,10 @@ import {
   existsSync,
   mkdirSync,
   readFileSync,
+  realpathSync,
+  lstatSync,
 } from 'node:fs'
-import { join, normalize, resolve } from 'node:path'
+import { join, resolve, relative, sep, isAbsolute } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
 import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard'
@@ -65,10 +67,25 @@ function contentType(filePath: string): string {
 }
 
 function safeResolve(root: string, urlPath: string): string | null {
-  const target = normalize(join(root, urlPath.replace(/^\/+/, '')))
-  const relative = target.slice(root.length)
-  if (relative.startsWith('..') || target === root) return null
-  return target
+  try {
+    // Resolve the canonical root and requested target to prevent traversal,
+    // percent-encoded path escape and symlinks to files outside the project.
+    const base = realpathSync(root)
+    const decoded = decodeURIComponent(urlPath.split('?')[0])
+    if (decoded.includes(String.fromCharCode(0))) return null
+    const target = resolve(base, decoded.replace(/^\/+/, ''))
+    const suffix = relative(base, target)
+    if (!suffix || suffix === '..' || suffix.startsWith('..' + sep) || isAbsolute(suffix)) return null
+    const info = lstatSync(target)
+    if (!info.isFile() || info.isSymbolicLink()) return null
+    const resolved = realpathSync(target)
+    const actualSuffix = relative(base, resolved)
+    if (!actualSuffix || actualSuffix === '..' || actualSuffix.startsWith('..' + sep)
+        || isAbsolute(actualSuffix)) return null
+    return target
+  } catch {
+    return null
+  }
 }
 
 function serveStatic(
@@ -77,7 +94,8 @@ function serveStatic(
 ): (req: IncomingMessage, res: ServerResponse, next: () => void) => void {
   return (req, res, next) => {
     const url = req.url ?? '/'
-    if (!url.startsWith(mount)) {
+    if ((req.method !== 'GET' && req.method !== 'HEAD') ||
+        (url !== mount && !url.startsWith(mount + '/'))) {
       next()
       return
     }
@@ -90,9 +108,12 @@ function serveStatic(
       return
     }
 
+    if (rejectNonLocalRequest(req, res)) return
     res.statusCode = 200
     res.setHeader('Content-Type', contentType(filePath))
-    createReadStream(filePath).pipe(res)
+    const stream = createReadStream(filePath)
+    stream.on('error', () => { if (!res.headersSent) { res.statusCode = 404; res.end() } else res.destroy() })
+    stream.pipe(res)
   }
 }
 
