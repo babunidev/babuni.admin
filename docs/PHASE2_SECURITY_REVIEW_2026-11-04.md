@@ -11,6 +11,8 @@
 
 These checks add to the already verified local-only listener, independent server token, ephemeral browser session and disabled-by-default remote adapters. A passing CI run verifies implementation **against fixtures**, not the operating system's locked keyring or production authorization.
 
+The legacy opt-in admin/content guards now also require an exact HTTP Origin for mutations (not merely a matching Host) and reject `same-site` requests. These guards reduce CSRF exposure but are still not administrator authentication.
+
 ## Security status and remaining blockers
 
 | Area | Verified or observed | Remaining live-operation gate |
