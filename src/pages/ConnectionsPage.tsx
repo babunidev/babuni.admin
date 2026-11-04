@@ -136,6 +136,12 @@ export function ConnectionsPage() {
           <button type="button" disabled={busy} onClick={()=>{ void testProfile(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Test</button>
           <button type="button" disabled={busy} onClick={()=>{ void remove(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-fog disabled:opacity-50">Remove</button></div>
         </div>
+        {reports[p.id] && <section aria-label="Read-only content report" className="mt-3 border-t border-gold/10 pt-3">
+          <h4 className="text-xs text-gold-bright">Game content — read-only</h4>
+          <ul className="mt-2 space-y-1 text-xs text-fog">
+            {reports[p.id].files.map(file => <li key={file.name}>{file.name}: {file.status === 'available' ? String(file.entries) + ' records, ' + String(file.bytes) + ' bytes' : 'Unavailable (' + file.reason + ')'}</li>)}
+          </ul>
+        </section>}
       </article>)}
     </section>
   </div>
