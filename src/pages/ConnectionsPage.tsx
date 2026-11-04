@@ -32,7 +32,7 @@ interface Health {
 const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
   morkahja:[
     {value:'local-files',label:'Local files'},
-    {value:'postgres-ssh',label:'PostgreSQL via SSH (offline host-key check only)'},
+    {value:'postgres-ssh',label:'PostgreSQL via SSH (operator-enabled health check)'},
   ],
   'babuni-dev':[
     {value:'github',label:'GitHub repository (planned)'},
@@ -76,7 +76,7 @@ async function api<T>(method='GET',path='/',data?:unknown):Promise<T> {
 function stateLabel(profile:Profile) {
   if (profile.state==='connected') return 'Connected — local read-only session'
   if (profile.state==='available') return 'Available — local check only'
-  if (profile.state==='disconnected') return 'Disconnected'
+  if (profile.state==='disconnected') return profile.code==='REMOTE_DB_HEALTHY_READ_ONLY'?'Remote health checked — tunnel closed':'Disconnected'
   if (profile.state==='degraded') return 'Degraded — some content is unavailable'
   if (profile.state==='error') return 'Error — local check failed'
   return 'Not connected — profile only'
@@ -177,7 +177,7 @@ export function ConnectionsPage() {
 
   const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
   return <div className="max-w-4xl space-y-6">
-    <PageHeader title="Connections" description="Private connection profiles, local file checks and offline SSH trust preflight. No remote connections are active."/>
+    <PageHeader title="Connections" description="Private connections. Remote SSH/PostgreSQL health checks require a separate operator-only configuration and are disabled by default; no live editing."/>
     <p role="status" className="text-sm text-fog">{status}</p>
     <p className="text-xs text-fog">
       Local service: {health?.service==='available'?'Available (loopback only)':'Not verified'}
@@ -236,6 +236,10 @@ export function ConnectionsPage() {
             <button type="button" disabled={busy} onClick={()=>{
               void operation(()=>api('POST','/'+p.id+'/test'))
             }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">{p.capabilities?.includes('ssh:preflight')?'Check pinned key (offline)':'Test'}</button>
+            {p.capabilities?.includes('ssh:probe') &&
+              <button type="button" disabled={busy} onClick={()=>{
+                void operation(()=>api('POST','/'+p.id+'/probe'))
+              }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Probe SSH + DB (opt-in)</button>}
             {p.capabilities?.includes('local:connect') &&
               (p.state==='connected'
                 ? <button type="button" disabled={busy} onClick={()=>{
