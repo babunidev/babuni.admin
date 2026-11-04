@@ -124,7 +124,7 @@ const server=createServer(async(req,res)=>{
     if (req.method==='POST' && ['read-overview','read-players','read-dashboard'].includes(action)) {
       if (!hasCapability(profile,'ssh:read')) return send(res,403,{error:'CAPABILITY_DENIED'})
       let page=1
-      if(action==='read-players') {
+      if(action==='read-players' || action==='read-dashboard') {
         try {page=parsePlayerPage(await body(req))}
         catch {return send(res,400,{error:'INVALID_PAGE'})}
       }
