@@ -27,7 +27,7 @@ function knownHost(host) {
     child.stdin?.end()
   })
 }
-function startTunnel(profile,config,port) {
+export function buildSshArgs(profile,config,port) {
   const args=[
     '-F','/dev/null','-N','-T','-p','22',
     '-o','BatchMode=yes','-o','PasswordAuthentication=no',
@@ -40,8 +40,12 @@ function startTunnel(profile,config,port) {
   ]
   if(config.identityFile)args.push('-i',config.identityFile,'-o','IdentitiesOnly=yes')
   args.push('--',config.sshUser+'@'+profile.target)
+  return args
+}
+function startTunnel(profile,config,port) {
   // Never invoke a shell or print stderr; SSH agent/private key stays with OpenSSH.
-  return spawn('ssh',args,{stdio:['ignore','ignore','ignore'],shell:false})
+  return spawn('ssh',buildSshArgs(profile,config,port),
+    {stdio:['ignore','ignore','ignore'],shell:false})
 }
 
 export class MorkahjaTunnelManager {
