@@ -64,6 +64,8 @@ jobs:
 
           MORKAHJA_PUBLIC="$RUNNER_TEMP/morkahja-fixture" \
           VITE_USE_LOCAL_CONTENT=true LOCAL_CONTENT_WRITES=true \
+          BABUNI_TEST_PROFILE_FILE="$RUNNER_TEMP/content-fixture-profiles.json" \
+          BABUNI_LEGACY_CONTENT_FIXTURE_WRITES=true \
           VITE_USE_MOCK_DATA=true DATABASE_URL='' \
           npm run dev -- --host 127.0.0.1 --port 5182 > /tmp/babuni-fixture.log 2>&1 &
           for i in $(seq 1 30); do
