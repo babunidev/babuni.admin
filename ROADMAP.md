@@ -1,5 +1,14 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-04 — Morkahja read-only dashboard
+
+- [x] Implement a separate, manual Morkahja dashboard for database counts and 20-row player preview pages.
+- [x] Add fixed SELECT-only queries, repeated role verification, limited response fields and a shared single-flight SSH tunnel lifecycle.
+- [x] Require a second operator-only data-read opt-in and exact `displayName`, `avatarCount`, `lastPlayedAt` field list; browser requests cannot select arbitrary data or queries.
+- [ ] Verify the new read-only snapshot and approved field list on the actual Morkahja server after disposable fixture/CI tests pass. No live player data was read during implementation. [Data contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
+
+**Observed on the operator's Nobara PC:** The Morkahja SSH/database health probe returned `REMOTE_DB_HEALTHY_READ_ONLY` at 20:59 on 2026-11-04. This validates the configured health path, not general data-reading or write authority.
+
 ## 2026-11-04 — SSH client compatibility fix
 
 - [x] Remove unsupported client option `PermitTTY` while retaining `-T`.
