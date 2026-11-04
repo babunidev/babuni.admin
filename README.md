@@ -43,7 +43,7 @@ The Vite proxy additionally requires an ephemeral in-memory browser session capa
 
 ### Keyring failure diagnostics and security release boundary
 
-The application now inspects the Linux Secret Service default collection's lock property **without unlocking or reading existing credentials**. A confirmed lock prevents credential operations. Providers without a readable lock property remain `unknown`; this is not proof of an unlocked keyring.
+The application now inspects the Linux Secret Service default collection's lock property **without unlocking or reading existing credentials**. A confirmed lock prevents credential operations. Providers without a readable lock property remain `unknown`; this is not proof of an unlocked keyring. The inspection command skips credential lookup in that case to avoid an unlock prompt.
 
 ```bash
 npm run keyring:inspect

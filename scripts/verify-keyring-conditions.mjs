@@ -9,16 +9,19 @@ const probe={id:randomUUID(),kind:'github'}
 async function inspect() {
   // Only inspect the default collection Locked property and a never-used ID.
   const lockState=await defaultCollectionLockState()
+  console.log('Default Secret Service collection:',lockState)
+  if (lockState==='unknown') {
+    // Do not call secret-tool: some providers would show an unlock prompt.
+    console.log('Lock introspection unsupported; skipped credential lookup to avoid an unlock prompt.')
+    return
+  }
   const health=await keyringHealth()
   const credential=await credentialStatus(probe)
-  console.log('Default Secret Service collection:',lockState)
   console.log('Keyring health:',health)
   console.log('Nonexistent test-profile credential:',credential)
   if(lockState==='locked') {
     if(health!=='locked'||credential!=='locked') throw new Error('LOCKED_KEYRING_NOT_DENIED')
     console.log('Real locked-keyring detection verified without unlocking.')
-  } else if(lockState==='unknown') {
-    console.log('Collection lock state could not be verified with this Secret Service provider.')
   } else console.log('Collection is unlocked. Locked-keyring verification remains pending.')
 }
 function isolatedProbe(env) {

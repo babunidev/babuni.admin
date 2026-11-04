@@ -1,4 +1,5 @@
 import { test } from 'node:test'
+import { spawnSync } from 'node:child_process'
 import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, chmodSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -73,6 +74,13 @@ else process.exit(2)
     assert.equal(await credentialStatus(profile),'missing')
     process.env.BABUNI_TEST_COLLECTION_LOCK='unknown'
     assert.equal(await defaultCollectionLockState(),'unknown')
+    const priorArgs=readFileSync(mockArguments,'utf8')
+    const inspected=spawnSync(process.execPath,['scripts/verify-keyring-conditions.mjs','inspect'],{
+      env:process.env,encoding:'utf8',
+    })
+    assert.equal(inspected.status,0)
+    assert.ok(inspected.stdout.includes('skipped credential lookup'))
+    assert.equal(readFileSync(mockArguments,'utf8'),priorArgs)
     process.env.BABUNI_KEYRING_LOCKED='1'
     assert.equal(await credentialStatus(profile),'unavailable')
     await assert.rejects(storeCredential(profile,'synthetic'),/KEYRING_UNAVAILABLE/)
