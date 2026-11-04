@@ -4,8 +4,9 @@ import { inspectContent } from './inspectContent.mjs'
 import { probeProfile, inspectionState } from './connectionHealth.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
-import { probeMorkahjaPostgres, isSshProbeActive } from './sshPostgresProbe.mjs'
+import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
 import { stopAllSshTunnels } from './sshTunnel.mjs'
+import { parsePlayerPage } from './morkahjaReadOnly.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -81,7 +82,7 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
@@ -119,6 +120,27 @@ const server=createServer(async(req,res)=>{
       const status=await probeMorkahjaPostgres(profile)
       states.set(id,status)
       return send(res,200,{status})
+    }
+    if (req.method==='POST' && ['read-overview','read-players'].includes(action)) {
+      if (!hasCapability(profile,'ssh:read')) return send(res,403,{error:'CAPABILITY_DENIED'})
+      let page=1
+      if(action==='read-players') {
+        try {page=parsePlayerPage(await body(req))}
+        catch {return send(res,400,{error:'INVALID_PAGE'})}
+      }
+      const kind=action==='read-overview'?'overview':'players'
+      const report=await fetchMorkahjaReadOnly(profile,kind,page)
+      if(!report.ok) {
+        const code=report.code==='REMOTE_PROBE_BUSY'?409:
+          ['REMOTE_PROBE_DISABLED','REMOTE_READ_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:422
+        return send(res,code,{error:report.code})
+      }
+      states.set(id,{
+        state:'disconnected',code:'REMOTE_READ_COMPLETED',
+        detail:'Approved read-only snapshot retrieved; SSH tunnel closed.',
+        checkedAt:report.checkedAt,lastSuccessAt:report.checkedAt,
+      })
+      return send(res,200,report)
     }
     if (req.method==='GET' && action==='inspect') {
       if (!hasCapability(profile,'local:inspect')) return send(res,403,{error:'CAPABILITY_DENIED'})
