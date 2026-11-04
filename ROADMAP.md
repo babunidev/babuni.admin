@@ -61,8 +61,10 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Add manual local-file Connect, Disconnect and Reconnect through read-only probes without background retries.
 - [x] Strengthen local Vite proxy Host/Origin/Fetch Metadata checks and add a per-run browser session capability while keeping the service key server-side.
 - [x] Add Morkahja-only offline SSH host-key trust preflight: dedicated operator-managed known_hosts file, exact host matching, OpenSSH parser check, invalid/unsafe store denial and no outbound connection; verified only by fixture CI tests. [Design](docs/LOCAL_CONNECTION_MANAGER.md).
-- [ ] Implement **online** SSH host-key verification, outbound tunnel lifecycle, PostgreSQL role authorization and GitHub transport (all remain disabled).
-- [ ] Connect Morkahja PostgreSQL through a protected outbound tunnel with least privilege.
+- [x] Implement a **disabled-by-default**, operator-gated Morkahja SSH/PostgreSQL health probe: exact host and approved fingerprint, private identity file, keyring password, hardened OpenSSH invocation, temporary loopback tunnel, fixed read-only PostgreSQL metadata/privilege query and tunnel cleanup. Fixture tests verify code paths; **no live Morkahja host has been contacted**. [Configuration and safety](docs/MORKAHJA_SSH_READONLY_PROBE.md).
+- [ ] Independently verify the real Morkahja SSH host, remote identity, database role and safe live health-check behavior before enabling the probe for an actual server.
+- [ ] Implement GitHub remote transport and future authenticated project-scoped content workflows; neither is enabled.
+- [ ] Authorize and verify a **live** Morkahja PostgreSQL connection through the protected outbound health-probe tunnel using a dedicated audited read-only role. Only disposable PostgreSQL fixtures have been exercised.
 - [x] Add read-only inspection of five known Morkahja JSON datasets through the local service; file counts and status only, using isolated fixtures.
 - [x] Add local service/keyring health, per-profile timestamps and structured error codes; distinguish complete, degraded and failed content inspection without claiming remote connectivity.
 - [x] Correct the portrait JSON key to `Avatar` and add regression coverage for its real-shape fixture.
