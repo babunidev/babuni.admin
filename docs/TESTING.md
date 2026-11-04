@@ -1,5 +1,22 @@
 # Testing Babuni Admin
 
+## Failure-mode checks and security regression suite — 2026-11-04
+
+The synthetic keyring test now uses a disposable mock D-Bus tool to verify `locked`, `unlocked`, `unknown`, unavailable and denied credential operations, without touching the machine's default collection. The regression suite tests server-owned adapter permissions and the legacy local HTTP request guard, including denial of cross-project and remote capabilities. The local-content middleware additionally has fixture tests for rejecting symlinked files outside the game asset root and cross-site reads.
+
+On the user's Nobara desktop, with the keyring initially unlocked:
+
+```bash
+cd ~/Projects/babuni.admin
+npm run keyring:inspect
+npm run keyring:verify-unavailable
+```
+
+The isolated unavailable-bus command makes no changes to desktop bus settings. For a real locked test, the operator must intentionally lock the default collection using their desktop keyring manager, run `npm run keyring:inspect`, and unlock the collection afterward. The operation may temporarily interrupt other applications. If lock introspection reports `unknown`, actual locked behavior is **not verified**. Neither command prints or changes project credentials.
+
+See [Phase 2 security review](PHASE2_SECURITY_REVIEW_2026-11-04.md) for the distinction between CI fixtures, operator-reported results and remaining live-operation gates.
+
+
 ## Nobara desktop keyring verification — 2026-11-04
 
 The human creative ran `npm run keyring:verify` on the Nobara desktop and supplied the following successful terminal results: `Linux Secret Service round-trip verified: ephemeral store and retrieve.` and `Ephemeral test secret removed from the keyring.` This is operator-reported verification on the actual machine, separate from CI's fake-keyring tests. The synthetic test did not access real project credentials. Locked or unavailable desktop keyring behavior and remote service authentication remain unverified.
