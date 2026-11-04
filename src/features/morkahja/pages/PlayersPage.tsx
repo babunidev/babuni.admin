@@ -99,7 +99,7 @@ export function PlayersPage() {
   return (
     <div>
       <PageHeader
-        title="Players"
+        title="Moderation"
         description={
           useLocalPostgres
             ? 'All accounts from PostgreSQL — online players listed first.'
