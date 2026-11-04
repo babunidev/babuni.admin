@@ -52,17 +52,21 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Design a shared local connection manager: profile contracts, non-browser credential references, status lifecycle, scoped adapter boundaries, UI and test acceptance criteria. **Design only, not implementation.** [Design](docs/LOCAL_CONNECTION_MANAGER.md).
 - [x] Introduce a standalone loopback-only local Node service with an ephemeral service token; use Vite as the developer UI/proxy rather than as the connection-profile authority. This is the first local process boundary, not a full privilege/isolation review.
 - [x] Add local, non-secret connection profile creation/listing/removal with disabled-by-default status and isolated persistence tests.
-- [ ] Add browser tests for the rendered connection profile interface.
+- [x] Add rendered Chromium Connections tests with disposable profiles, local lifecycle and forged-origin/session denial. Verified only when CI passes.
 - [x] Remove browser-side reads of `VITE_DATABASE_URL` and `VITE_API_TOKEN`; use server-only `DATABASE_URL` in the current development adapter. This does not implement a credential vault.
-- [ ] Complete per-project connection profiles with edit flow, validated adapter registry and credentials; add/list/remove non-secret profile metadata is implemented.
+- [x] Add profile editing for name/target, immutable project/adapter/credential identity, and invalidation of previous checks when the target changes.
+- [x] Add a validated server-owned adapter/capability registry. Only local-file read-only operations are active; remote permissions remain denied.
 - [x] Add Linux Secret Service credential storage through a hidden terminal prompt, outside browser config, logs and Git. Verified with a disposable fake keyring; real Nobara keyring access still requires operator verification.
 - [x] Add a read-only local directory test with verified available/error status; non-local adapters explicitly remain unconfigured.
-- [ ] Add SSH/GitHub checks, keyring storage, safe connect/disconnect, reconnection and project capability authorization.
+- [x] Add manual local-file Connect, Disconnect and Reconnect through read-only probes without background retries.
+- [x] Strengthen local Vite proxy Host/Origin/Fetch Metadata checks and add a per-run browser session capability while keeping the service key server-side.
+- [ ] Implement SSH/GitHub remote checks, transport lifecycle and independent project authorization.
 - [ ] Connect Morkahja PostgreSQL through a protected outbound tunnel with least privilege.
 - [x] Add read-only inspection of five known Morkahja JSON datasets through the local service; file counts and status only, using isolated fixtures.
 - [x] Add local service/keyring health, per-profile timestamps and structured error codes; distinguish complete, degraded and failed content inspection without claiming remote connectivity.
 - [x] Correct the portrait JSON key to `Avatar` and add regression coverage for its real-shape fixture.
-- [ ] Verify the real Linux keyring on Nobara with missing, unlocked and locked keyring states.
+- [x] Add `npm run keyring:verify`, an opt-in synthetic real-keyring store/compare/delete check.
+- [ ] Verify the actual Nobara desktop's unlocked keyring and separately observe locked/unavailable behavior; CI only simulates these scenarios.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
 - [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
 - [ ] Enforce origin/session validation, project-scoped operations, read-only defaults, action attribution, and recovery before real mutations.
