@@ -116,7 +116,7 @@ const server=createServer(async(req,res)=>{
         if(['INVALID_GAME_JSON','INVALID_GAME_STRUCTURE','GAME_FILE_TOO_LARGE',
           'UNSAFE_GAME_FILE','UNSAFE_GAME_DIRECTORY','CONTENT_SCOPE_DENIED'].includes(code))
           return send(res,422,{error:code})
-        return send(res,500,{error:['WRITE_REVERTED_AUDIT_FAILURE',
+        return send(res,500,{error:['WRITE_REVERTED_AUDIT_FAILURE','RESTORE_REVERTED_AUDIT_FAILURE',
           'PARTIAL_WRITE_NEEDS_RECOVERY'].includes(code)?code:'CONTENT_OPERATION_FAILED'})
       }
     }
