@@ -1,5 +1,13 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Prefer safe error categories over speculative database changes
+
+**Observed behavior:** The newly added read-only dashboard returned `REMOTE_READ_FAILED` during its first real Morkahja request, even though an earlier metadata-only SSH/database health probe had succeeded. The underlying cause is unknown; no live database error code was available in the screenshot.
+
+**AI implementation:** Preserve the fixed SELECT-only adapter and access gates, and map PostgreSQL SQLSTATE errors into narrow, non-sensitive failure codes. A disposable PostgreSQL regression test now checks that a healthy non-write role with insufficient SELECT grants reports a permission problem. No automatic grants, database schema changes, remote debug logs or broader privileges are introduced.
+
+**Verification status:** Only fixture/test evidence is available for the new classifications. A fresh operator test is needed to determine the real server's error category.
+
 ## 2026-11-04 — Separate real data reads from the legacy admin adapter
 
 **Creative direction:** After the SSH and PostgreSQL health probe worked on the actual Nobara desktop, the next useful milestone was to display database counts and a paginated player preview, without exposing secrets or changing live records.

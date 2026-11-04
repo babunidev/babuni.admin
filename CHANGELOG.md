@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Safer Morkahja read-only failure diagnostics
+
+- Classified PostgreSQL read failures by SQLSTATE without returning server messages or query details to the browser.
+- Added helpful status text for missing SELECT grants, schema mismatches, malformed data, timeouts, login and connection failures; unknown causes remain generic.
+- Extended disposable PostgreSQL tests to reproduce a role that passes metadata health checks yet lacks SELECT grants.
+- No changes to remote database permissions, query scope, write capabilities or SSH lifecycle.
+
 ## 2026-11-04 — Morkahja read-only dashboard
 
 - Added a separate `/read-only` Morkahja page with manually requested database totals, 24-hour activity count and 20-row paginated player preview.

@@ -1,5 +1,12 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-04 — Diagnose first live Morkahja dashboard read failure
+
+- [x] Record operator screenshot: `/read-only` shows `REMOTE_READ_FAILED` when requesting data after successful SSH/database health checking. The actual PostgreSQL error is **not yet known**.
+- [x] Classify trusted PostgreSQL SQLSTATE errors without exposing raw error messages, internal schema details or credentials. UI distinguishes missing SELECT grants, missing tables/columns, invalid data, timeouts, login and connection failures.
+- [x] Extend the disposable PostgreSQL fixture to reproduce a metadata-health-passing reader that lacks SELECT permission on game tables.
+- [ ] Re-run the real dashboard after this change and identify its newly categorized result; **no live database grant or schema modification is authorized by this diagnosis**.
+
 ## 2026-11-04 — Morkahja read-only dashboard
 
 - [x] Implement a separate, manual Morkahja dashboard for database counts and 20-row player preview pages.

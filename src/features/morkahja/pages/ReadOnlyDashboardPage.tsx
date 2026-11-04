@@ -39,6 +39,21 @@ const checkedTime = (value: string) => new Date(value).toLocaleString()
 const lastPlayed = (value: number | null) =>
   value === null ? 'Not recorded' : new Date(value).toLocaleString()
 
+const readErrorHints: Record<string,string> = {
+  DB_READ_PERMISSION_DENIED: 'The database role lacks SELECT permission on at least one required table. No permissions were changed.',
+  DB_READ_TABLE_MISSING: 'A required table was not found in the configured database schema.',
+  DB_READ_COLUMN_MISSING: 'The game database has a different column layout than the dashboard expects.',
+  DB_READ_SCHEMA_MISMATCH: 'A database column or function is incompatible with the fixed read-only query.',
+  DB_READ_INVALID_DATA: 'The fixed query encountered an unsupported database value.',
+  DB_READ_TIMEOUT: 'The read-only query exceeded its time limit.',
+  DB_READ_AUTH_FAILED: 'PostgreSQL did not accept the configured database login.',
+  DB_READ_CONNECTION_FAILED: 'The temporary database connection could not be established or was interrupted.',
+}
+function readableFailure(error:unknown):string {
+  const code=error instanceof Error ? error.message : 'REMOTE_READ_FAILED'
+  return readErrorHints[code] ? code + ' — ' + readErrorHints[code] : code
+}
+
 export function ReadOnlyDashboardPage() {
   const [profiles, setProfiles] = useState<ConnectionOption[]>([])
   const [profileId, setProfileId] = useState('')
@@ -74,7 +89,7 @@ export function ReadOnlyDashboardPage() {
       setStatus('Overview retrieved using a temporary SSH tunnel. Disconnected.')
     } catch(error) {
       setOverview(null)
-      setStatus(error instanceof Error ? error.message : 'REMOTE_READ_FAILED')
+      setStatus(readableFailure(error))
     } finally {setBusy(false)}
   }
 
@@ -89,7 +104,7 @@ export function ReadOnlyDashboardPage() {
       setStatus('Player preview retrieved. No persistent connection is open.')
     } catch(error) {
       setPlayerPage(null)
-      setStatus(error instanceof Error ? error.message : 'REMOTE_READ_FAILED')
+      setStatus(readableFailure(error))
     } finally {setBusy(false)}
   }
 
