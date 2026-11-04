@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { PageHeader } from '../shared/components/PageHeader'
+import { localConnectionApi as api } from '../shared/services/localConnectionClient'
 
 type ProjectId = 'morkahja' | 'babuni-dev'
 type Kind = 'local-files' | 'postgres-ssh' | 'github' | 'remote-publish'
@@ -40,39 +41,6 @@ const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
   ],
 }
 
-let uiSession:Promise<string>|null=null
-function sessionToken():Promise<string> {
-  if (!uiSession) {
-    uiSession=fetch('/local-connections-api/session',{
-      cache:'no-store',headers:{'X-Babuni-Local':'1'},
-    }).then(async response=>{
-      if (!response.ok) throw new Error('LOCAL_SESSION_UNAVAILABLE')
-      const json=await response.json() as {session?:string}
-      if (!json.session || json.session.length<32) throw new Error('LOCAL_SESSION_UNAVAILABLE')
-      return json.session
-    }).catch(error=>{uiSession=null;throw error})
-  }
-  return uiSession
-}
-async function api<T>(method='GET',path='/',data?:unknown):Promise<T> {
-  const session=await sessionToken()
-  let result:Response
-  try {
-    result=await fetch('/local-connections-api'+path,{
-      method,cache:'no-store',
-      headers:{'Content-Type':'application/json','X-Babuni-Local':'1','X-Babuni-Session':session},
-      body:data===undefined?undefined:JSON.stringify(data),
-    })
-  } catch { throw new Error('LOCAL_SERVICE_UNAVAILABLE') }
-  let value:{error?:string;status?:{code?:string}}
-  try {value=await result.json() as typeof value}
-  catch {throw new Error('INVALID_SERVICE_RESPONSE')}
-  if (!result.ok) {
-    if (result.status===403) uiSession=null
-    throw new Error(value.error||value.status?.code||'LOCAL_SERVICE_FAILURE')
-  }
-  return value as unknown as T
-}
 function stateLabel(profile:Profile) {
   if (profile.state==='connected') return 'Connected — local read-only session'
   if (profile.state==='available') return 'Available — local check only'
@@ -113,7 +81,7 @@ export function ConnectionsPage() {
       ])
       setProfiles(data.profiles||[])
       setHealth(service)
-      setStatus('Profiles are stored on this PC. Remote adapters are not active.')
+      setStatus('Profiles are stored on this PC. SSH health and approved read-only access are separate from editing.')
     } catch(error) {
       setProfiles([])
       setHealth(null)
@@ -125,7 +93,7 @@ export function ConnectionsPage() {
       .then(([data,service])=>{
         setProfiles(data.profiles||[])
         setHealth(service)
-        setStatus('Profiles are stored on this PC. Remote adapters are not active.')
+        setStatus('Profiles are stored on this PC. SSH health and approved read-only access are separate from editing.')
       })
       .catch(()=>{setHealth(null);setStatus('LOCAL_SERVICE_UNAVAILABLE')})
   },[])
@@ -224,7 +192,7 @@ export function ConnectionsPage() {
             <p className="mt-1 text-xs text-fog">Result: {p.code||'NOT_CHECKED'} · Checked: {checkedTime(p.checkedAt)}</p>
             {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last successful check: {checkedTime(p.lastSuccessAt)}</p>}
             {p.kind!=='local-files' && <p className="mt-1 text-xs text-fog">
-              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · Remote transport not implemented
+              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · No persistent connection or write permission
             </p>}
             <p className="mt-1 text-xs text-fog">Allowed operations: {p.capabilities?.join(', ')||'None (adapter planned)'}</p>
           </div>
