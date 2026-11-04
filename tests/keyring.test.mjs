@@ -3,13 +3,14 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, chmodSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { credentialStatus, storeCredential, clearCredential, keyringHealth, verifyCredential } from '../local-service/keyring.mjs'
+import { credentialStatus, storeCredential, clearCredential, keyringHealth, verifyCredential, defaultCollectionLockState } from '../local-service/keyring.mjs'
 
 test('OS keyring boundary stores secrets only through stdin and returns status, not secret values', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'babuni-keyring-'))
   const mockBin = join(dir,'secret-tool')
   const mockFile = join(dir,'secret')
   const mockArguments = join(dir,'arguments')
+  const mockBus = join(dir,'busctl')
   // Disposable command fixture: it is deliberately not a real credential store.
   writeFileSync(mockBin, `#!/usr/bin/env node
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'node:fs'
@@ -26,10 +27,21 @@ if (args[0] === 'lookup') {
 } else process.exitCode = 2
 `)
   chmodSync(mockBin,0o700)
+  writeFileSync(mockBus, `#!/usr/bin/env node
+const args=process.argv.slice(2)
+const state=process.env.BABUNI_TEST_COLLECTION_LOCK
+if(state==='unknown') process.exit(2)
+else if(args.includes('ReadAlias')) process.stdout.write('o "/org/freedesktop/secrets/collection/login"\\n')
+else if(args.includes('get-property')) process.stdout.write(state==='locked' ? 'b true\\n' : 'b false\\n')
+else process.exit(2)
+`)
+  chmodSync(mockBus,0o700)
   const original = {
     binary:process.env.BABUNI_SECRET_TOOL_BIN,
     file:process.env.BABUNI_KEYRING_FILE,
     args:process.env.BABUNI_KEYRING_ARGS,
+    bus:process.env.BABUNI_BUSCTL_BIN,
+    collection:process.env.BABUNI_TEST_COLLECTION_LOCK,
   }
   process.env.BABUNI_SECRET_TOOL_BIN=mockBin
   process.env.BABUNI_KEYRING_FILE=mockFile
@@ -48,6 +60,19 @@ if (args[0] === 'lookup') {
     assert.equal(await credentialStatus(profile),'missing')
     await assert.rejects(storeCredential(profile,'line\npassword'), /INVALID_CREDENTIAL/)
     assert.equal(await credentialStatus({id:profile.id,kind:'local-files'}),'not-required')
+    process.env.BABUNI_BUSCTL_BIN=mockBus
+    process.env.BABUNI_TEST_COLLECTION_LOCK='locked'
+    assert.equal(await defaultCollectionLockState(),'locked')
+    assert.equal(await credentialStatus(profile),'locked')
+    assert.equal(await keyringHealth(),'locked')
+    await assert.rejects(storeCredential(profile,'synthetic'), /KEYRING_LOCKED/)
+    await assert.rejects(clearCredential(profile), /KEYRING_LOCKED/)
+    assert.equal(await verifyCredential(profile,'synthetic'),false)
+    process.env.BABUNI_TEST_COLLECTION_LOCK='unlocked'
+    assert.equal(await defaultCollectionLockState(),'unlocked')
+    assert.equal(await credentialStatus(profile),'missing')
+    process.env.BABUNI_TEST_COLLECTION_LOCK='unknown'
+    assert.equal(await defaultCollectionLockState(),'unknown')
     process.env.BABUNI_KEYRING_LOCKED='1'
     assert.equal(await credentialStatus(profile),'unavailable')
     await assert.rejects(storeCredential(profile,'synthetic'),/KEYRING_UNAVAILABLE/)
@@ -57,7 +82,7 @@ if (args[0] === 'lookup') {
     assert.equal(await keyringHealth(),'unavailable')
   } finally {
     delete process.env.BABUNI_KEYRING_LOCKED
-    for (const [key,value] of [['BABUNI_SECRET_TOOL_BIN',original.binary],['BABUNI_KEYRING_FILE',original.file],['BABUNI_KEYRING_ARGS',original.args]]) {
+    for (const [key,value] of [['BABUNI_SECRET_TOOL_BIN',original.binary],['BABUNI_KEYRING_FILE',original.file],['BABUNI_KEYRING_ARGS',original.args],['BABUNI_BUSCTL_BIN',original.bus],['BABUNI_TEST_COLLECTION_LOCK',original.collection]]) {
       if (value === undefined) delete process.env[key]; else process.env[key]=value
     }
     rmSync(dir,{recursive:true,force:true})
