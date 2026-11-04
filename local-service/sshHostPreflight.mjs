@@ -7,6 +7,16 @@ import { isAbsolute, join } from 'node:path'
 const hostnamePattern = /^(?=.{1,120}$)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/
 const keyTypes = new Set(['ssh-ed25519', 'ssh-rsa', 'ecdsa-sha2-nistp256', 'ecdsa-sha2-nistp384', 'ecdsa-sha2-nistp521'])
 
+function plausiblePublicKey(type, encoded) {
+  if (!keyTypes.has(type) || typeof encoded !== 'string' ||
+      !/^[A-Za-z0-9+/]+={0,2}$/.test(encoded) || encoded.length<40) return false
+  const bytes=Buffer.from(encoded,'base64')
+  if (bytes.length<8) return false
+  const declared=bytes.readUInt32BE(0)
+  return declared===Buffer.byteLength(type) && bytes.length>4+declared &&
+    bytes.subarray(4,4+declared).toString('utf8')===type
+}
+
 export function validSshHostname(host) {
   return typeof host === 'string' && hostnamePattern.test(host) && !['localhost','0.0.0.0'].includes(host.toLowerCase())
 }
@@ -61,8 +71,7 @@ export async function preflightSshHost(profile) {
     const entry=data.split(/\r?\n/).some(line=>{
       const tokens=line.trim().split(/\s+/)
       return tokens.length>=3 && tokens[0]===profile.target &&
-        keyTypes.has(tokens[1]) && /^[A-Za-z0-9+/]+={0,2}$/.test(tokens[2]) &&
-        tokens[2].length>=40
+        plausiblePublicKey(tokens[1],tokens[2])
     })
     if (!entry) return result('SSH_HOST_NOT_PINNED','No exact host-key entry in the dedicated trust store; no connection attempted.',checkedAt)
     if (!await findWithOpenSsh(profile.target,file)) {
