@@ -1,5 +1,14 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-04 — Keep keyring failure tests non-disruptive
+
+**Creative direction:** Verify locked and unavailable Nobara keyring conditions, then review security before allowing live operations.
+
+**AI implementation:** Inspect the default Secret Service collection's `Locked` property through read-only D-Bus calls, and test an unreachable bus address in an isolated child process rather than stopping the user's session bus. A confirmed lock blocks credential writes; providers that cannot expose lock state report `unknown` rather than being assumed unlocked. The review also found and tightened legacy static asset path containment.
+
+**Verification boundary:** Fixture tests and CI can validate denial paths, but do not prove the real login keyring was locked or that live project actions are authorized. The choice to lock the ordinary desktop collection, if needed, remains with the operator because it may interrupt other applications. Live writes remain blocked pending independent authorization and recovery checks.
+
+
 ## 2026-11-04 — Connection control without premature remote authority
 
 **Creative direction:** Complete the local connection-manager workflow, strengthen its security boundary and test it in the browser before enabling access to actual projects.
