@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, chmodSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { credentialStatus, storeCredential, clearCredential, keyringHealth, verifyCredential, defaultCollectionLockState } from '../local-service/keyring.mjs'
+import { credentialStatus, storeCredential, clearCredential, keyringHealth, verifyCredential, defaultCollectionLockState, readCredentialForService } from '../local-service/keyring.mjs'
 
 test('OS keyring boundary stores secrets only through stdin and returns status, not secret values', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'babuni-keyring-'))
@@ -64,6 +64,7 @@ else process.exit(2)
     process.env.BABUNI_BUSCTL_BIN=mockBus
     process.env.BABUNI_TEST_COLLECTION_LOCK='locked'
     assert.equal(await defaultCollectionLockState(),'locked')
+    await assert.rejects(readCredentialForService(profile),/KEYRING_LOCKED/)
     assert.equal(await credentialStatus(profile),'locked')
     assert.equal(await keyringHealth(),'locked')
     await assert.rejects(storeCredential(profile,'synthetic'), /KEYRING_LOCKED/)
@@ -71,9 +72,14 @@ else process.exit(2)
     assert.equal(await verifyCredential(profile,'synthetic'),false)
     process.env.BABUNI_TEST_COLLECTION_LOCK='unlocked'
     assert.equal(await defaultCollectionLockState(),'unlocked')
+    await assert.rejects(readCredentialForService(profile),/KEYRING_CREDENTIAL_MISSING/)
+    await storeCredential(profile,'synthetic-read-only-db-password')
+    assert.equal(await readCredentialForService(profile),'synthetic-read-only-db-password')
+    await clearCredential(profile)
     assert.equal(await credentialStatus(profile),'missing')
     process.env.BABUNI_TEST_COLLECTION_LOCK='unknown'
     assert.equal(await defaultCollectionLockState(),'unknown')
+    await assert.rejects(readCredentialForService(profile),/KEYRING_UNKNOWN/)
     const priorArgs=readFileSync(mockArguments,'utf8')
     const inspected=spawnSync(process.execPath,['scripts/verify-keyring-conditions.mjs','inspect'],{
       env:process.env,encoding:'utf8',
