@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-04 — Read-only Morkahja content inspection
+
+- Added fixed-file metadata inspection for the five legacy Morkahja JSON datasets in the local connection service.
+- Added an Inspect control and counts/status display in the Connections screen.
+- Added disposable file-fixture tests, including missing-file and symlink rejection.
+- No live Morkahja files, remote systems or write operations were used in verification.
+
 ## 2026-11-04 — Standalone local profile service
 
 - Added separate loopback Node process and per-run service key, launched with Vite through `npm run dev`.
