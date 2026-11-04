@@ -1,5 +1,16 @@
 # Babuni Admin — Architecture
 
+## Phase 2 — Profile editing, local lifecycle and browser session (2026-11-04)
+
+`vite/connectionAdapters.ts` contains a static server-side project/adapter capability allowlist. Only Morkahja `local-files` has active read-only permissions; SSH, GitHub and publishing transports remain unavailable. Profile edits can change the name or target, not the project, adapter or credential UUID. A target change invalidates previous checks.
+
+`local-service/connectionLifecycle.mjs` adds manual local Connect, Disconnect and Reconnect. A successful Connect only establishes an ephemeral in-process read-only status after a directory probe: it holds no file handles, opens no tunnel and grants no write permission. Remote connection operations return `ADAPTER_NOT_IMPLEMENTED`.
+
+`vite/localSessionGuard.ts` validates the peer, Host, Origin, Fetch Metadata and an ephemeral, in-memory browser session token. The Vite proxy keeps its independent server-to-service key out of the browser and strips the UI session header. These checks reduce cross-site request risk but are not full authentication against arbitrary programs running as the same local OS user.
+
+The operator-triggered `scripts/verify-keyring.mjs` checks a disposable synthetic credential round trip through Linux Secret Service. Automated keyring tests use a fake binary; the real Nobara keyring remains unverified.
+
+
 ## Phase 2 — Credential storage and health checks (2026-11-04)
 
 The loopback service (`local-service/server.mjs`) now provides `GET /local-connections-api/health`, manual local-directory tests, and JSON inspection reports. Responses include a stable error code, timestamp and last complete success when applicable. Partial local inspection reports `degraded`. The actual Morkahja portraits file uses the case-sensitive `Avatar` property.
