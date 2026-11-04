@@ -22,7 +22,7 @@ test('SSH host preflight requires a private exact trust entry; never opens a con
     assert.equal((await preflightSshHost(profile)).code,'SSH_HOST_NOT_PINNED')
     writeFileSync(trust,`another.example.invalid ${pub[0]} ${pub[1]}\n`)
     assert.equal((await preflightSshHost(profile)).code,'SSH_HOST_NOT_PINNED')
-    writeFileSync(trust,profile.target+' ssh-ed25519 '+('A'.repeat(64))+'\\n')
+    writeFileSync(trust,profile.target+' ssh-ed25519 '+('A'.repeat(64))+'\n')
     assert.equal((await preflightSshHost(profile)).code,'SSH_HOST_NOT_PINNED')
     writeFileSync(trust,entry)
     const checked=await preflightSshHost(profile)
