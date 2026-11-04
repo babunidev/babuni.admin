@@ -1,9 +1,20 @@
 import assert from 'node:assert/strict'
 import { before, after, test } from 'node:test'
 import { chromium } from 'playwright'
+import { request as httpRequest } from 'node:http'
 
 const origin=process.env.BROWSER_TEST_BASE_URL||'http://127.0.0.1:5185'
 const gameRoot=process.env.BABUNI_BROWSER_TEST_GAME_ROOT
+function requestWithHost(url, headers) {
+  return new Promise((resolve,reject)=>{
+    const req=httpRequest(url,{headers:{...headers,Host:'attacker.invalid'}},res=>{
+      res.resume()
+      res.on('end',()=>resolve(res.statusCode))
+    })
+    req.on('error',reject)
+    req.end()
+  })
+}
 let browser
 
 before(async()=>{
@@ -26,10 +37,8 @@ test('browser session blocks untrusted connections requests',async()=>{
     headers:{'X-Babuni-Local':'1','Sec-Fetch-Site':'cross-site'},
   })
   assert.equal(crossSite.status,403)
-  const wrongHost=await fetch(origin+'/local-connections-api/session',{
-    headers:{'X-Babuni-Local':'1',Host:'attacker.invalid'},
-  })
-  assert.equal(wrongHost.status,403)
+  assert.equal(await requestWithHost(origin+'/local-connections-api/session',
+    {'X-Babuni-Local':'1'}),403)
 })
 
 test('Connections UI creates edits checks connects disconnects and removes a local fixture profile',async()=>{
