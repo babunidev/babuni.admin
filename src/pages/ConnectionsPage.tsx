@@ -132,6 +132,7 @@ export function ConnectionsPage() {
           <div><h3 className="text-parchment">{p.displayName}</h3><p className="mt-1 text-xs text-fog">{p.projectId} · {p.kind} · {p.target}</p>
             <p className="mt-2 text-xs text-fog">{p.state === 'available' ? 'Directory available (read-only check)' : p.state === 'error' ? 'Connection check failed' : 'Not connected — profile only.'} {p.detail}</p></div>
           <div className="flex gap-2">
+          <button type="button" disabled={busy} onClick={()=>{ void inspect(p.id) }}>Inspect</button>
           <button type="button" disabled={busy} onClick={()=>{ void testProfile(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Test</button>
           <button type="button" disabled={busy} onClick={()=>{ void remove(p.id) }} className="rounded border border-gold/20 px-3 py-1 text-xs text-fog disabled:opacity-50">Remove</button></div>
         </div>
