@@ -10,7 +10,6 @@ test('outbound SSH child uses strict pinning and a loopback-only ephemeral forwa
   const binary=join(root,'ssh')
   const audit=join(root,'argv.json')
   const original=process.env.PATH
-  const argFile=process.env.BABUNI_SSH_TEST_ARGV
   let tunnel
   try{
     // This fixture replaces ssh with a local-only listener. It cannot contact a VPS.
@@ -19,7 +18,7 @@ test('outbound SSH child uses strict pinning and a loopback-only ephemeral forwa
       "import {createServer} from 'node:net'",
       "import {writeFileSync} from 'node:fs'",
       'const args=process.argv.slice(2)',
-      'writeFileSync(process.env.BABUNI_SSH_TEST_ARGV,JSON.stringify(args))',
+      "writeFileSync(new URL('./argv.json',import.meta.url),JSON.stringify(args))",
       "const forward=args[args.indexOf('-L')+1]",
       "const match=/^127\\.0\\.0\\.1:(\\d+):127\\.0\\.0\\.1:(\\d+)$/.exec(forward)",
       'if(!match)process.exit(2)',
@@ -30,7 +29,6 @@ test('outbound SSH child uses strict pinning and a loopback-only ephemeral forwa
     ].join('\n'),{mode:0o700})
     chmodSync(binary,0o700)
     process.env.PATH=root+':'+original
-    process.env.BABUNI_SSH_TEST_ARGV=audit
     tunnel=await startSshTunnel({
       host:'morkahja.example.invalid',sshPort:2222,sshUser:'read_only',
       sshIdentityFile:'/tmp/fixture-only-key',dbPort:5432,
@@ -47,12 +45,10 @@ test('outbound SSH child uses strict pinning and a loopback-only ephemeral forwa
     assert.equal(args.at(-1),'morkahja.example.invalid')
     assert.equal(args.some(v=>/^(yes|accept-new|no)$/.test(v)),false)
   }finally{
-    tunnel?.stop()
+    await tunnel?.stop()
     stopAllSshTunnels()
     if(original===undefined)delete process.env.PATH
     else process.env.PATH=original
-    if(argFile===undefined)delete process.env.BABUNI_SSH_TEST_ARGV
-    else process.env.BABUNI_SSH_TEST_ARGV=argFile
     rmSync(root,{recursive:true,force:true})
   }
 })
