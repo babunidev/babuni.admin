@@ -34,12 +34,20 @@ test('independent local service requires session key and tests local folder with
     }
     assert.ok(up,'service failed to bind')
     assert.equal((await fetch(url)).status,403)
+    assert.equal((await fetch(url+'health')).status,403)
+    const health=await (await request('health')).json()
+    assert.equal(health.ok,true)
+    assert.equal(health.mode,'local-only')
+    assert.ok(['available','unavailable'].includes(health.keyring))
     assert.equal((await fetch(url,{headers:{...headers,'X-Babuni-Service-Key':'incorrect'}})).status,403)
     assert.equal((await request('',{headers:{Origin:'https://bad.example'}})).status,403)
     assert.equal((await request('',{headers:{'Sec-Fetch-Site':'cross-site'}})).status,403)
     mkdirSync(join(dir,'game'))
     writeFileSync(join(dir,'game','encountersdata.json'), JSON.stringify({'001':{name:'fixture'},_meta:{version:1}}))
     symlinkSync(join(dir,'game','encountersdata.json'), join(dir,'game','solutiondata.json'))
+    writeFileSync(join(dir,'game','portraits.json'), JSON.stringify({Avatar:[null,{avatarID:1}]}))
+    writeFileSync(join(dir,'game','frames.json'), JSON.stringify({Frames:[null,{frameID:1}]}))
+    writeFileSync(join(dir,'game','expansiondata.json'), JSON.stringify({expansions:{one:{}}}))
     const added=await request('',{method:'POST',body:JSON.stringify({
       projectId:'morkahja',kind:'local-files',displayName:'Fixture',target:dir,
     })})
@@ -52,10 +60,20 @@ test('independent local service requires session key and tests local folder with
     assert.equal(report.readOnly,true)
     assert.equal(report.files[0].entries,1)
     assert.equal(report.files[1].status,'unavailable')
-    assert.equal(report.files[2].reason,'MISSING')
+    assert.equal(report.files[1].reason,'UNSAFE_PATH')
+    assert.equal(report.files[2].status,'available')
+    assert.equal(report.files[4].status,'available')
+    assert.equal(report.files[4].entries,2)
+    const afterInspection=(await (await request()).json()).profiles[0]
+    assert.equal(afterInspection.state,'degraded')
+    assert.equal(afterInspection.code,'CONTENT_PARTIAL')
+    assert.ok(afterInspection.checkedAt)
     const checked=await request(p.id+'/test',{method:'POST'})
     assert.equal(checked.status,200)
-    assert.equal((await checked.json()).status.state,'available')
+    const status=(await checked.json()).status
+    assert.equal(status.state,'available')
+    assert.equal(status.code,'DIRECTORY_AVAILABLE')
+    assert.ok(status.lastSuccessAt)
     const rows=(await (await request()).json()).profiles
     assert.equal(rows.length,1)
     assert.equal(rows[0].state,'available')
@@ -65,12 +83,15 @@ test('independent local service requires session key and tests local folder with
     const missingId=(await missing.json()).profile.id
     const miss=(await (await request(missingId+'/test',{method:'POST'})).json()).status
     assert.equal(miss.state,'error')
+    assert.equal(miss.code,'DIRECTORY_MISSING')
     const remote=await request('',{method:'POST',body:JSON.stringify({
       projectId:'babuni-dev',kind:'github',displayName:'GitHub',target:'babunidev/test',
     })})
     const remoteId=(await remote.json()).profile.id
     const checkRemote=(await (await request(remoteId+'/test',{method:'POST'})).json()).status
     assert.equal(checkRemote.state,'not-configured')
+    assert.equal(checkRemote.code,'ADAPTER_NOT_IMPLEMENTED')
+    assert.ok(['missing','unavailable'].includes(checkRemote.credential))
     assert.equal((await request(p.id,{method:'DELETE'})).status,200)
     assert.equal((await (await request()).json()).profiles.length,2)
   } finally{

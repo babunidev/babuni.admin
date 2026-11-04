@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Checking credentials and connection status without exposing either
+
+The first inspection of my Morkahja files found a case-sensitive mismatch: the real portrait dataset used `Avatar`, but the inspector expected `Portraits`. Once the local correction showed the correct portrait count, the next concern was making connection status and credential handling more dependable. AI added a terminal-only Linux keyring adapter, specific directory and JSON error codes, and timestamps that distinguish full, partial and failed read-only checks. Synthetic keyring and filesystem tests exercise the new paths; my real desktop keyring, SSH connections and live remote services have not yet been verified.
+
+
 ## 2026-11-04 — Checking the first connection without opening a remote one
 
 After confirming the Connections screen could save and remove a profile on my PC, the next task was to give it a proper local service instead of keeping profile operations inside Vite. AI added a second loopback-bound process with a temporary per-run service key and a small proxy from the development UI. Its first check only confirms that a selected local directory exists, without writing to it or reaching Morkahja's server. Remote connections and credential storage remain future work; they were deliberately not introduced as part of this first transport boundary.

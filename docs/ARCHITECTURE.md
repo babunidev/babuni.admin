@@ -1,5 +1,13 @@
 # Babuni Admin — Architecture
 
+## Phase 2 — Credential storage and health checks (2026-11-04)
+
+The loopback service (`local-service/server.mjs`) now provides `GET /local-connections-api/health`, manual local-directory tests, and JSON inspection reports. Responses include a stable error code, timestamp and last complete success when applicable. Partial local inspection reports `degraded`. The actual Morkahja portraits file uses the case-sensitive `Avatar` property.
+
+For future remote-profile credentials, `local-service/keyring.mjs` calls Linux Secret Service using the `secret-tool` executable. `scripts/credentials.mjs` collects credentials through a no-echo terminal prompt and sends them only via child-process stdin. The browser and non-secret XDG profile JSON receive no passwords, tokens or keyring values. The browser receives only `stored`, `missing` or `unavailable`. Keyring failure has no plaintext fallback. Remote profile removal clears the keyring entry before removing metadata.
+
+The implementation is verified with a fake Secret Service process and disposable Morkahja JSON fixtures. An unlocked Nobara keyring, real SSH tunnel, GitHub authorization and live server connection have not been tested. A stored credential does not imply an active remote adapter or any permission to operate on a project.
+
 ## Current state (2026-11-03)
 
 **Hardening update:** [Phase 1 hardening review](PHASE1_HARDENING_2026-11-03.md), validated by [CI run 41659550592](https://github.com/babunidev/babuni.admin/actions/runs/41659550592), adds server-only database configuration, locally guarded opt-in development endpoints, transactional moderation and session revocation, atomic file replacement/backups, representative legacy fixtures and browser-form verification. It does not provide authenticated production administration.

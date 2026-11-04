@@ -1,6 +1,6 @@
 # Shared local connection manager — Phase 2 design
 
-**Status:** Architecture and interaction design only. No live connection manager, credential vault, SSH tunnel supervisor or GitHub connector is implemented by this document.
+**Status:** Architecture design with a local profile registry, terminal-only Linux keyring storage and read-only health/inspection slices implemented. No outbound SSH, PostgreSQL, GitHub or publishing adapter is implemented.
 
 ## Purpose and deployment boundary
 
@@ -111,3 +111,12 @@ The profile registry retains its existing XDG location and format. The first act
 
 Run `npm run dev` to start both components on the PC. Tests use a temporary profile file, disposable local directories, and an ephemeral port; no live Morkahja data or remote services are contacted. This is a first process boundary, **not** a credential vault, desktop packaging or hardened OS-user isolation. The old development-only Vite profile plugin remains in source for compatibility tests but is no longer registered by the main Vite config.
 
+
+
+## 2026-11-04 — Credential storage and local health implementation
+
+The `local-service/keyring.mjs` adapter uses Linux Secret Service through `secret-tool`, with credentials entered only using the hidden terminal prompt in `npm run credentials -- set <id>`. Profiles still persist only non-secret metadata. The browser can see whether a profile's secret is present, missing or inaccessible; it cannot enter or retrieve credential bytes. Keyring errors do not silently fall back to plaintext files.
+
+The loopback health endpoint reports service/keyring status. Manual profile tests record timestamps, last complete success and directory-specific errors. JSON inspection additionally distinguishes `available`, `degraded` and `error`, and preserves individual reasons such as missing files, invalid structure and bad JSON. The correct legacy portrait schema uses `Avatar` with a capital A. Future remote adapters remain `not-configured` even if credentials are present.
+
+Fixture tests verify the subprocess boundary with a disposable fake `secret-tool`, plus isolated directory and JSON checks. No real desktop keyring, database, SSH connection, project file mutation or remote GitHub access has been tested. The root README describes operator commands and keyring requirements.

@@ -1,7 +1,8 @@
 import { createServer } from 'node:http'
-import { randomBytes, timingSafeEqual } from 'node:crypto'
-import { stat, realpath } from 'node:fs/promises'
+import { timingSafeEqual } from 'node:crypto'
 import { inspectContent } from './inspectContent.mjs'
+import { probeProfile, inspectionState } from './connectionHealth.mjs'
+import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
 
 const PORT = Number(process.env.BABUNI_LOCAL_SERVICE_PORT || '5191')
@@ -29,16 +30,12 @@ async function body(req) {
   }
   try { return JSON.parse(content) } catch { throw Object.assign(new Error('INVALID_JSON'), {status:400}) }
 }
-async function probe(profile) {
-  if (profile.kind !== 'local-files') return {state:'not-configured',detail:'This connection type is not implemented yet.'}
-  try {
-    const target = await realpath(profile.target)
-    const result = await stat(target)
-    if (!result.isDirectory()) return {state:'error',detail:'Target is not a directory.'}
-    return {state:'available',detail:'Directory exists and can be inspected locally. No files were modified.',checkedAt:new Date().toISOString()}
-  } catch {
-    return {state:'error',detail:'Local directory does not exist or cannot be accessed.',checkedAt:new Date().toISOString()}
+async function listedProfile(profile) {
+  const last = states.get(profile.id) || {
+    state:'not-configured', code:'NOT_CHECKED', detail:'No connection test performed.',
   }
+  const credential = requiresCredential(profile) ? await credentialStatus(profile) : 'not-required'
+  return {...profile, ...last, credential}
 }
 const server = createServer(async (req,res) => {
   const peer = req.socket.remoteAddress
@@ -56,8 +53,12 @@ const server = createServer(async (req,res) => {
   }
   try {
     const path = new URL(req.url || '/', 'http://127.0.0.1').pathname.replace(/^\/local-connections-api/, '') || '/'
+    if (req.method === 'GET' && path === '/health') {
+      return send(res,200,{ok:true,service:'available',mode:'local-only',
+        keyring:await keyringHealth(),checkedAt:new Date().toISOString()})
+    }
     if (req.method === 'GET' && path === '/') {
-      const profiles = registry.list().map(p=>({...p,...(states.get(p.id) || {state:'not-configured',detail:'No connection test performed.'})}))
+      const profiles = await Promise.all(registry.list().map(listedProfile))
       return send(res,200,{profiles})
     }
     if (req.method === 'POST' && path === '/') {
@@ -66,14 +67,21 @@ const server = createServer(async (req,res) => {
     }
     const match = /^\/([0-9a-f-]{36})(?:\/(test|inspect))?$/i.exec(path)
     if (match && req.method === 'DELETE' && !match[2]) {
-      states.delete(match[1])
-      const ok=registry.remove(match[1])
+      const profile = registry.list().find(p=>p.id===match[1])
+      if (!profile) return send(res,404,{error:'NOT_FOUND'})
+      if (requiresCredential(profile)) {
+        // Fail closed if the keyring is unavailable; never orphan a secret silently.
+        try { await clearCredential(profile) }
+        catch { return send(res,503,{error:'KEYRING_UNAVAILABLE'}) }
+      }
+      const ok=registry.remove(profile.id)
+      if (ok) states.delete(profile.id)
       return send(res,ok?200:404,{ok})
     }
     if (match && req.method === 'POST' && match[2]==='test') {
       const profile=registry.list().find(p=>p.id===match[1])
       if (!profile) return send(res,404,{error:'NOT_FOUND'})
-      const status=await probe(profile)
+      const status=await probeProfile(profile,states.get(profile.id))
       states.set(profile.id,status)
       return send(res,200,{status})
     }
@@ -81,6 +89,9 @@ const server = createServer(async (req,res) => {
       const profile = registry.list().find(p=>p.id===match[1])
       if (!profile) return send(res,404,{error:'NOT_FOUND'})
       const report = await inspectContent(profile)
+      if (profile.kind === 'local-files' && profile.projectId === 'morkahja') {
+        states.set(profile.id,inspectionState(report,states.get(profile.id)))
+      }
       return send(res, report.ok ? 200 : 422, report)
     }
     return send(res,404,{error:'NOT_FOUND'})

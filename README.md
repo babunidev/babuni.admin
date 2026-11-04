@@ -4,7 +4,7 @@
 **Repository:** `babunidev/babuni.admin`  
 **Current focus:** Structural transition from a local Morkahja administration console into a multi-project administration platform.
 
-**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Only read-only local directory checks are available. SSH, GitHub, remote project access and credential storage remain unimplemented.
+**Deployment boundary:** Babuni Admin is a single-user application that runs on Babuni's own PC. Its UI remains on loopback (`127.0.0.1`), not on a hosted website or VPS. It initiates protected outbound connections from the PC to remote project services; those services independently authenticate and authorize access. The connection manager has a **non-secret profile registry and Connections screen**, backed by a separate loopback-only local Node service during development. Read-only local directory and content checks are available. Non-local profiles may store credentials in the Linux OS keyring using a terminal-only command, but SSH, GitHub and remote project access are not implemented.
 
 Babuni Admin is planned as one private workbench for maintaining multiple projects. **Morkahja** is the existing functional domain: its dashboard, player moderation, activity views and game-content editors remain in source. **Babuni Dev** is the next proposed workspace, intended to manage GitHub-backed portfolio documents and publish individual content updates without rebuilding the whole website. Additional project workspaces may be introduced later.
 
@@ -13,6 +13,23 @@ The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Q
 ## Local development
 
 Use `npm run dev` on your PC. It launches Vite on `127.0.0.1:5180` and the separate profile service on `127.0.0.1:5191`. The service requires a randomized per-run key attached by the server-side Vite proxy. The browser does not receive that key. Stop both with Ctrl+C. Profiles remain in the local XDG config directory. `npm run dev:ui` starts only Vite and cannot manage the profiles.
+
+### Local credentials and health (Linux)
+
+Credentials for future remote profile types can be stored via Linux Secret Service (`secret-tool`) from a **hidden terminal prompt**, without sending credentials through the browser. The PC needs the `secret-tool` utility (typically provided by `libsecret`) and an accessible, unlocked user keyring. Missing or locked keyrings fail without plaintext fallback.
+
+```bash
+npm run credentials -- list
+npm run credentials -- set <profile-uuid>
+npm run credentials -- status <profile-uuid>
+npm run credentials -- clear <profile-uuid>
+```
+
+Local-file profiles do not require credentials. Storing a credential for a remote-type profile does **not** connect to SSH, GitHub, PostgreSQL or any live server; those transports remain unimplemented. Existing SSH private keys should normally stay managed by an SSH agent, not be pasted into this command. The credential is sent only through stdin to `secret-tool`, never in command arguments, browser state or the non-secret connection JSON file. Removing a remote profile attempts keyring cleanup before deleting the profile; if the keyring cannot be reached, removal fails safely.
+
+The Connections screen reports loopback service and keyring availability, checked timestamps, last complete success, file-specific errors and degraded/available/error local inspection states. A service restart clears ephemeral check history; no background remote connection is attempted.
+
+`npm run test:connections` exercises synthetic keyring and file fixtures. These tests do not verify a real unlocked Nobara keyring, SSH tunneling or remote project access.
 
 ## Project documentation
 

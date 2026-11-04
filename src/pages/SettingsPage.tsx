@@ -37,7 +37,7 @@ export function SettingsPage() {
     {
       label: 'Players source',
       value: useLocalPostgres
-        ? 'PostgreSQL (VITE_DATABASE_URL)'
+        ? 'PostgreSQL (server-only DATABASE_URL)'
         : useMockData
           ? 'Mock data'
           : 'VPS admin API',
@@ -59,7 +59,7 @@ export function SettingsPage() {
         ? 'N/A'
         : useDevProxy
           ? 'ADMIN_API_KEY via proxy (recommended)'
-          : 'VITE_API_TOKEN or VPS session cookie',
+          : 'Legacy remote API mode; do not supply browser tokens',
     },
     {
       label: 'Content source',

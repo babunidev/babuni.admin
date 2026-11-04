@@ -2,7 +2,7 @@
 
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  
-**Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Connection manager implementation and verified live project access remain planned.
+**Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Read-only profile checks, structured local connection status and terminal-only Linux keyring storage are implemented slices. Live outbound adapters and real desktop keyring verification remain planned.
 
 ## Initial restructuring completed (verification scope detailed below)
 
@@ -55,11 +55,14 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [ ] Add browser tests for the rendered connection profile interface.
 - [x] Remove browser-side reads of `VITE_DATABASE_URL` and `VITE_API_TOKEN`; use server-only `DATABASE_URL` in the current development adapter. This does not implement a credential vault.
 - [ ] Complete per-project connection profiles with edit flow, validated adapter registry and credentials; add/list/remove non-secret profile metadata is implemented.
-- [ ] Integrate OS-user secret storage and keep credentials outside the browser, logs, Git and readable config.
+- [x] Add Linux Secret Service credential storage through a hidden terminal prompt, outside browser config, logs and Git. Verified with a disposable fake keyring; real Nobara keyring access still requires operator verification.
 - [x] Add a read-only local directory test with verified available/error status; non-local adapters explicitly remain unconfigured.
 - [ ] Add SSH/GitHub checks, keyring storage, safe connect/disconnect, reconnection and project capability authorization.
 - [ ] Connect Morkahja PostgreSQL through a protected outbound tunnel with least privilege.
 - [x] Add read-only inspection of five known Morkahja JSON datasets through the local service; file counts and status only, using isolated fixtures.
+- [x] Add local service/keyring health, per-profile timestamps and structured error codes; distinguish complete, degraded and failed content inspection without claiming remote connectivity.
+- [x] Correct the portrait JSON key to `Avatar` and add regression coverage for its real-shape fixture.
+- [ ] Verify the real Linux keyring on Nobara with missing, unlocked and locked keyring states.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
 - [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
 - [ ] Enforce origin/session validation, project-scoped operations, read-only defaults, action attribution, and recovery before real mutations.
