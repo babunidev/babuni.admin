@@ -3,7 +3,8 @@ import assert from 'node:assert/strict'
 import {mkdtempSync,rmSync,writeFileSync,chmodSync,readFileSync,existsSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join} from 'node:path'
-import {startSshTunnel,stopAllSshTunnels} from '../local-service/sshTunnel.mjs'
+import {spawnSync} from 'node:child_process'
+import {buildSshTunnelArgs,startSshTunnel,stopAllSshTunnels} from '../local-service/sshTunnel.mjs'
 
 test('SSH child pins hosts, creates private Unix forward and inherits no service tokens',async()=>{
   const root=mkdtempSync(join(tmpdir(),'babuni-ssh-command-'))
@@ -64,4 +65,16 @@ test('SSH child pins hosts, creates private Unix forward and inherits no service
     else process.env.BABUNI_LOCAL_SERVICE_TOKEN=originalToken
     rmSync(root,{recursive:true,force:true})
   }
+})
+
+// -G evaluates configuration and exits without contacting the fixture host.
+test('production tunnel arguments parse in real OpenSSH with terminal allocation disabled',()=>{
+  const args=buildSshTunnelArgs({
+    host:'morkahja.example.invalid',sshPort:2222,sshUser:'read_only',
+    sshIdentityFile:'/tmp/fixture-only-key',dbPort:5432,
+  },'/tmp/fixture-only-socket')
+  const parsed=spawnSync('ssh',['-G',...args],{encoding:'utf8',timeout:5000})
+  assert.ifError(parsed.error)
+  assert.equal(parsed.status,0,parsed.stderr)
+  assert.match(parsed.stdout,/^requesttty false$/m)
 })

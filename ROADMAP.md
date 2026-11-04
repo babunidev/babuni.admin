@@ -1,5 +1,11 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-04 — SSH client compatibility fix
+
+- [x] Remove unsupported client option `PermitTTY` while retaining `-T`.
+- [x] Validate the production argument builder with real OpenSSH in offline `-G` mode.
+- [ ] Verify the corrected application health probe and cleanup on the target desktop.
+
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  
 **Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Read-only profile checks, structured local connection status and terminal-only Linux keyring storage are implemented slices. Live outbound adapters remain planned. The creative has verified the unlocked Nobara desktop keyring with a synthetic credential round trip; a deliberately unreachable D-Bus session bus was verified in an isolated child process on Nobara; the real locked default keyring and subsequent unlock recovery were also verified by operator-reported inspection output on Nobara.

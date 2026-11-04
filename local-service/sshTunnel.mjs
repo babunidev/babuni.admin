@@ -31,10 +31,8 @@ function stopChild(child) {
 export async function stopAllSshTunnels() {
   await Promise.all([...liveSessions].map(session=>session.stop()))
 }
-export async function startSshTunnel(config) {
-  const socketDir=await mkdtemp(join(tmpdir(),'babuni-ssh-pg-'))
-  const socketPath=join(socketDir,localSocketName)
-  const args=['-F','/dev/null','-N','-T',
+export function buildSshTunnelArgs(config, socketPath) {
+  return ['-F','/dev/null','-N','-T',
     '-o','BatchMode=yes','-o','NumberOfPasswordPrompts=0',
     '-o','StrictHostKeyChecking=yes',
     '-o','UserKnownHostsFile='+sshKnownHostsPath(),
@@ -43,12 +41,18 @@ export async function startSshTunnel(config) {
     '-o','CanonicalizeHostname=no','-o','PermitLocalCommand=no',
     '-o','IdentitiesOnly=yes','-o','PreferredAuthentications=publickey',
     '-o','GSSAPIAuthentication=no','-o','ForwardAgent=no',
-    '-o','ForwardX11=no','-o','PermitTTY=no',
+    '-o','ForwardX11=no',
     '-o','PasswordAuthentication=no','-o','KbdInteractiveAuthentication=no',
     '-o','ExitOnForwardFailure=yes','-o','ConnectTimeout=5',
     '-o','ServerAliveInterval=5','-o','ServerAliveCountMax=1',
     '-p',String(config.sshPort),'-i',config.sshIdentityFile,'-l',config.sshUser,
     '-L',socketPath+':127.0.0.1:'+config.dbPort,config.host]
+}
+
+export async function startSshTunnel(config) {
+  const socketDir=await mkdtemp(join(tmpdir(),'babuni-ssh-pg-'))
+  const socketPath=join(socketDir,localSocketName)
+  const args=buildSshTunnelArgs(config,socketPath)
   // The SSH process cannot inherit application tokens or any arbitrary environment.
   const childEnv={}
   for(const name of ['PATH','HOME','USER','LOGNAME','LANG','SSH_AUTH_SOCK','XDG_RUNTIME_DIR']) {
