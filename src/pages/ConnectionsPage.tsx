@@ -54,7 +54,7 @@ async function api<T>(method = 'GET', path = '/', data?: unknown): Promise<T> {
   try { value = await result.json() as { error?: string } }
   catch { throw new Error('INVALID_SERVICE_RESPONSE') }
   if (!result.ok) throw new Error(value.error || 'LOCAL_SERVICE_FAILURE')
-  return value as T
+  return value as unknown as T
 }
 function stateLabel(profile: Profile) {
   if (profile.state === 'available') return 'Available — local, read-only'
@@ -97,7 +97,19 @@ export function ConnectionsPage() {
       setStatus(error instanceof Error ? error.message : 'LOCAL_SERVICE_UNAVAILABLE')
     }
   }
-  useEffect(() => { void reload() }, [])
+  useEffect(() => {
+    void Promise.all([
+      api<{profiles: Profile[]}>(),
+      api<Health>('GET', '/health'),
+    ]).then(([data, service]) => {
+      setProfiles(data.profiles || [])
+      setHealth(service)
+      setStatus('Profiles are stored on this PC. No remote adapters are active.')
+    }).catch(() => {
+      setHealth(null)
+      setStatus('LOCAL_SERVICE_UNAVAILABLE')
+    })
+  }, [])
 
   async function add(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
