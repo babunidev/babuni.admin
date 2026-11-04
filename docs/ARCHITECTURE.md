@@ -11,6 +11,10 @@ The opt-in legacy `vite/localContentPlugin.ts` static route now verifies real pa
 
 Legacy local admin/content mutation requests now require an explicit exact HTTP loopback Origin and reject `same-site` cross-origin Fetch Metadata requests; this is still not authorization against local same-user processes.
 
+## Phase 2 — Offline Morkahja SSH trust preflight (2026-11-04)
+
+`local-service/sshHostPreflight.mjs` performs a local-only OpenSSH known-host check for a Morkahja `postgres-ssh` profile. It requires an exact hostname entry in a dedicated user-owned, non-symlink, non-group/world-writable trust file, and verifies the entry is discoverable by `ssh-keygen -F`. No network request is made and no credentials are retrieved. The service routes this under existing authenticated `POST /local-connections-api/:id/test`; `vite/connectionAdapters.ts` grants only `ssh:preflight`, not SSH Connect or database reads. The profile remains `not-configured` even when a local entry is found. Online SSH host-key matching, a tunnel and PostgreSQL access are **not implemented**.
+
 ## Phase 2 — Profile editing, local lifecycle and browser session (2026-11-04)
 
 `vite/connectionAdapters.ts` contains a static server-side project/adapter capability allowlist. Only Morkahja `local-files` has active read-only permissions; SSH, GitHub and publishing transports remain unavailable. Profile edits can change the name or target, not the project, adapter or credential UUID. A target change invalidates previous checks.
