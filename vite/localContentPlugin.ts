@@ -108,6 +108,7 @@ function writeJsonFile(gameDir: string, kind: ContentKind, data: unknown): void 
 
 function localContentApi(
   gameDir: string,
+  allowWrites: boolean,
 ): (req: IncomingMessage, res: ServerResponse, next: () => void) => void {
   const apiPrefix = '/local-content-api'
 
@@ -119,6 +120,10 @@ function localContentApi(
     }
 
     if (rejectNonLocalRequest(req, res)) return
+    if (req.method === 'POST' && !allowWrites) {
+      sendJson(res, 403, { error: 'LEGACY_CONTENT_WRITES_DISABLED' })
+      return
+    }
 
     const route = url.slice(apiPrefix.length).split('?')[0] ?? ''
     const segment = route.replace(/^\//, '')
@@ -285,7 +290,7 @@ function localContentApi(
   }
 }
 
-export function morkahjaLocalContentPlugin(publicRoot: string): Plugin {
+export function morkahjaLocalContentPlugin(publicRoot: string, allowWrites = false): Plugin {
   const gameDir = join(publicRoot, 'game')
   const uiDir = join(publicRoot, 'UI')
 
@@ -293,7 +298,7 @@ export function morkahjaLocalContentPlugin(publicRoot: string): Plugin {
     name: 'morkahja-local-content',
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use(localContentApi(gameDir))
+      server.middlewares.use(localContentApi(gameDir, allowWrites))
       server.middlewares.use(serveStatic(gameDir, '/game'))
       server.middlewares.use(serveStatic(uiDir, '/UI'))
     },
