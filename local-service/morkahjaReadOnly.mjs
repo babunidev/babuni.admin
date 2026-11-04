@@ -41,7 +41,7 @@ const BOUNDARY_SQL = [
   ' JOIN pg_namespace n ON n.oid=c.relnamespace',
   " WHERE n.nspname='public' AND c.relname IN",
   " ('players','avatars','sessions','game_events')",
-  " AND has_table_privilege(current_user,c.oid,'SELECT')",
+  " AND has_any_column_privilege(current_user,c.oid,'SELECT')",
   ' ) AS raw_table_access',
 ].join('\n')
 
