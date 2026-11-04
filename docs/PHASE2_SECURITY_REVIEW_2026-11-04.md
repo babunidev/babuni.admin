@@ -21,6 +21,12 @@ The original security table below describes the earlier review; it is **not** ev
 
 See [operator-only health probe contract](MORKAHJA_SSH_READONLY_PROBE.md).
 
+## Follow-on — Morkahja read-only dashboard (2026-11-04)
+
+Following an operator-observed successful real SSH/database **health check** at 20:59, a separate `ssh:read` data capability was implemented for the Morkahja-only `/read-only` page. It requires an additional owner-private `readOnlyDataEnabled` flag and **exact** approved fields, and routes through the loopback-session guard with fixed SELECT-only SQL, read-only transactions, strict page bounds, private Unix-socket SSH forwarding and cleanup. The overview returns only counts; the 20-row player preview returns only display name, avatar count and last played. This is not a general SQL, moderation, content-editing or publishing interface.
+
+Disposable fixtures and browser denial tests provide implementation evidence. **Live Morkahja player-data reads have not been verified.** Independent remote-role membership/privilege auditing and production-schema verification still apply before real data access. See [read-only dashboard specification](MORKAHJA_READ_ONLY_DASHBOARD.md).
+
 ## Security status and remaining blockers
 
 | Area | Verified or observed | Remaining live-operation gate |
