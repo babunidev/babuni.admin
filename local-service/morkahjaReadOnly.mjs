@@ -41,15 +41,17 @@ function asTimestamp(value) {
     ms<=253402300799999 ? ms : null
 }
 
-export async function queryMorkahjaReadOnly(config,socketDir,password,kind,page=1) {
+export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1) {
   if (kind!=='overview' && kind!=='players') throw new Error('INVALID_READ_OPERATION')
   if (kind==='players' && (!Number.isInteger(page) || page<1 || page>1000)) {
     throw new Error('INVALID_PAGE')
   }
-  const role=await inspectReadOnlyDatabase(config,socketDir,password)
+  const role=await inspectReadOnlyDatabase(config,endpoint,password)
   if (!role.ok) return {ok:false,code:role.code}
   const client=new pg.Client({
-    host:socketDir,port:5432,user:config.dbUser,database:config.dbName,
+    host:typeof endpoint==='string'?endpoint:'127.0.0.1',
+    port:typeof endpoint==='string'?5432:endpoint,
+    user:config.dbUser,database:config.dbName,
     password,ssl:false,connectionTimeoutMillis:4500,
     query_timeout:3500,statement_timeout:3000,
     application_name:'babuni-admin-read-only-view',
