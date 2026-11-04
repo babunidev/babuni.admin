@@ -3,6 +3,7 @@ import { AdminLayout } from './app/AdminLayout'
 import { OverviewPage } from './features/babuni-dev/pages/OverviewPage'
 import { ContentPage } from './features/morkahja/pages/ContentPage'
 import { DashboardPage } from './features/morkahja/pages/DashboardPage'
+import { ReadOnlyDashboardPage } from './features/morkahja/pages/ReadOnlyDashboardPage'
 import { PlayersPage } from './features/morkahja/pages/PlayersPage'
 import { ConnectionsPage } from './pages/ConnectionsPage'
 import { SettingsPage } from './pages/SettingsPage'
@@ -13,6 +14,7 @@ export default function App() {
       <Routes>
         <Route element={<AdminLayout />}>
           <Route index element={<DashboardPage />} />
+          <Route path="read-only" element={<ReadOnlyDashboardPage />} />
           <Route path="players" element={<PlayersPage />} />
           <Route path="players/:playerId" element={<PlayersPage />} />
           <Route path="content" element={<ContentPage />} />
