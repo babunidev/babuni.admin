@@ -2,7 +2,7 @@
 
 ## 2026-11-04 — Building a connection that stays closed by default
 
-After confirming the local host-key check, the next problem was verifying a real SSH/PostgreSQL path without turning the admin into a permanently connected or write-capable service. AI added a separate, operator-controlled health probe: my PC must explicitly approve the host and fingerprint, an SSH identity and a dedicated database role before it can run. The probe opens a temporary tunnel for a fixed read-only privilege check and then closes it. Disposable SSH and PostgreSQL fixtures exercise the implementation; my live Morkahja server remains untouched, and none of the editing tools gains remote authority.
+After confirming the local host-key check, the next problem was verifying a real SSH/PostgreSQL path without turning the admin into a permanently connected or write-capable service. AI added a separate, operator-controlled health probe: my PC must explicitly approve the host and fingerprint, an SSH identity and a dedicated database role before it can run. The probe opens a temporary, private Unix-socket tunnel for a fixed read-only privilege check and then closes it. Disposable SSH and PostgreSQL fixtures exercise the implementation; my live Morkahja server remains untouched, and none of the editing tools gains remote authority.
 
 ## 2026-11-04 — Checking a host key without reaching the server
 
