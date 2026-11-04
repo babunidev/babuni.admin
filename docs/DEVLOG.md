@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-04 — Turning the working data check into a proper overview
+
+With the player list now navigating through every page and back, the real game test confirmed that active-session and recent-event counts respond to play. Returning to the site still required choosing the connection and clicking two separate buttons, which made the otherwise useful overview unnecessarily awkward. My direction was to remember the selection, load both panels together on opening the page, put connection controls below the information, and distinguish **Overview** from **Moderation**. AI changed the UI and combined the two fixed database reads into one temporary read-only SSH request. Extra counters remain a separate data-definition decision, since a session is not a room and the game exposes no approved aggregate view yet for gems, achievements or unlock transactions. The new remembered-selection behavior still needs a real desktop check.
+
+
 ## 2026-11-04 — Seeing Morkahja data through the finished read-only path
 
 After the restricted views and adapter were in place, the first successful snapshots appeared in my local Morkahja dashboard. The overview showed 62 players, 90 avatars, no active sessions and no events in the preceding 24 hours; the separate player preview displayed names, avatar counts and last-played dates. The interface also reported that SSH disconnected after each request. With the requested overview and preview now working against the live database, the remaining checks are page navigation, reconciling the zero activity counts with gameplay and testing failures without leaving a connection open.
