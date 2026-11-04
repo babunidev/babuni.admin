@@ -1,5 +1,11 @@
 # Testing Babuni Admin
 
+## Operator-gated Morkahja SSH/PostgreSQL probe — 2026-11-04
+
+The opt-in health probe is **disabled by default**. `tests/ssh-online-probe.test.mjs` checks private configuration, exact host and independently approved SHA256 fingerprint, unlocked-keyring requirements, denial, concurrency, cleanup and sanitized failures. `tests/ssh-tunnel.test.mjs` replaces `ssh` with a local-only test binary and checks strict host-key options, a loopback forward and child termination without contacting any server. The updated local-service test covers endpoint scoping and disabled-state refusal. `npm run test:postgres` additionally exercises `inspectReadOnlyDatabase` against a disposable PostgreSQL 16 fixture, asserting that a limited role passes and the fixture's privileged role fails.
+
+**Never aim `TEST_DATABASE_URL` at a live database.** The existing PostgreSQL suite performs destructive fixture setup. No CI test contacts Morkahja, opens a real SSH session or performs live player-data reads. See [SSH probe configuration](MORKAHJA_SSH_READONLY_PROBE.md).
+
 ## Morkahja SSH offline trust tests — 2026-11-04
 
 `tests/ssh-preflight.test.mjs` generates an ephemeral fixture key locally with `ssh-keygen` and verifies absence of a trust file, absent/incorrect/wildcard entries, explicitly pinned exact entries, unsafe permissions, symlink rejection, disallowed target values and cross-project denial. `tests/local-service.test.mjs` covers the service's `POST /test` path with a disposable trust file and verifies that Connect and Inspect remain unavailable for PostgreSQL-via-SSH profiles. No live host or database is contacted.
