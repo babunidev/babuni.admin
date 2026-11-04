@@ -137,3 +137,19 @@ test('SSH argv enforces pinned host, localhost forwarding and noninteractive aut
   assert.equal(args.at(-1),config.sshUser+'@'+profile.target)
   assert.equal(args.includes('StrictHostKeyChecking=accept-new'),false)
 })
+
+test('disconnect during SSH connection establishment cancels pending startup',async()=>{
+  const f=fixture()
+  let release
+  f.manager.deps.isKnownHost=()=>new Promise(resolve=>{release=resolve})
+  const pending=f.manager.connect(profile)
+  for(let i=0;i<20&&!release;i++)await new Promise(resolve=>setTimeout(resolve,0))
+  assert.equal(typeof release,'function')
+  await f.manager.disconnect(profile.id)
+  release(true)
+  const result=await pending
+  assert.equal(result.ok,false)
+  assert.equal(result.error,'CONNECTION_CANCELLED')
+  assert.equal(f.manager.isConnected(profile.id),false)
+  assert.equal(f.children[0].killed,true)
+})
