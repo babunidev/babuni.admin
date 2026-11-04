@@ -46,7 +46,8 @@ export async function startSshTunnel(config) {
     '-o','GlobalKnownHostsFile=/dev/null','-o','UpdateHostKeys=no',
     '-o','ProxyCommand=none','-o','ProxyJump=none',
     '-o','CanonicalizeHostname=no','-o','PermitLocalCommand=no',
-    '-o','IdentitiesOnly=yes','-o','ForwardAgent=no',
+    '-o','IdentitiesOnly=yes','-o','PreferredAuthentications=publickey',
+    '-o','GSSAPIAuthentication=no','-o','ForwardAgent=no',
     '-o','ForwardX11=no','-o','PermitTTY=no',
     '-o','PasswordAuthentication=no','-o','KbdInteractiveAuthentication=no',
     '-o','ExitOnForwardFailure=yes','-o','ConnectTimeout=5',
@@ -54,13 +55,26 @@ export async function startSshTunnel(config) {
     '-p',String(config.sshPort),'-i',config.sshIdentityFile,'-l',config.sshUser,
     '-L','127.0.0.1:'+port+':127.0.0.1:'+config.dbPort,config.host]
   // No remote shell command. ssh reads no terminal and never prompts for trust.
-  const child=spawn('ssh',args,{shell:false,stdio:['ignore','ignore','ignore'],
-    env:{...process.env,SSH_ASKPASS_REQUIRE:'never',SSH_ASKPASS:'/bin/false'}})
+  // Do not leak the local service token, browser token or other app secrets to SSH.
+  const childEnv={}
+  for(const name of ['PATH','HOME','USER','LOGNAME','LANG','SSH_AUTH_SOCK','XDG_RUNTIME_DIR']) {
+    if(typeof process.env[name]==='string')childEnv[name]=process.env[name]
+  }
+  childEnv.SSH_ASKPASS_REQUIRE='never'
+  childEnv.SSH_ASKPASS='/bin/false'
+  const child=spawn('ssh',args,{shell:false,stdio:['ignore','ignore','ignore'],env:childEnv})
   liveChildren.add(child)
   let exited=false
   child.on('exit',()=>{exited=true;liveChildren.delete(child)})
   child.on('error',()=>{exited=true;liveChildren.delete(child)})
-  const stop=()=>{stopChild(child);liveChildren.delete(child)}
+  const stop=async()=>{
+    if(child.exitCode===null && child.signalCode===null){
+      const ended=new Promise(resolve=>child.once('exit',resolve))
+      stopChild(child)
+      await Promise.race([ended,sleep(1250)])
+    }
+    liveChildren.delete(child)
+  }
   try {
     for(let n=0;n<35;n++){
       if(exited)throw new Error('SSH_SESSION_FAILED')
@@ -68,5 +82,5 @@ export async function startSshTunnel(config) {
       await sleep(200)
     }
     throw new Error('SSH_FORWARD_TIMEOUT')
-  }catch(error){stop();throw error}
+  }catch(error){await stop();throw error}
 }
