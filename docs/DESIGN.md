@@ -1,7 +1,11 @@
-# Morkahja Admin — visual and interaction design
+# Babuni Admin — visual and interaction design
 
 **Creative director:** Babuni.dev.  
 **Implementation evidence:** `.cursor/rules/morkahja-admin.mdc`, `src/index.css`, React components and page structure.
+
+## Shared Babuni Admin identity
+
+The app-wide browser title and sidebar brand use **Babuni Admin**. Its favicon and small sidebar mark reuse the exact 64×64 `public/favicon.webp` asset from Babuni Dev; no separate artwork, color adjustment or icon generation is needed. This is a shared brand above the workspaces, not a rename of the Morkahja game. Realm-specific top-bar labels remain dedicated to the Morkahja workspace.
 
 ## Keep the game's atmosphere backstage
 
