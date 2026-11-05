@@ -1,5 +1,13 @@
 # Testing Babuni Admin
 
+## Batch A restricted aggregate-view fixtures — 2026-11-05
+
+The proposed `scripts/morkahja-batch-a-aggregate-views.sql` must not run automatically in production. A new offline static test checks its owner-controlled security boundary, grant scope and absence of table mutations. A disposable PostgreSQL 16 test runs the same view definition with only synthetic schema/role identifiers substituted; it checks rank-based achievement counts, unique earning players, deduplicated non-default dice/expansion ownership, malformed-data NULL behavior and SELECT privilege isolation. The test refuses any database other than `babuni_fixture` with the expected local fixture user. It is added to `npm run test:postgres`.
+
+**Verification:** All five GitHub Actions jobs passed for the implementation branch at commit `09b46696`: build (including the offline SQL-contract test), browser, browser-connections, PostgreSQL fixtures (including the Batch A aggregate SQL execution/role-denial test), and audit. [Run 42047478095](https://github.com/babunidev/babuni.admin/actions/runs/42047478095). The audit job's success reports execution, not an absence of advisories. No live PostgreSQL schema, records, permissions or Babuni Admin UI behavior changed. Deployed expansion catalog IDs must still be validated before any operator-controlled production DDL.
+
+
+
 ## Operator-reported live PostgreSQL role audit — 2026-11-05
 
 A second read-only `psql` transaction on the live `morkahja` database checked the `babuni_admin_probe` role. The returned role is login-capable, not a superuser, and lacks CREATEDB, CREATEROLE, replication and BYPASSRLS flags. The role-membership query returned zero rows. CREATE checks were false for the database and both audited schemas (`public`, `babuni_admin_ro`). The transaction ended with `ROLLBACK`.

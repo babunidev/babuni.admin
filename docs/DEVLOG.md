@@ -1,5 +1,11 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Preparing the first additional Overview counters
+
+After defining what the new statistics should mean, the first implementation step focused on achievements and permanent unlock ownership. My requirement remains that Babuni Admin must only receive aggregate figures, not underlying player records. AI prepared a separate owner-controlled PostgreSQL view and synthetic tests, designed to count earned achievements and non-default dice and expansion unlocks while treating malformed stored data as unavailable instead of zero. The client catalog provided candidate expansion IDs, but the server's deployed catalog still needs checking. Nothing has been changed on the live database and no new UI statistic is displayed yet.
+
+
+
 ## 2026-11-05 — Defining the numbers before displaying them
 
 The real database and its restricted read-only role were now checked, so the remaining work in this first milestone was deciding what each new Overview number should actually mean. Rather than count an eight-hour session as a person currently online or assume an open room still has players in it, AI compared the game’s heartbeat, room, achievement and unlock code and drafted precise counting rules. A two-minute activity window was proposed from the game's 45-second heartbeat, alongside separate counts for unlocked achievements, current gems and non-default ownership. The definitions remain proposals for my approval and further verification; no database view or dashboard card was added.
