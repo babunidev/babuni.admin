@@ -9,7 +9,7 @@ The database-side permissions have been configured and verified by the operator 
 - `overview`: exactly one row with `players`, `avatars`, `active_sessions`, `events_last_24h` aggregate counts.
 - `player_preview`: `position` (internal page ordering), `display_name` (truncated), `avatar_count` and `last_played_at`. Only the latter three display fields are returned by the service.
 - Both views use `security_barrier = true`. Their owner and schema are fixed by the operator's live database transaction, not inferred from application credentials.
-- The adapter explicitly rejects a probe role that gains direct SELECT on any of `public.players`, `public.avatars`, `public.sessions` or `public.game_events`. The database write-privilege test remains separate.
+- The adapter explicitly rejects a probe role that gains direct SELECT on any of `public.players`, `public.avatars`, `public.sessions`, `public.game_events` or `public.player_achievements`. The database write-privilege test remains separate.
 
 **Verification:** The operator confirmed committed views, usable SELECT grants, a nonempty preview count, and raw player/session SELECT denial. The operator subsequently verified the dashboard's live data requests after updating the adapter. No repeat database migration is necessary for this step.
 
@@ -26,6 +26,22 @@ The existing private `~/.config/babuni-admin/morkahja-probe.json` continues to c
 
 This excerpt is **not** a complete configuration file; retain all existing required settings. The file remains owned by the local operator, mode `0600`. The local service must also be started with `BABUNI_MORKAHJA_REMOTE_PROBE=enabled`. Without both flags and this **exact** field list, no database overview or player page can be retrieved. The browser can select an existing saved Morkahja `postgres-ssh` profile but cannot edit the server allowlist, permissions, keyring password or approved fields.
 
+## Batch A activation and desktop verification
+
+The operator has already deployed and verified `babuni_admin_ro.progression_ownership_totals`; no repeat migration is required. The local Overview now supports achievements unlocked, players with achievements, dice unlocks and expansion unlocks. These are aggregate counts, not purchase records.
+
+To enable the fixed additional read, retain all existing private configuration and add this property on the operator's Nobara PC:
+
+```json
+"readOnlyMetricFields": ["achievementsUnlocked", "playersWithAchievements", "diceUnlocks", "expansionUnlocks"]
+```
+
+This is a property excerpt, not a complete JSON document. Keep valid JSON syntax, existing `readOnlyDataEnabled` and exact `readOnlyDataFields`, ownership and mode 0600. No browser endpoint can enable it. Configurations without this property continue loading the original Overview and players; the new cards show Unavailable. The config is read on each request, but new application code requires restarting the local development process.
+
+After updating the application, enable the property, restart the local app with the existing approved environment and select the remembered connection or use Refresh. Confirm four cards, checked-at time, existing pagination and unavailable/error behavior. The operator's earlier database-only totals were 75/52/10/6; current totals may change with gameplay. Do not publish player-preview screenshots.
+
+**Desktop verification remains pending.** Unit, PostgreSQL and browser fixtures do not establish successful execution on Nobara. All new counters follow the existing manual/initial request lifecycle with no background polling.
+
 ## Additional counters and interpretation
 
 **Players online*** in the new UI is an estimate based on non-expired matching active-account sessions. This measures an authorized session, **not** a confirmed live player heartbeat or a game room. Sessions and rooms are different concepts; no room count has been verified from the game's database.
@@ -36,7 +52,7 @@ The legacy Morkahja adapter references `player_achievements`, player currency JS
 
 The Morkahja navigation now names the read-only landing page **Overview** at `/`; the historical `/read-only` URL still renders the same view. The previous legacy Dashboard remains accessible at `/dashboard`, and the write-capable `/players` route is labeled **Moderation** without changing its authority. The Overview remembers only the selected **local profile UUID** in browser storage. An initial profile selection immediately retrieves the overview and first player page, and reloading a page with a previously selected valid profile retrieves a fresh snapshot. There is no remote request if no profile has been selected; expired/missing local profile identifiers are discarded. All server-side private host, keyring, permission and operator approvals are rechecked on every read. No remote credentials or player data are persisted in the browser.
 
-**Database overview** contains only four counts: players, avatars, active sessions matching a player's active-session reference and not expired, and game events during the previous 24 hours. No player or session records are returned.
+**Original database overview** contains four counts: players, avatars, active sessions matching a player's active-session reference and not expired, and game events during the previous 24 hours. No player or session records are returned.
 
 **Player preview** returns a fixed, limited response of `displayName` (at most 80 characters), `avatarCount` and `lastPlayedAt` (a validated timestamp or null). It does not include internal player IDs, identity keys, session information, friend lists, moderation information, account credentials, or raw JSON. The fixed SQL orders players by last activity and an internal ID tie-breaker without exposing that ID. The page size is exactly 20; page numbers must be integers from 1 through 1000. There is no browser-controlled query, field selection, sorting or unlimited export.
 
