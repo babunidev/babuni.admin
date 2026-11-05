@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {mkdtempSync,writeFileSync,symlinkSync,rmSync,readFileSync} from 'node:fs'
 import {tmpdir} from 'node:os'
 import {join,resolve} from 'node:path'
-import {spawnSync} from 'node:child_process'
+import {spawnSync,execFileSync} from 'node:child_process'
 
 const script=resolve('scripts/verify-morkahja-deployed-catalog.py')
 const valid=()=>({expansions:Object.fromEntries([1001,1002,1003,1004].map(id=>[
@@ -58,6 +58,16 @@ test('catalog audit refuses symbolic links and duplicate JSON keys',()=>{
     const result=run(path)
     assert.equal(result.status,1)
     assert.match(result.stdout,/CATALOG_DUPLICATE_KEY/)
+  })
+})
+
+test('catalog audit refuses a named pipe instead of blocking on it',()=>{
+  withFixture(JSON.stringify(valid()),(_path,dir)=>{
+    const fifo=join(dir,'untrusted.pipe')
+    execFileSync('mkfifo',[fifo])
+    const result=run(fifo)
+    assert.equal(result.status,1)
+    assert.match(result.stdout,/CATALOG_UNSAFE_FILE/)
   })
 })
 
