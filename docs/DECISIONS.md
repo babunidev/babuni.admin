@@ -1,5 +1,14 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-05 — Shared Babuni brand, separate Morkahja workspace
+
+**Creative direction:** The admin app should identify as **Babuni Admin** in the browser tab and have the same favicon as Babuni Dev, rather than appearing as a standalone Morkahja Admin product.
+
+**Implementation by AI:** Copy the exact existing 64×64 WebP favicon from `babunidev/babuni.dev` into `public/favicon.webp`, reference it in the HTML browser icon and the shared sidebar, and set the HTML title/application name to Babuni Admin. Keep Morkahja's realm-specific labels and workspace identity intact.
+
+**Verification:** The uploaded favicon and Babuni Dev source asset have matching Git blob hashes. Browser tests cover the tab title, accessible shared brand presentation and favicon resource; live desktop appearance should be checked after pulling the change. No privilege or data-access changes.
+
+
 ## 2026-11-04 — Prioritize an automatic view-only Overview without widening database access
 
 **Creative direction:** After the operator verified all preview pages and confirmed the activity counters increase while playing, the next requirement was to restore the selected SSH profile across reloads and load overview/player information together. The read-only overview should be the first Morkahja page, connection configuration should sit below the results, and the existing player-administration screen should be labeled **Moderation**.
