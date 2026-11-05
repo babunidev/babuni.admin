@@ -1,6 +1,9 @@
 # Babuni Admin
 
-**Browser and visual identity:** The tab title and shared sidebar say **Babuni Admin**, with the same 64×64 WebP favicon used by the Babuni Dev website (`public/favicon.webp`). Morkahja remains one workspace inside the application. The icon is reused without modification; the app remains local-only.
+**Browser and visual identity:**
+**SSH login setup (opt-in):** To load the approved Morkahja SSH identity into the **existing** KDE/Nobara agent at graphical login, an optional helper is available. It does not store passphrases, start another agent, change server permissions or install itself automatically. Explicit installation: `python3 scripts/ssh-agent-login.py install`; verification: `python3 scripts/ssh-agent-login.py status`; removal: `python3 scripts/ssh-agent-login.py uninstall`. [Setup and limitations](docs/SSH_AGENT_DESKTOP_LOGIN.md).
+
+ The tab title and shared sidebar say **Babuni Admin**, with the same 64×64 WebP favicon used by the Babuni Dev website (`public/favicon.webp`). Morkahja remains one workspace inside the application. The icon is reused without modification; the app remains local-only.
 
 
 **Creative direction:** Babuni  
