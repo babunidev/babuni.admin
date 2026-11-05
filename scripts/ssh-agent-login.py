@@ -193,7 +193,6 @@ def install():
         "Comment=Load only the approved Babuni Admin identity into the existing desktop SSH agent",
         f'Exec="{py}" "{program}" run',
         "Terminal=false",
-        "NoDisplay=true",
         MARKER,
         "",
     ])).encode("utf-8")
