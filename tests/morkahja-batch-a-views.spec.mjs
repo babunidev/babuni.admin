@@ -2,6 +2,7 @@ import {test} from 'node:test'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import pg from 'pg'
+import {readProgression,PROGRESSION_FIELDS,unavailableProgression} from '../local-service/progressionMetrics.mjs'
 
 // This test must never run against Morkahja or another real database.
 const url=process.env.TEST_DATABASE_URL
@@ -88,6 +89,18 @@ test('Batch A aggregate SQL counts only approved ownership and enforces reader i
       invalid_dice_entries:'0',invalid_expansion_shapes:'0',
       invalid_expansion_entries:'0',
     })
+    const config={readOnlyDataEnabled:true,readOnlyMetricFields:PROGRESSION_FIELDS}
+    const fixtureClient={query:sql=>client.query(sql.replaceAll('babuni_admin_ro.',viewSchema+'.'))}
+    await client.query('BEGIN READ ONLY')
+    assert.deepEqual(await readProgression(fixtureClient,config),{
+      achievementsUnlocked:3,playersWithAchievements:2,diceUnlocks:3,expansionUnlocks:3,
+    })
+    const missingClient={query:sql=>fixtureClient.query(
+      sql.replaceAll('progression_ownership_totals','missing_progression_fixture'))}
+    assert.deepEqual(await readProgression(missingClient,config),unavailableProgression())
+    // A recovered missing optional view leaves the original transaction usable.
+    assert.equal((await select()).rows.length,1)
+    await client.query('ROLLBACK')
     await assert.rejects(
       ()=>client.query('SELECT id FROM '+dataSchema+'.players'),
       error=>error.code==='42501'
@@ -106,6 +119,11 @@ test('Batch A aggregate SQL counts only approved ownership and enforces reader i
     assert.equal(invalid.expansion_unlocks,null)
     assert.equal(invalid.invalid_dice_entries,'1')
     assert.equal(invalid.invalid_expansion_entries,'1')
+    await client.query('BEGIN READ ONLY')
+    assert.deepEqual(await readProgression(fixtureClient,config),{
+      achievementsUnlocked:3,playersWithAchievements:2,diceUnlocks:null,expansionUnlocks:null,
+    })
+    await client.query('ROLLBACK')
     await client.query('RESET ROLE')
     roleSet=false
     await client.query('DELETE FROM '+dataSchema+".players WHERE id='invalid'")
@@ -116,6 +134,7 @@ test('Batch A aggregate SQL counts only approved ownership and enforces reader i
     roleSet=true
     assert.deepEqual((await select()).rows[0],rows[0])
   } finally {
+    try {await client.query('ROLLBACK')} catch {}
     try {if(roleSet) await client.query('RESET ROLE')} catch {}
     try {await client.query('DROP SCHEMA IF EXISTS '+viewSchema+' CASCADE')} catch {}
     try {await client.query('DROP SCHEMA IF EXISTS '+dataSchema+' CASCADE')} catch {}
