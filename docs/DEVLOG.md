@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Bringing the verified totals into the Overview
+
+After checking the running backend's expansion catalog, I approved and applied the prepared database view. Its first restricted read returned 75 achievement unlocks across 52 players, with 10 dice and 6 expansion unlocks; every quality counter was zero. With that boundary verified, I asked AI to connect the four totals to my local Overview. AI added the fixed aggregate query, explicit field approval, unavailable states and fixtures; the live Nobara display still needs verification.
+
+
 ## 2026-11-05 — Checking the real expansion list before installing new counters
 
 The prepared achievements and unlock totals were ready in source, but they still depended on expansion identifiers from the game repository rather than a verified deployed catalog. To avoid introducing incorrect counts into my live Overview, AI prepared a narrowly scoped read-only JSON audit helper and synthetic tests. It reports only the IDs and their active states, refusing malformed or unexpected entries. The next step still needs to happen on my game server: verify its actual catalog and explicitly review the proposed SQL before any database view is created.
