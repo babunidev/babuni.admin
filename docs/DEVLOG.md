@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — A remembered connection that could not reconnect
+
+After switching to a remembered overview, my next local screenshot showed `SSH_SESSION_FAILED` where the live figures should have appeared. The stored profile had been restored, but the SSH process exited before its temporary database tunnel became ready. Since the code discarded SSH's diagnostic output, there was no reliable way to know whether the server, key, authentication or forward caused the exit. AI added tightly limited error classification and a fake-SSH regression test, keeping the raw output private and all existing trust checks unchanged. Identifying the actual failure on my PC remains the next verification step.
+
+
 ## 2026-11-05 — Making the admin look like one Babuni project
 
 Although the application had grown beyond Morkahja, its browser tab still called it Morkahja Admin and the shared interface had no matching icon. For consistency with the Babuni Dev website, I chose its existing favicon as the mark for Babuni Admin too. AI reused the original WebP asset without changing its artwork, corrected the browser title and added the icon beside the shared sidebar name, with a browser regression test for both workspaces. Morkahja remains the name of its game workspace; no game data or connection behavior changed.
