@@ -1,5 +1,17 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-05 — Prepare Batch A without auto-deploying database changes
+
+**Creative direction:** Proceed step by step after defining additional Morkahja Overview statistics.
+
+**AI design and implementation:** Prepare a single owner-controlled, security-barrier PostgreSQL aggregate view as a source artifact with tests for achievement ranks and non-default dice/expansion ownership. Keep the original raw-table restrictions and expose only scalar aggregate counts, with null/unavailable for malformed data. Build the operator-required SQL separately from Babuni Admin's runtime; no production migration executes as a side effect of development.
+
+**Catalog limitation:** The candidate expansion IDs come from the game's client catalog, not from an independent check of the deployed server's `game/expansiondata.json`. The prepared view must not be run in production until the deployed catalog is checked and the creative/operator approves the database change.
+
+**Status:** Source implementation and fixture tests prepared; no production SQL executed, no UI counters enabled. Server-side audit and aggregate verification remain pending.
+
+
+
 ## 2026-11-05 — Proposed statistics contract, not yet approved for production
 
 **Creative direction:** Define meaningful Morkahja Overview numbers before implementing additional read-only counters.

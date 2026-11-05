@@ -1,5 +1,13 @@
 # Babuni Admin — Architecture
 
+## Batch A restricted metrics: prepared SQL, not a deployed adapter (2026-11-05)
+
+`scripts/morkahja-batch-a-aggregate-views.sql` defines one future owner-rights, security-barrier view `babuni_admin_ro.progression_ownership_totals`. The view summarizes `public.players` and `public.player_achievements` without granting the probe role SELECT on either table. It returns only numeric aggregate counts and aggregate data-quality signals; invalid unlock data forces NULL (unavailable) for the affected metric. The SQL uses transaction-local `SET ROLE morkahjadbadmin` so the view owner remains the approved game-database owner.
+
+This SQL is a **manual operator-run production change candidate**, not a migration automatically invoked by Vite, the local service, the browser or GitHub CI. It must be reviewed with the deployed expansion catalog, tested with synthetic PostgreSQL roles, and explicitly authorized before execution on the VPS. `local-service/morkahjaReadOnly.mjs` and the existing read-only dashboard continue using only the two previously authorized views; the new view is not used until a separate safe adapter/UI milestone.
+
+
+
 ## Opt-in desktop SSH identity loader (2026-11-05)
 
 `scripts/ssh-agent-login.py` is independent of the HTTP service and SSH tunnel lifecycle. Its operator-run installer copies the loader into the user's local share folder and registers a removable XDG Autostart entry. At graphical login it reads only the owner-private Morkahja configuration and companion public key, compares the configured key's fingerprint against the existing `SSH_AUTH_SOCK`, and invokes `ssh-add` with GUI askpass if necessary. It does not start a second SSH agent or store passphrases, keys, credentials, or game data. Installation is never triggered by `npm run dev`, and successful fixture tests do not establish live login readiness. [Instructions](SSH_AGENT_DESKTOP_LOGIN.md).

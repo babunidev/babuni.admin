@@ -1,5 +1,15 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Prepare Batch A owner-controlled aggregate SQL
+
+- Added an operator-gated SQL view definition for earned achievements, unique players with achievements, non-default dice skins and expansion ownership.
+- Added a database-owner boundary with view-only SELECT grant to `babuni_admin_probe`, leaving the six audited raw game tables inaccessible.
+- Added invalid ownership diagnostics so malformed JSON or unknown catalog values produce unavailable aggregates rather than plausible but incorrect zeros.
+- Added offline SQL-contract and isolated PostgreSQL fixture tests; included the new PostgreSQL test in `npm run test:postgres`.
+- Awaiting CI verification, deployed expansion catalog confirmation and separate explicit authorization before any production DDL. No live database operation, dashboard change or new runtime adapter was performed.
+
+
+
 ## 2026-11-05 — Propose source-backed Overview statistics
 
 - Documented an exact candidate contract for presence, rooms, achievements, gems, expansion/dice unlock ownership and deferred purchase reporting.

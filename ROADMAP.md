@@ -8,6 +8,16 @@
 - [ ] Verify controlled SSH read interruptions/cleanup and future login or browser-reload edge cases independently.
 
 
+## 2026-11-05 — Batch A aggregate-view preparation (achievements and ownership)
+
+- [x] Prepare an **operator-gated, not automatically applied** `babuni_admin_ro.progression_ownership_totals` SQL view definition for achievement unlocks, unique earning players, non-default dice ownership, and catalog-qualified expansion ownership.
+- [x] Add disposable PostgreSQL fixture tests for counts, duplicate IDs, progress-only achievements, invalid ownership data, owner-only base-table access, and the probe role's view-only access. CI verification is recorded separately when available.
+- [ ] Verify that the actual deployed Morkahja expansion catalog agrees with the candidate IDs (client catalog: 1001, 1002, 1003, 1004; 1002 currently flagged inactive). Do not assume the client source matches the live server.
+- [ ] Review and authorize the production view definition and execute it explicitly as the database operator. **Not yet applied.**
+- [ ] Verify aggregate-only results on live data and preserve the current dashboard behavior until the read-only adapter and new cards have independent tests.
+
+[Prepared SQL](scripts/morkahja-batch-a-aggregate-views.sql) · [Candidate contract](docs/MORKAHJA_OVERVIEW_METRICS.md).
+
 ## 2026-11-05 — Discover new Morkahja Overview metrics safely
 
 - [x] Inspect the actual Morkahja game source for room, player-presence, achievement, gem, expansion/dice and commerce data definitions.
