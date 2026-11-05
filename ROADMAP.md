@@ -17,7 +17,7 @@
 - [x] Operator explicitly approved and applied the reviewed SQL from 8d42562; COMMIT confirmed.
 - [x] Operator verified totals 75/52/10/6, five zero quality counters, expected owner/view SELECT and raw player/achievement table and column denial.
 - [x] Implement the fixed aggregate adapter, independent metric-field approval and four Overview cards with unavailable handling.
-- [ ] Verify current-change unit, PostgreSQL recovery, browser, build and lint checks in CI.
+- [x] Verify current-change unit, PostgreSQL recovery, browser, build and lint checks in CI. The first run exposed an outdated four-field legacy test expectation; commit `6e479a8` updated it to require all eight fields and null optional metrics without approval. All five jobs passed in [CI run 42079244053](https://github.com/babunidev/babuni.admin/actions/runs/42079244053).
 - [ ] Enable the separate metric-field list on Nobara and verify the four cards through the live local service.
 
 [Prepared SQL](scripts/morkahja-batch-a-aggregate-views.sql) · [Candidate contract](docs/MORKAHJA_OVERVIEW_METRICS.md).
