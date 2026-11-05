@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Prepare the deployed expansion catalog audit
+
+- Added a standalone, operator-run read-only verifier for the live game-server `expansiondata.json`, comparing canonical IDs to the previously prepared Batch A SQL allowlist.
+- Added synthetic tests for expected and unexpected IDs, invalid catalog contents, duplicate JSON keys and symbolic-link rejection.
+- Documented an operator-only live verification procedure and the separate production SQL approval gate.
+- No remote access, production schema change, grant, game-data modification or new Overview counter was performed.
+
+
 ## 2026-11-05 — Prepare Batch A owner-controlled aggregate SQL
 
 - Added an operator-gated SQL view definition for earned achievements, unique players with achievements, non-default dice skins and expansion ownership.

@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Checking the real expansion list before installing new counters
+
+The prepared achievements and unlock totals were ready in source, but they still depended on expansion identifiers from the game repository rather than a verified deployed catalog. To avoid introducing incorrect counts into my live Overview, AI prepared a narrowly scoped read-only JSON audit helper and synthetic tests. It reports only the IDs and their active states, refusing malformed or unexpected entries. The next step still needs to happen on my game server: verify its actual catalog and explicitly review the proposed SQL before any database view is created.
+
+
 ## 2026-11-05 — Preparing the first additional Overview counters
 
 After defining what the new statistics should mean, the first implementation step focused on achievements and permanent unlock ownership. My requirement remains that Babuni Admin must only receive aggregate figures, not underlying player records. AI prepared a separate owner-controlled PostgreSQL view and synthetic tests, designed to count earned achievements and non-default dice and expansion unlocks while treating malformed stored data as unavailable instead of zero. The client catalog provided candidate expansion IDs, but the server's deployed catalog still needs checking. Nothing has been changed on the live database and no new UI statistic is displayed yet.

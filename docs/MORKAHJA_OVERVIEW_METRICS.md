@@ -2,6 +2,22 @@
 
 **Status (2026-11-05): Source-code review and operator-reported live schema/role audits complete; a proposed metric definition contract is documented.** Thresholds, names and counting rules remain subject to the creative's approval and live validation. New owner-controlled aggregate views and dashboard counters remain unimplemented. No live database definitions or privileges were changed.
 
+## Operator-gated catalog verification (prepared; not run on VPS)
+
+The prepared SQL allowlist is pinned to expansion IDs `1001,1002,1003,1004`. The current Morkahja repository's three tracked JSON catalogs (`server/game`, `client/public/game`, `client/src/data/game`) agree on those IDs and flag `1002` inactive. Repository snapshots do **not** prove what the deployed game server currently uses.
+
+A separate audit helper, `scripts/verify-morkahja-deployed-catalog.py`, reads exactly **one operator-selected local JSON file**; it never connects to PostgreSQL, opens a network connection or writes anything. It requires an absolute file path, rejects a symbolic-link final component, a non-regular file or files over 8 MiB, malformed/duplicate JSON keys, mismatched embedded IDs and invalid active flags. It prints only IDs, inactive IDs and a matching/missing/extra summary, not game names, paths, player data or secrets. A matching result does **not** authorize the production DDL.
+
+**Run on the Ubuntu game host, not just from an old local checkout:**
+
+1. From Nobara, with the checked-out Babuni Admin repository, copy `scripts/verify-morkahja-deployed-catalog.py` to the authorized server account via `scp` (no root privileges needed for the transfer).
+2. Identify the path to the **actually deployed** `server/game/expansiondata.json` read by the running game backend. Do not accidentally check only a static client build or a stale repository clone.
+3. Run `python3 ~/verify-morkahja-deployed-catalog.py /absolute/path/to/the/running/server/game/expansiondata.json` as the normal SSH account if the file is readable. Do not change permissions just to make it readable.
+4. Expect `CATALOG_IDS 1001,1002,1003,1004` and `CATALOG_MATCH`. The `CATALOG_INACTIVE_IDS` line separately reports enabled/disabled states; `1002` is inactive in tracked source but may differ on the live server.
+5. Keep the SQL view **unapplied** until the actual output is reviewed and the operator explicitly approves a database migration. A `CATALOG_MISMATCH` is a stop condition, not a reason to run the candidate SQL anyway. Delete the temporary copy of the helper when finished.
+
+Fixture tests live in `tests/morkahja-catalog-audit.test.mjs`, including a check that the helper's hard-coded expected IDs agree with the prepared SQL allowlist. The live catalog has not been inspected through this helper and is still unverified.
+
 ## First implementation slice — Batch A prepared for isolated verification
 
 **Code status:** `scripts/morkahja-batch-a-aggregate-views.sql` is an **opt-in SQL migration source file**, not an executed production change. It creates/replaces `babuni_admin_ro.progression_ownership_totals` with `security_barrier=true` and owner-rights evaluation. The executable SQL sets its transaction-local role to `morkahjadbadmin`, so the view is owner-controlled and may aggregate raw tables without granting direct raw-table SELECT to `babuni_admin_probe`. It revokes public rights on the view and grants only SELECT on that view to the probe account. The existing two read-only views, user interface and adapter are not modified.
