@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Making the admin look like one Babuni project
+
+Although the application had grown beyond Morkahja, its browser tab still called it Morkahja Admin and the shared interface had no matching icon. For consistency with the Babuni Dev website, I chose its existing favicon as the mark for Babuni Admin too. AI reused the original WebP asset without changing its artwork, corrected the browser title and added the icon beside the shared sidebar name, with a browser regression test for both workspaces. Morkahja remains the name of its game workspace; no game data or connection behavior changed.
+
+
 ## 2026-11-04 — Turning the working data check into a proper overview
 
 With the player list now navigating through every page and back, the real game test confirmed that active-session and recent-event counts respond to play. Returning to the site still required choosing the connection and clicking two separate buttons, which made the otherwise useful overview unnecessarily awkward. My direction was to remember the selection, load both panels together on opening the page, put connection controls below the information, and distinguish **Overview** from **Moderation**. AI changed the UI and combined the two fixed database reads into one temporary read-only SSH request. Extra counters remain a separate data-definition decision, since a session is not a room and the game exposes no approved aggregate view yet for gems, achievements or unlock transactions. The new remembered-selection behavior still needs a real desktop check.

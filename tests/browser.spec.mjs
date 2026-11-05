@@ -117,3 +117,29 @@ test('shared rendered controls work: Morkahja player table and Babuni Dev page h
     await context.close()
   }
 })
+
+test('Babuni Admin uses the shared Babuni Dev favicon and browser-tab title', async () => {
+  const { page, context, unexpectedErrors } = await openPage('/')
+  try {
+    assert.equal(await page.title(), 'Babuni Admin')
+    assert.equal(await page.locator('meta[name="application-name"]').getAttribute('content'), 'Babuni Admin')
+    const favicon = page.locator('link[rel="icon"]')
+    assert.equal(await favicon.getAttribute('href'), '/favicon.webp')
+    assert.equal(await favicon.getAttribute('type'), 'image/webp')
+    const response = await page.request.get(origin + '/favicon.webp')
+    assert.equal(response.status(), 200)
+    assert.match(response.headers()['content-type'] ?? '', /image\/webp/)
+    assert.equal((await response.body()).byteLength, 7926)
+
+    const logo = page.locator('aside img[src="/favicon.webp"]')
+    await logo.waitFor()
+    assert.equal(await logo.evaluate(img => img.complete && img.naturalWidth === 64 && img.naturalHeight === 64), true)
+
+    await page.goto(origin + '/babuni-dev')
+    assert.equal(await page.title(), 'Babuni Admin')
+    assert.equal(await page.locator('aside img[src="/favicon.webp"]').count(), 1)
+    assert.deepEqual(unexpectedErrors, [])
+  } finally {
+    await context.close()
+  }
+})

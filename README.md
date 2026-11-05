@@ -1,5 +1,8 @@
 # Babuni Admin
 
+**Browser and visual identity:** The tab title and shared sidebar say **Babuni Admin**, with the same 64×64 WebP favicon used by the Babuni Dev website (`public/favicon.webp`). Morkahja remains one workspace inside the application. The icon is reused without modification; the app remains local-only.
+
+
 **Creative direction:** Babuni  
 **Repository:** `babunidev/babuni.admin`  
 **Current focus:** Structural transition from a local Morkahja administration console into a multi-project administration platform.
