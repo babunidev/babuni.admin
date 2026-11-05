@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Finding the source of future Overview counters
+
+With the secure dashboard now reading real player information, more interesting figures could be added: actual online presence, open rooms, achievements, gems, dice, expansions and purchases. A review of Morkahja's code showed that these are separate kinds of information, not interchangeable counts. AI traced their storage models and prepared a metadata-only SQL audit to compare the source definitions with the real database. The new counters remain unimplemented until the live schema is confirmed and restricted aggregate views are approved.
+
+
 ## 2026-11-05 — Preparing SSH access for the next login
 
 The automatic Overview failure was traced to the desktop SSH agent having no identities loaded. After adding the approved key and restarting the old application process, my live Morkahja figures returned. To avoid manually repeating that step after each computer login, AI prepared an optional per-user loader that relies on the existing agent and graphical passphrase prompt. Isolated tests passed, but its first real Nobara login is not yet verified.

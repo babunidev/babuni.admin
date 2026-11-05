@@ -1,5 +1,17 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-05 — Discover new Morkahja Overview metrics safely
+
+- [x] Inspect the actual Morkahja game source for room, player-presence, achievement, gem, expansion/dice and commerce data definitions.
+- [x] Distinguish online presence from valid login sessions, nonclosed encounter rooms from current activity, gem balances from transactions, and unlock ownership from recorded purchases.
+- [x] Prepare a fixed, read-only PostgreSQL metadata audit for the relevant live tables and existing restricted views; do not fetch player or payment records.
+- [ ] Operator verifies the live schema using the metadata audit. Until then, the presence and structure of every candidate live table remain unconfirmed.
+- [ ] Approve aggregate definitions and implement new owner-controlled `babuni_admin_ro` views with SELECT-only rights for the existing probe role.
+- [ ] Test disposable fixtures and operator-observed live counters before adding UI cards. No new counter or production view is created in this discovery step.
+
+[Candidate metric definitions and safe audit](docs/MORKAHJA_OVERVIEW_METRICS.md).
+
+
 ## 2026-11-05 — Opt-in SSH identity at desktop login
 
 - [x] Confirm the failed live read was caused by an empty desktop SSH agent. The operator loaded the approved key and recovered the Overview.

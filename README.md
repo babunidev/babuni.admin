@@ -1,5 +1,8 @@
 # Babuni Admin
 
+**Morkahja statistics expansion:** A source-backed investigation now identifies candidate data for rooms, player presence, achievements, gem balances, dice/expansion unlocks and purchase transactions. No new live counters have been enabled. A metadata-only audit script is provided to verify the actual server schema before creating any additional restricted aggregate views. [Metric discovery](docs/MORKAHJA_OVERVIEW_METRICS.md).
+
+
 **Browser and visual identity:**
 **SSH login setup (opt-in):** To load the approved Morkahja SSH identity into the **existing** KDE/Nobara agent at graphical login, an optional helper is available. It does not store passphrases, start another agent, change server permissions or install itself automatically. Explicit installation: `python3 scripts/ssh-agent-login.py install`; verification: `python3 scripts/ssh-agent-login.py status`; removal: `python3 scripts/ssh-agent-login.py uninstall`. [Setup and limitations](docs/SSH_AGENT_DESKTOP_LOGIN.md).
 
