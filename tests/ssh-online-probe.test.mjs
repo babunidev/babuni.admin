@@ -104,6 +104,11 @@ test('short-lived remote probe never connects when disabled and cleans up even o
   finish({ok:true})
   assert.equal((await pending).code,'REMOTE_DB_HEALTHY_READ_ONLY')
   assert.equal(stops,4)
+  deps.inspectDatabase=async()=>({ok:true})
+  deps.openTunnel=async()=>{throw new Error('SSH_HOST_KEY_REJECTED')}
+  const hostKey=await probeMorkahjaPostgres(profile,deps)
+  assert.equal(hostKey.code,'SSH_HOST_KEY_REJECTED')
+  assert.equal(JSON.stringify(hostKey).includes('sshIdentityFile'),false)
 })
 
 
@@ -161,4 +166,7 @@ test('approved data read stays disabled by default, shares lock and closes tunne
   assert.equal(combined.data.playerPage.page,3)
   assert.equal(opens,4)
   assert.equal(stops,4)
+  deps.openTunnel=async()=>{throw new Error('SSH_AUTH_REJECTED')}
+  const auth=await fetchMorkahjaReadOnly(profile,'dashboard',1,deps)
+  assert.deepEqual(auth,{ok:false,code:'SSH_AUTH_REJECTED'})
 })

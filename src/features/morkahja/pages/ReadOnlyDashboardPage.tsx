@@ -65,6 +65,14 @@ const readErrorHints: Record<string,string> = {
   DB_READ_TIMEOUT: 'The read-only query exceeded its time limit.',
   DB_READ_AUTH_FAILED: 'PostgreSQL did not accept the configured database login.',
   DB_READ_CONNECTION_FAILED: 'The temporary database connection was interrupted.',
+  SSH_SESSION_FAILED: 'SSH stopped before opening its temporary database tunnel. The exact cause was not recognized.',
+  SSH_HOST_KEY_REJECTED: 'SSH refused the server host key. Check the pinned key offline before retrying; do not disable strict verification.',
+  SSH_IDENTITY_UNAVAILABLE: 'The approved SSH identity could not be loaded or used. Check the configured key path and permissions.',
+  SSH_AUTH_REJECTED: 'The SSH server rejected authentication using the approved identity.',
+  SSH_FORWARD_DENIED: 'SSH could not establish the required temporary database forward.',
+  SSH_CLIENT_CONFIG_INVALID: 'The installed OpenSSH client rejected a configured option.',
+  SSH_HOST_UNREACHABLE: 'SSH could not reach or maintain a connection to the configured server.',
+  SSH_FORWARD_TIMEOUT: 'SSH did not open the temporary database forward within the expected time.',
   REMOTE_PROBE_BUSY: 'A previous SSH check is still running. Refresh after it closes.',
 }
 function readableFailure(error:unknown):string {

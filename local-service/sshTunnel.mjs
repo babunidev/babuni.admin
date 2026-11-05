@@ -49,6 +49,31 @@ export function buildSshTunnelArgs(config, socketPath) {
     '-L',socketPath+':127.0.0.1:'+config.dbPort,config.host]
 }
 
+// Raw SSH diagnostics can include private key paths and usernames. Inspect them
+// inside the local service only; return one fixed category to the UI.
+export function classifySshExitDiagnostic(message) {
+  const value=typeof message==='string'?message.slice(0,4096):''
+  if(/host key verification failed|remote host identification has changed|no .* host key is known|offending .* key/i.test(value)) {
+    return 'SSH_HOST_KEY_REJECTED'
+  }
+  if(/identity file .* not accessible|load key .* (?:error|invalid|refused|permission denied)|sign_and_send_pubkey: signing failed/i.test(value)) {
+    return 'SSH_IDENTITY_UNAVAILABLE'
+  }
+  if(/permission denied \(publickey|too many authentication failures|authentication failed/i.test(value)) {
+    return 'SSH_AUTH_REJECTED'
+  }
+  if(/administratively prohibited|port forwarding (?:is )?disabled|forwarding request failed|cannot listen to port|bind .* address already in use/i.test(value)) {
+    return 'SSH_FORWARD_DENIED'
+  }
+  if(/bad configuration option|unsupported option|unknown configuration option|unknown cipher type/i.test(value)) {
+    return 'SSH_CLIENT_CONFIG_INVALID'
+  }
+  if(/could not resolve hostname|name or service not known|connection refused|connection timed out|network is unreachable|no route to host|connection reset by|connection closed by|operation timed out/i.test(value)) {
+    return 'SSH_HOST_UNREACHABLE'
+  }
+  return 'SSH_SESSION_FAILED'
+}
+
 export async function startSshTunnel(config) {
   const socketDir=await mkdtemp(join(tmpdir(),'babuni-ssh-pg-'))
   const socketPath=join(socketDir,localSocketName)
@@ -62,12 +87,20 @@ export async function startSshTunnel(config) {
   childEnv.SSH_ASKPASS='/bin/false'
   let child
   try {
-    child=spawn('ssh',args,{shell:false,stdio:['ignore','ignore','ignore'],env:childEnv})
+    child=spawn('ssh',args,{shell:false,stdio:['ignore','ignore','pipe'],env:childEnv})
   }catch(error){
     await rm(socketDir,{recursive:true,force:true})
     throw error
   }
-  const session={child,socketDir}
+  // Keep a small in-memory diagnostic solely for categorization. Never log,
+  // persist, or return stderr, argv, environment or SSH identity details.
+  let sshDiagnostic=''
+  child.stderr?.on('data',chunk=>{
+    if(sshDiagnostic.length<4096) {
+      sshDiagnostic=(sshDiagnostic+String(chunk)).slice(0,4096)
+    }
+  })
+    const session={child,socketDir}
   liveSessions.add(session)
   let exited=false
   child.on('exit',()=>{
@@ -88,7 +121,7 @@ export async function startSshTunnel(config) {
   session.stop=stop
   try {
     for(let n=0;n<35;n++){
-      if(exited)throw new Error('SSH_SESSION_FAILED')
+      if(exited)throw new Error(classifySshExitDiagnostic(sshDiagnostic))
       if(await isListening(socketPath))return {socketDir,stop}
       await sleep(200)
     }

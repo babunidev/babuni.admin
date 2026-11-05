@@ -74,7 +74,9 @@ export async function probeMorkahjaPostgres(profile, deps={}) {
   }catch(error) {
     const code=typeof error?.message==='string' &&
       ['KEYRING_LOCKED','KEYRING_UNAVAILABLE','KEYRING_UNKNOWN','KEYRING_CREDENTIAL_MISSING',
-       'SSH_SESSION_FAILED','SSH_FORWARD_TIMEOUT'].includes(error.message)
+       'SSH_SESSION_FAILED','SSH_FORWARD_TIMEOUT',
+       'SSH_HOST_KEY_REJECTED','SSH_IDENTITY_UNAVAILABLE','SSH_AUTH_REJECTED',
+       'SSH_FORWARD_DENIED','SSH_CLIENT_CONFIG_INVALID','SSH_HOST_UNREACHABLE'].includes(error.message)
       ? error.message:'REMOTE_PROBE_FAILED'
     return status(code,'Remote probe did not complete. No remote edits were attempted.')
   }finally {
@@ -113,7 +115,9 @@ export async function fetchMorkahjaReadOnly(profile,kind,page=1,deps={}) {
     return {ok:true,data:result.data,checkedAt:new Date().toISOString()}
   } catch(error) {
     const permitted=['KEYRING_LOCKED','KEYRING_UNAVAILABLE','KEYRING_UNKNOWN',
-      'KEYRING_CREDENTIAL_MISSING','SSH_SESSION_FAILED','SSH_FORWARD_TIMEOUT']
+      'KEYRING_CREDENTIAL_MISSING','SSH_SESSION_FAILED','SSH_FORWARD_TIMEOUT',
+      'SSH_HOST_KEY_REJECTED','SSH_IDENTITY_UNAVAILABLE','SSH_AUTH_REJECTED',
+      'SSH_FORWARD_DENIED','SSH_CLIENT_CONFIG_INVALID','SSH_HOST_UNREACHABLE']
     const code=permitted.includes(error?.message)?error.message:'REMOTE_READ_FAILED'
     return {ok:false,code}
   } finally {

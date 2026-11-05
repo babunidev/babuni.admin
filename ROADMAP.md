@@ -1,5 +1,13 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-05 — Diagnose automatic Morkahja SSH failures safely
+
+- [x] Record operator screenshot: remembered Morkahja connection is selected but the initial combined read shows `SSH_SESSION_FAILED`; the SSH child exited before a temporary PostgreSQL forward was available. The cause is not yet identified.
+- [x] Capture only a bounded amount of SSH child stderr in service memory, classify familiar errors into fixed categories, and never log or send raw stderr, identity paths, usernames or SSH host details to the browser.
+- [x] Preserve strict host-key checking, pinned identity, the temporary Unix socket, the read-only SQL boundary and tunnel cleanup; add regression tests with a synthetic failing SSH child.
+- [ ] Reproduce the failure on the operator's Nobara desktop after updating; record the new diagnostic category before changing local SSH settings or server permissions.
+
+
 ## 2026-11-04 — Remembered Morkahja Overview and combined refresh
 
 - [x] Record operator verification of all four live player-preview pages and successful return to page one.

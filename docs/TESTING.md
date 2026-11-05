@@ -1,5 +1,10 @@
 # Testing Babuni Admin
 
+## SSH early-exit diagnostics — 2026-11-05
+
+The first automatic Overview screenshot showed a restored connection profile and `SSH_SESSION_FAILED`. The failure occurred before the PostgreSQL tunnel was ready, but its exact cause was unavailable. Synthetic SSH tests now verify that known host-key, identity, authentication, forwarding, client-configuration and network failures map to fixed codes without returning raw diagnostic output. An early-exit fixture tests cleanup. The read-only service wrappers test safe propagation. Live verification on Nobara remains pending.
+
+
 ## Morkahja Overview refresh and remembered profile — 2026-11-04
 
 The operator verified the first read-only implementation's four player-preview pages, returning to page one, and observed active-session/recent-event counts increase while playing. That live evidence applies to the earlier manual controls. The subsequent Overview enhancement requires its **own** Nobara check.

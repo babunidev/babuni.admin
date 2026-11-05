@@ -51,6 +51,12 @@ The browser receives no DB password or SSH private-key bytes. The password is re
 
 The new Morkahja `/read-only` dashboard is **not enabled by the health probe alone**. It additionally requires `readOnlyDataEnabled: true` and the exact field list `['displayName','avatarCount','lastPlayedAt']` in the same operator-private configuration. It uses a separate scoped `ssh:read` capability and fixed SELECT-only queries. See [read-only dashboard contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
+## Private SSH failure classifications
+
+Following the operator-observed `SSH_SESSION_FAILED` on a remembered Overview reload, the local service can now classify a bounded fragment of child SSH stderr into fixed codes without exposing the raw text. Recognized categories cover rejected host keys, inaccessible identities, authentication rejection, denied forwards, unsupported client options and unreachable hosts. An unrecognized early exit remains `SSH_SESSION_FAILED`. No SSH argument, host-key policy, database privilege or tunnel cleanup behavior was relaxed.
+
+The real reason for the operator's failed attempt is **not yet verified**. Tests use synthetic SSH failures only; never treat the classified code as approval to disable host verification or broaden database access.
+
 ## Verification and boundaries
 
 - Unit tests check missing configuration, wrong host/fingerprint, unsafe file permissions, invalid profile scope, concurrency, cleanup and sanitized error responses.
