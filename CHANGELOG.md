@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Propose source-backed Overview statistics
+
+- Documented an exact candidate contract for presence, rooms, achievements, gems, expansion/dice unlock ownership and deferred purchase reporting.
+- Cross-checked the proposed two-minute presence window against the game's 45-second client heartbeat and eight-hour session duration; separated open rooms from verifiably active rooms.
+- Added data-validation requirements, explicit unavailable states, and a staged implementation/test sequence with protected aggregate-only database views.
+- Preserved creative approval and live JSONB/aggregate validation as pending gates. Documentation-only; no runtime code, new SQL views, database access or counters were changed.
+
+
 ## 2026-11-05 — Record live restricted-role verification
 
 - Recorded the operator's second read-only PostgreSQL audit: the dedicated `babuni_admin_probe` login has no elevated PostgreSQL role attributes, no role memberships and no CREATE privileges on the checked database or schemas.

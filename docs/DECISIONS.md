@@ -1,5 +1,16 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-05 — Proposed statistics contract, not yet approved for production
+
+**Creative direction:** Define meaningful Morkahja Overview numbers before implementing additional read-only counters.
+
+**AI source review:** The client sends a heartbeat every 45 seconds; the server persists presence timestamps, while sessions may remain valid for eight hours. Automatic room inactivity disengagement is disabled. Achievement ranks, current gem balance, and expansion/dice ownership are stored independently. The expected purchase tables were absent from the operator's audited live public schema.
+
+**Proposal:** Use a 120-second recent-heartbeat window with explicit labels; distinguish recently active room participants, open rooms and active rooms; count achievements with rank at least one, unique players with earned achievements, non-default expansion/dice ownership, and current gem balances. Defer purchases until their actual storage is verified. Compute only scalar aggregates in owner-controlled database views, and display missing or invalid data as unavailable rather than inventing zeroes.
+
+**Status:** The human creative requested metric definitions but has not separately accepted the proposed threshold, labels or detailed inclusion rules. No SQL view, DB grant, app card or live query was implemented. The full source-backed draft and validation gates are in [Morkahja Overview metrics](MORKAHJA_OVERVIEW_METRICS.md).
+
+
 ## 2026-11-05 — Review game statistics before expanding database permissions
 
 **Creative direction:** Expand the useful read-only Morkahja Overview with rooms, achievements, gems, unlocks, transactions and a more accurate online-player count.

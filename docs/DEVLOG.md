@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Defining the numbers before displaying them
+
+The real database and its restricted read-only role were now checked, so the remaining work in this first milestone was deciding what each new Overview number should actually mean. Rather than count an eight-hour session as a person currently online or assume an open room still has players in it, AI compared the game’s heartbeat, room, achievement and unlock code and drafted precise counting rules. A two-minute activity window was proposed from the game's 45-second heartbeat, alongside separate counts for unlocked achievements, current gems and non-default ownership. The definitions remain proposals for my approval and further verification; no database view or dashboard card was added.
+
+
 ## 2026-11-05 — Confirming the dashboard's restricted database role
 
 After inspecting the live schema, the remaining question was whether the dashboard login could inherit wider rights or create objects. From my Ubuntu server, I ran another read-only PostgreSQL check and supplied its results for AI to review. The probe account had no additional role memberships, elevated role attributes or CREATE permission in the tested database and schemas. AI added this verification to the development records while leaving the permissions themselves untouched. Choosing reliable definitions for online players, rooms, achievements and other statistics is still ahead.
