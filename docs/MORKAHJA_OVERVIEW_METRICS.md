@@ -1,6 +1,6 @@
 # Morkahja Overview — Candidate statistics and database discovery
 
-**Status (2026-11-05): Source-code review and operator-reported live metadata audit complete.** Additional role membership checks, metric definitions, aggregate views, and dashboard counters remain pending. No live database definitions or privileges were changed.
+**Status (2026-11-05): Source-code review, operator-reported live metadata audit and restricted role checks complete.** Metric definitions, new owner-controlled aggregate views and dashboard counters remain pending. No live database definitions or privileges were changed.
 
 ## Established from the Morkahja game source
 
@@ -43,7 +43,25 @@ Both `probe_can_select` and `probe_can_select_any_column` returned true for the 
 
 `public.purchases` and `public.processed_stripe_events` **were not returned**. This establishes that the named relations were not present among the audited `public` objects; it does not establish whether commerce data lives under a different schema or service. The audit deliberately did **not** include `sessions` in its column metadata query, so its internal structure has not been verified here. The contents and shapes *inside* JSONB values were not read, and commerce totals, real-time player presence, room activity, and unlock counts have not been computed.
 
-**Remaining Step 4 gate:** Independently check the `babuni_admin_probe` role's direct/inherited membership and role attributes. Metadata privilege checks confirm effective SELECT access to the named objects only; they do not provide a complete security or write-privilege audit. No additional read access, SQL endpoint, or dashboard counter is authorized by this result.
+### Role and creation-privilege audit — 2026-11-05
+
+After the metadata check, the operator ran a second transaction on the live `morkahja` database with `BEGIN READ ONLY`, a 5-second statement timeout, and `ROLLBACK`. The result for `babuni_admin_probe` was:
+
+| Check | Observed result |
+| --- | --- |
+| `rolcanlogin` | `true` |
+| `rolsuper`, `rolcreatedb`, `rolcreaterole` | All `false` |
+| `rolreplication`, `rolbypassrls` | Both `false` |
+| Other role memberships via `pg_has_role(..., 'MEMBER')` | 0 rows |
+| `has_database_privilege(..., 'CREATE')` on `morkahja` | `false` |
+| `has_schema_privilege(..., 'CREATE')` on `public` | `false` |
+| `has_schema_privilege(..., 'CREATE')` on `babuni_admin_ro` | `false` |
+
+Combined with the prior metadata audit, this supports the intended restricted-view model: the role is not privileged through PostgreSQL role membership or the checked CREATE privileges, and has effective SELECT only on the two designated views among the audited relations.
+
+**Limits:** These checks do not enumerate every function, schema, sequence, table, database or grant via `PUBLIC`, nor do they audit permissions outside the checked object set. They are not a blanket production write-access certification. No grants, role attributes, game records or views were changed.
+
+**Next gate — metric definitions:** Choose a presence heartbeat threshold and included states; distinguish open from occupied rooms; decide whether achievements represent unlocked records or rank progress; count only non-default dice/expansion ownership; treat gem totals as balances; and defer purchase figures until the actual commerce storage is located. The previously verified column types do not prove the contents or consistency of JSONB documents. No new read access, SQL endpoint, or dashboard counter is authorized by these observations.
 
 ## Operator-only, metadata-only live audit
 

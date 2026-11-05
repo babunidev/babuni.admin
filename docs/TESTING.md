@@ -1,5 +1,12 @@
 # Testing Babuni Admin
 
+## Operator-reported live PostgreSQL role audit — 2026-11-05
+
+A second read-only `psql` transaction on the live `morkahja` database checked the `babuni_admin_probe` role. The returned role is login-capable, not a superuser, and lacks CREATEDB, CREATEROLE, replication and BYPASSRLS flags. The role-membership query returned zero rows. CREATE checks were false for the database and both audited schemas (`public`, `babuni_admin_ro`). The transaction ended with `ROLLBACK`.
+
+Together with the preceding restricted-view audit, this verifies the role's **checked** read-only permissions and lack of membership-derived roles; it does not enumerate every possible object privilege or certify all future database operations. No server-side changes or new CI tests were made.
+
+
 ## Operator-reported live schema metadata audit — 2026-11-05
 
 The operator ran the reviewed, fixed SQL script as the PostgreSQL administrator against the live `morkahja` database on Ubuntu. The transcript confirmed a `BEGIN READ ONLY` session, two catalog queries, and `ROLLBACK`; six audited `public` game tables and the two `babuni_admin_ro` views were reported with owner `morkahjadbadmin`. The `babuni_admin_probe` role's effective SELECT and any-column-SELECT checks were true for the views and false for every returned game table. The script displayed 28 column definitions and found neither `purchases` nor `processed_stripe_events` in the audited `public` schema.

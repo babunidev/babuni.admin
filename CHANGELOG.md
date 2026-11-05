@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Record live restricted-role verification
+
+- Recorded the operator's second read-only PostgreSQL audit: the dedicated `babuni_admin_probe` login has no elevated PostgreSQL role attributes, no role memberships and no CREATE privileges on the checked database or schemas.
+- Updated the statistics discovery document and roadmap with the evidence and clearly limited verification scope.
+- Kept metric definitions, aggregate-only views and dashboard counters unimplemented.
+- Documentation-only change; no production database configuration, application code or privileges changed.
+
+
 ## 2026-11-05 — Record the live Morkahja metadata audit
 
 - Documented the operator's successful, read-only metadata audit of live Morkahja PostgreSQL objects.

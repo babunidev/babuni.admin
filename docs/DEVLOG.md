@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Confirming the dashboard's restricted database role
+
+After inspecting the live schema, the remaining question was whether the dashboard login could inherit wider rights or create objects. From my Ubuntu server, I ran another read-only PostgreSQL check and supplied its results for AI to review. The probe account had no additional role memberships, elevated role attributes or CREATE permission in the tested database and schemas. AI added this verification to the development records while leaving the permissions themselves untouched. Choosing reliable definitions for online players, rooms, achievements and other statistics is still ahead.
+
+
 ## 2026-11-05 — Checking the database before adding statistics
 
 The first read-only dashboard was working, but new figures would require understanding what actually exists in the live database. After copying the prepared metadata script to my Ubuntu server, I ran its read-only PostgreSQL audit and shared the output with AI for interpretation. Six game tables and the two restricted views were present; the dashboard's database role could select the views but not the underlying game tables. The expected purchase tables were absent from the audited public schema, so purchase statistics cannot be assumed. AI recorded the findings without touching game data or permissions, leaving role-membership checks and precise metric definitions for the next step.
