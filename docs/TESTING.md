@@ -1,5 +1,12 @@
 # Testing Babuni Admin
 
+## Morkahja metric-source discovery audit (2026-11-05)
+
+The source-backed `scripts/morkahja-overview-metadata.sql` inspects PostgreSQL catalog relations, column metadata, view ownership and existing reader privileges inside a `BEGIN READ ONLY` transaction. It returns **no** game rows, player data, commerce records or credentials. The static test `tests/morkahja-overview-metadata.test.mjs` verifies the read-only transaction and disallows mutation statements and raw game-table SELECT patterns.
+
+This is an operator-run diagnostic, not a new browser endpoint. A repository/CI test cannot confirm what is actually deployed in the live Morkahja database; production table presence and additional dashboard counters remain unverified. No database DDL or new privileges are part of this change.
+
+
 ## Desktop SSH autostart: disposable fixtures (2026-11-05)
 
 The new `tests/ssh-login-autostart.test.mjs` runs the login helper using an isolated HOME and synthetic `ssh-add`/`ssh-keygen` binaries. Checks include safe, idempotent per-user installation, startup-file permissions, no private-key material in the autostart entry, fingerprint matching, the graphical askpass policy, refusal without a GUI or safe config, and uninstall without touching the key. Neither real SSH identities nor any network services are used. The recovered read-only Overview after **manual** `ssh-add` is operator-verified; automatic key loading at the next Nobara login is still pending.

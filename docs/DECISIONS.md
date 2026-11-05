@@ -1,5 +1,14 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-05 — Review game statistics before expanding database permissions
+
+**Creative direction:** Expand the useful read-only Morkahja Overview with rooms, achievements, gems, unlocks, transactions and a more accurate online-player count.
+
+**Research by AI:** Inspected Morkahja's PostgreSQL document store, room/presence types, achievement persistence, player-currency fields, dice/expansion unlocks and commerce ledger. These have different meanings: account sessions are not live presence; nonclosed rooms may be stale; gem balances are not purchase revenue; and unlock ownership does not prove a transaction.
+
+**Decision at this stage:** Prepare only a metadata-level read-only audit and candidate metric definitions. Do not grant direct raw-table SELECT rights, create production views or display guessed counts. The actual server schema and final definitions still require operator verification. The existing restricted Overview remains unchanged.
+
+
 ## 2026-11-05 — Reuse the desktop SSH agent, not a new one
 
 **Creative direction:** Avoid manually loading the SSH key each time Babuni Admin is used after desktop login.

@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Read-only Morkahja metrics discovery
+
+- Reviewed the actual Morkahja game data sources for rooms, player presence, achievements, gem balances, dice/expansion unlocks and purchase records.
+- Added a source-backed candidate-metric contract and a fixed, metadata-only PostgreSQL audit script to validate the live schema before implementing counters.
+- Added a regression test checking that the audit contains only read-only catalog inspection and no raw game-data retrieval or mutations.
+- No live database tables, permissions, views, remote connections or dashboard counters were changed.
+
+
 ## 2026-11-05 — Optional SSH identity loading at desktop login
 
 - Added operator-installable `scripts/ssh-agent-login.py` with install, run, status and uninstall modes.
