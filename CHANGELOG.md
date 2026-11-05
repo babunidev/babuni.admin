@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Safe diagnostics for early SSH tunnel exits
+
+- Replaced the opaque `SSH_SESSION_FAILED` where possible with fixed failure categories for host-key verification, SSH identity availability, public-key authentication, forwarding policy, unsupported SSH options and network reachability. Unknown failures retain the generic code.
+- Captured at most 4096 characters of child SSH stderr in the local-service process only; never return, persist or print the raw diagnostic, key paths or credentials.
+- Added UI explanations and synthetic SSH failure tests, without changing the SSH trust model, actual connection arguments, read-only database queries, or server configuration.
+- The operator's live root cause remains unverified; no live server was contacted in this change.
+
+
 ## 2026-11-05 — Consistent Babuni Admin branding
 
 - Replaced the outdated `Morkahja Admin` browser-tab title with **Babuni Admin** and set the HTML application name accordingly.
