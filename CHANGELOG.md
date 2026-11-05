@@ -1,5 +1,15 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Connect Batch A aggregates to the local Overview
+
+- Added four fixed aggregate fields and Overview cards for achievements and non-default dice/expansion ownership.
+- Added separate exact `readOnlyMetricFields` approval while preserving existing player-field authorization, SSH lifecycle and no polling.
+- Validate nonnegative safe-integer counts and quality signals; missing or invalid aggregates remain unavailable. Recover expected optional-view SQL failures inside the same read-only snapshot.
+- Extended raw-table boundary rejection to `player_achievements`.
+- Added unit, PostgreSQL recovery and browser display fixtures; current-change CI and Nobara verification remain pending.
+- Recorded the operator's separately approved and committed live view, catalog match, aggregate results and permission checks.
+
+
 ## 2026-11-05 — Prepare the deployed expansion catalog audit
 
 - Added a standalone, operator-run read-only verifier for the live game-server `expansiondata.json`, comparing canonical IDs to the previously prepared Batch A SQL allowlist.
