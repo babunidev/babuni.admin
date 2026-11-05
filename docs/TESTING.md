@@ -1,5 +1,10 @@
 # Testing Babuni Admin
 
+## Desktop SSH autostart: disposable fixtures (2026-11-05)
+
+The new `tests/ssh-login-autostart.test.mjs` runs the login helper using an isolated HOME and synthetic `ssh-add`/`ssh-keygen` binaries. Checks include safe, idempotent per-user installation, startup-file permissions, no private-key material in the autostart entry, fingerprint matching, the graphical askpass policy, refusal without a GUI or safe config, and uninstall without touching the key. Neither real SSH identities nor any network services are used. The recovered read-only Overview after **manual** `ssh-add` is operator-verified; automatic key loading at the next Nobara login is still pending.
+
+
 ## SSH early-exit diagnostics — 2026-11-05
 
 The first automatic Overview screenshot showed a restored connection profile and `SSH_SESSION_FAILED`. The failure occurred before the PostgreSQL tunnel was ready, but its exact cause was unavailable. Synthetic SSH tests now verify that known host-key, identity, authentication, forwarding, client-configuration and network failures map to fixed codes without returning raw diagnostic output. An early-exit fixture tests cleanup. The read-only service wrappers test safe propagation. Live verification on Nobara remains pending.

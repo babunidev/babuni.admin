@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Optional SSH identity loading at desktop login
+
+- Added operator-installable `scripts/ssh-agent-login.py` with install, run, status and uninstall modes.
+- The helper reads the existing secure identity configuration, detects the approved fingerprint in the current desktop agent, and uses graphical SSH askpass if loading is needed.
+- Added isolated home-directory tests; no key or passphrase is copied, no second agent or server connection is created, and no autostart is enabled by default.
+- Next-login verification on the real Nobara desktop remains pending.
+
+
 ## 2026-11-05 — Safe diagnostics for early SSH tunnel exits
 
 - Replaced the opaque `SSH_SESSION_FAILED` where possible with fixed failure categories for host-key verification, SSH identity availability, public-key authentication, forwarding policy, unsupported SSH options and network reachability. Unknown failures retain the generic code.

@@ -1,5 +1,16 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-05 — Reuse the desktop SSH agent, not a new one
+
+**Creative direction:** Avoid manually loading the SSH key each time Babuni Admin is used after desktop login.
+
+**Evidence:** The operator identified an empty agent, loaded the configured key and observed the real read-only Overview recover.
+
+**AI implementation:** Provide a reversible, opt-in XDG Autostart helper that checks the exact approved key fingerprint and delegates a single-key load to the existing SSH agent and graphical askpass. Do not change any server rights, cache the key's passphrase in Babuni Admin, or run a second SSH agent.
+
+**Verification:** Synthetic tests verify configuration and key checks. A real Nobara graphical login test is pending.
+
+
 ## 2026-11-05 — Safe categories for SSH failures
 
 The saved Morkahja profile appeared correctly in my Overview, but the SSH process stopped before opening the temporary database tunnel. With only `SSH_SESSION_FAILED` visible, the cause could not yet be established. AI added fixed categories for common SSH failures and synthetic tests that prevent raw diagnostic text from reaching the browser. The strict connection rules and database permissions remain unchanged; the actual Nobara failure still needs confirmation.
