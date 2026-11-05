@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Verifying the new cards against regressions
+
+The new Overview fields initially broke an older PostgreSQL fixture that expected only the four original counts. After the CI failure identified that mismatch, AI updated the test to preserve the four new nullable fields and check their unavailable state without separate authorization. The next CI run passed its five jobs, including disposable PostgreSQL tests, browser checks, build and lint; my live Nobara display still needs its own confirmation.
+
 ## 2026-11-05 — Bringing the verified totals into the Overview
 
 After checking the running backend's expansion catalog, I approved and applied the prepared database view. Its first restricted read returned 75 achievement unlocks across 52 players, with 10 dice and 6 expansion unlocks; every quality counter was zero. With that boundary verified, I asked AI to connect the four totals to my local Overview. AI added the fixed aggregate query, explicit field approval, unavailable states and fixtures; the live Nobara display still needs verification.
