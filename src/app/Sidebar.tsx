@@ -19,7 +19,11 @@ export function Sidebar() {
   return (
     <aside className="flex h-full w-56 flex-col border-r border-gold/15 bg-slate/95 lg:w-60">
       <div className="border-b border-gold/10 px-5 py-5">
-        <p className="text-xs uppercase tracking-[0.25em] text-fog">Babuni Admin</p>
+        <div className="flex items-center gap-3">
+          <img src="/favicon.webp" alt="" width={32} height={32}
+            className="h-8 w-8 shrink-0 rounded-sm" />
+          <p className="text-xs uppercase tracking-[0.25em] text-fog">Babuni Admin</p>
+        </div>
         <label htmlFor="workspace-select" className="mt-4 block text-xs text-fog">
           Workspace
         </label>
