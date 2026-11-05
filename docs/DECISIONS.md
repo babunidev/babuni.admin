@@ -1,5 +1,10 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-05 — Safe categories for SSH failures
+
+The saved Morkahja profile appeared correctly in my Overview, but the SSH process stopped before opening the temporary database tunnel. With only `SSH_SESSION_FAILED` visible, the cause could not yet be established. AI added fixed categories for common SSH failures and synthetic tests that prevent raw diagnostic text from reaching the browser. The strict connection rules and database permissions remain unchanged; the actual Nobara failure still needs confirmation.
+
+
 ## 2026-11-05 — Shared Babuni brand, separate Morkahja workspace
 
 **Creative direction:** The admin app should identify as **Babuni Admin** in the browser tab and have the same favicon as Babuni Dev, rather than appearing as a standalone Morkahja Admin product.
