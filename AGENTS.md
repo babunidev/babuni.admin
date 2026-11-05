@@ -1,6 +1,6 @@
-# Morkahja Admin — instructions for future human and AI developers
+# Babuni Admin — instructions for future human and AI developers
 
-**Human creative and project authority:** Babuni. The current repository is `babunidev/babuni.admin`, publicly named **Babuni Admin**. `arcanitebrothers` is the historical package/repository name; existing application UI may still say `Morkahja Admin`.
+**Human creative and project authority:** Babuni. The current repository is `babunidev/babuni.admin`, publicly named **Babuni Admin**. `arcanitebrothers` is the historical package/repository name. Browser-tab identity and shared sidebar branding use **Babuni Admin**; **Morkahja** is the game workspace, not the whole admin application.
 
 ## Start with the actual architecture
 
