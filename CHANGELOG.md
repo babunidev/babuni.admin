@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Consistent Babuni Admin branding
+
+- Replaced the outdated `Morkahja Admin` browser-tab title with **Babuni Admin** and set the HTML application name accordingly.
+- Reused the exact `public/favicon.webp` asset from the Babuni Dev website for the browser-tab icon and the shared sidebar brand.
+- Added browser regression checks for the title, favicon file and shared logo across Morkahja and Babuni Dev workspaces. No database or permissions changes.
+
+
 ## 2026-11-04 — Remembered Morkahja Overview and one-request refresh
 
 - Moved the read-only Overview to the Morkahja home route and navigation label; renamed the existing Players administration navigation/header to Moderation. The older dashboard remains available at `/dashboard`, and `/read-only` is retained.
