@@ -39,6 +39,15 @@ test('remote config requires independent opt-in, exact host and fingerprint, and
     put({...config,readOnlyDataEnabled:true,
       readOnlyDataFields:['displayName','avatarCount','lastPlayedAt']})
     assert.equal((await readMorkahjaProbeConfig(profile,env)).ok,true)
+    const dataConfig={...config,readOnlyDataEnabled:true,
+      readOnlyDataFields:['displayName','avatarCount','lastPlayedAt']}
+    put({...dataConfig,readOnlyMetricFields:[
+      'achievementsUnlocked','playersWithAchievements','diceUnlocks','expansionUnlocks']})
+    assert.equal((await readMorkahjaProbeConfig(profile,env)).ok,true)
+    for(const fields of [[],['diceUnlocks'],['playerId'],true]) {
+      put({...dataConfig,readOnlyMetricFields:fields})
+      assert.equal((await readMorkahjaProbeConfig(profile,env)).code,'REMOTE_CONFIG_INVALID')
+    }
     put(config)
     assert.equal((await readMorkahjaProbeConfig({...profile,projectId:'babuni-dev'},env)).code,'REMOTE_SCOPE_DENIED')
     put({...config,host:'unapproved.example.invalid'})
