@@ -1,5 +1,10 @@
 # Babuni Admin — Architecture
 
+## Opt-in desktop SSH identity loader (2026-11-05)
+
+`scripts/ssh-agent-login.py` is independent of the HTTP service and SSH tunnel lifecycle. Its operator-run installer copies the loader into the user's local share folder and registers a removable XDG Autostart entry. At graphical login it reads only the owner-private Morkahja configuration and companion public key, compares the configured key's fingerprint against the existing `SSH_AUTH_SOCK`, and invokes `ssh-add` with GUI askpass if necessary. It does not start a second SSH agent or store passphrases, keys, credentials, or game data. Installation is never triggered by `npm run dev`, and successful fixture tests do not establish live login readiness. [Instructions](SSH_AGENT_DESKTOP_LOGIN.md).
+
+
 ## Morkahja Overview: restored profile and one bounded combined snapshot (2026-11-04)
 
 The Morkahja landing route `/` now renders the restricted read-only **Overview**; `/read-only` remains compatible. The older read/write-capable-style Dashboard route is preserved separately at `/dashboard`. The old `/players` administration route remains, but is explicitly labeled **Moderation** in the workspace navigation. No moderation implementation was changed by the route labels.

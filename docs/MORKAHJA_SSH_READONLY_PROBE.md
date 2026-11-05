@@ -52,6 +52,11 @@ The browser receives no DB password or SSH private-key bytes. The password is re
 The new Morkahja `/read-only` dashboard is **not enabled by the health probe alone**. It additionally requires `readOnlyDataEnabled: true` and the exact field list `['displayName','avatarCount','lastPlayedAt']` in the same operator-private configuration. It uses a separate scoped `ssh:read` capability and fixed SELECT-only queries. See [read-only dashboard contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 ## Private SSH failure classifications
+## Approved SSH identity at desktop login
+
+The operator confirmed `SSH_AUTH_REJECTED` with an empty desktop SSH agent and restored the live Overview by adding the approved key manually. A new [opt-in desktop login helper](SSH_AGENT_DESKTOP_LOGIN.md) can load just that identity through the existing KDE/Nobara agent and a graphical askpass, without storing its passphrase or changing SSH/server permissions. The helper has passed isolated tests, but its actual startup behavior on Nobara has not yet been verified.
+
+
 
 Following the operator-observed `SSH_SESSION_FAILED` on a remembered Overview reload, the local service can now classify a bounded fragment of child SSH stderr into fixed codes without exposing the raw text. Recognized categories cover rejected host keys, inaccessible identities, authentication rejection, denied forwards, unsupported client options and unreachable hosts. An unrecognized early exit remains `SSH_SESSION_FAILED`. No SSH argument, host-key policy, database privilege or tunnel cleanup behavior was relaxed.
 

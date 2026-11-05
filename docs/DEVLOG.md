@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Preparing SSH access for the next login
+
+The automatic Overview failure was traced to the desktop SSH agent having no identities loaded. After adding the approved key and restarting the old application process, my live Morkahja figures returned. To avoid manually repeating that step after each computer login, AI prepared an optional per-user loader that relies on the existing agent and graphical passphrase prompt. Isolated tests passed, but its first real Nobara login is not yet verified.
+
+
 ## 2026-11-05 — A remembered connection that could not reconnect
 
 After switching to a remembered overview, my next local screenshot showed `SSH_SESSION_FAILED` where the live figures should have appeared. The stored profile had been restored, but the SSH process exited before its temporary database tunnel became ready. Since the code discarded SSH's diagnostic output, there was no reliable way to know whether the server, key, authentication or forward caused the exit. AI added tightly limited error classification and a fake-SSH regression test, keeping the raw output private and all existing trust checks unchanged. Identifying the actual failure on my PC remains the next verification step.
