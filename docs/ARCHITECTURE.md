@@ -1,12 +1,12 @@
 # Babuni Admin — Architecture
 
-## Batch A restricted metrics: prepared SQL, not a deployed adapter (2026-11-05)
+## Batch A restricted metrics (2026-11-05)
 
-`scripts/morkahja-batch-a-aggregate-views.sql` defines one future owner-rights, security-barrier view `babuni_admin_ro.progression_ownership_totals`. The view summarizes `public.players` and `public.player_achievements` without granting the probe role SELECT on either table. It returns only numeric aggregate counts and aggregate data-quality signals; invalid unlock data forces NULL (unavailable) for the affected metric. The SQL uses transaction-local `SET ROLE morkahjadbadmin` so the view owner remains the approved game-database owner.
+The operator deployed `babuni_admin_ro.progression_ownership_totals` after explicit approval and a matching deployed catalog check. The owner-rights security-barrier view remains owned by `morkahjadbadmin`; the probe has SELECT on the aggregate view and no raw player/achievement table access.
 
-This SQL is a **manual operator-run production change candidate**, not a migration automatically invoked by Vite, the local service, the browser or GitHub CI. It must be reviewed with the deployed expansion catalog, tested with synthetic PostgreSQL roles, and explicitly authorized before execution on the VPS. `local-service/morkahjaReadOnly.mjs` and the existing read-only dashboard continue using only the two previously authorized views; the new view is not used until a separate safe adapter/UI milestone.
+`morkahjaReadOnly.mjs` reads the optional aggregates through `progressionMetrics.mjs` inside its existing repeatable-read READ ONLY snapshot. An exact private `readOnlyMetricFields` list independently enables the four counters; existing configurations preserve their old access. Fixed columns, a two-row cap to detect a broken one-row contract, integer/quality validation and savepoint recovery keep unavailable metrics separate from genuine zero. Connection failures still fail the request. Runtime raw-table denial includes `player_achievements`. The UI reuses StatCard and the existing refresh/timestamp behavior; no new endpoint or polling is added.
 
-
+See [authorization and desktop verification](MORKAHJA_READ_ONLY_DASHBOARD.md). Deployment evidence is operator-reported; this change's CI and Nobara validation are pending.
 
 ## Opt-in desktop SSH identity loader (2026-11-05)
 
