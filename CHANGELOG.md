@@ -1,5 +1,14 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Record the live Morkahja metadata audit
+
+- Documented the operator's successful, read-only metadata audit of live Morkahja PostgreSQL objects.
+- Confirmed six audited `public` tables and two restricted `babuni_admin_ro` views, all owned by `morkahjadbadmin`, with `babuni_admin_probe` SELECT confined to the views for the checked objects.
+- Recorded verified column types and that `purchases` and `processed_stripe_events` were not found in the audited `public` schema.
+- Kept role memberships, additional privileges, JSONB content shape, commerce location and metric semantics unverified; updated the roadmap only for the completed metadata-audit checkpoint.
+- Documentation-only change; no project code, live database, grants, game records or new counters were modified.
+
+
 ## 2026-11-05 — Roadmap and operator-verification reconciliation
 
 - Updated previously stale roadmap tasks for live player-preview pagination, gameplay-responsive session/event counters and the recovered remembered-profile combined Overview.

@@ -1,5 +1,12 @@
 # Testing Babuni Admin
 
+## Operator-reported live schema metadata audit — 2026-11-05
+
+The operator ran the reviewed, fixed SQL script as the PostgreSQL administrator against the live `morkahja` database on Ubuntu. The transcript confirmed a `BEGIN READ ONLY` session, two catalog queries, and `ROLLBACK`; six audited `public` game tables and the two `babuni_admin_ro` views were reported with owner `morkahjadbadmin`. The `babuni_admin_probe` role's effective SELECT and any-column-SELECT checks were true for the views and false for every returned game table. The script displayed 28 column definitions and found neither `purchases` nor `processed_stripe_events` in the audited `public` schema.
+
+These observations **do not** verify direct or transitive role memberships, all possible database privileges, the `sessions` column layout, the JSONB contents or any new aggregate statistic. No live records, credentials, payments, schema changes or permissions were requested by this audit. Detailed returned metadata is summarized in [Morkahja Overview metrics](MORKAHJA_OVERVIEW_METRICS.md).
+
+
 ## Operator-reported acceptance evidence reconciled — 2026-11-05
 
 - **SSH identity:** Following the requested fresh-login procedure, the operator reported `SSH_LOGIN_IDENTITY_READY` and an `ssh-add -l` ED25519 fingerprint matching the approved identity. The command output does not independently establish when the desktop was last logged out or whether a manual key addition occurred.

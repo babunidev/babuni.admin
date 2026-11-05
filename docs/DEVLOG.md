@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Checking the database before adding statistics
+
+The first read-only dashboard was working, but new figures would require understanding what actually exists in the live database. After copying the prepared metadata script to my Ubuntu server, I ran its read-only PostgreSQL audit and shared the output with AI for interpretation. Six game tables and the two restricted views were present; the dashboard's database role could select the views but not the underlying game tables. The expected purchase tables were absent from the audited public schema, so purchase statistics cannot be assumed. AI recorded the findings without touching game data or permissions, leaving role-membership checks and precise metric definitions for the next step.
+
+
 ## 2026-11-05 — Bringing the roadmap up to date
 
 The requested SSH-agent check on my Nobara desktop returned `SSH_LOGIN_IDENTITY_READY` and the expected public-key fingerprint. Earlier live tests had also shown all four player-preview pages working, game activity changing the session/event totals, and a recovered Overview populated under my remembered connection after the service was restarted. AI reconciled those observations with older unchecked roadmap items instead of treating the same tasks as unfinished. The post-login output is operator-reported evidence, not an independently observed logout sequence; controlled connection failure tests and the live schema audit remain open.

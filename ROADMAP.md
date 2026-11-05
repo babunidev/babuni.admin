@@ -13,7 +13,7 @@
 - [x] Inspect the actual Morkahja game source for room, player-presence, achievement, gem, expansion/dice and commerce data definitions.
 - [x] Distinguish online presence from valid login sessions, nonclosed encounter rooms from current activity, gem balances from transactions, and unlock ownership from recorded purchases.
 - [x] Prepare a fixed, read-only PostgreSQL metadata audit for the relevant live tables and existing restricted views; do not fetch player or payment records.
-- [ ] Operator verifies the live schema using the metadata audit. Until then, the presence and structure of every candidate live table remain unconfirmed.
+- [x] Operator ran `scripts/morkahja-overview-metadata.sql` on the Ubuntu Morkahja PostgreSQL database as `postgres`. The read-only transaction returned six audited `public` tables and two restricted `babuni_admin_ro` views, with the expected view-only SELECT privileges for `babuni_admin_probe`; `purchases` and `processed_stripe_events` were not present in the audited `public` schema. Column types for the returned views and selected game tables were confirmed. Direct and inherited role membership, privileges beyond SELECT, and the columns of `sessions` were **not** established by this audit.
 - [ ] Approve aggregate definitions and implement new owner-controlled `babuni_admin_ro` views with SELECT-only rights for the existing probe role.
 - [ ] Test disposable fixtures and operator-observed live counters before adding UI cards. No new counter or production view is created in this discovery step.
 
