@@ -1,5 +1,13 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-05 — Reconcile operator-verified desktop and Overview behavior
+
+- [x] Record operator-reported post-login `SSH_LOGIN_IDENTITY_READY` and matching ED25519 agent fingerprint; do not treat terminal output as independent observation of the logout sequence.
+- [x] Reconcile the already verified player list pagination (20/20/20/2) and gameplay-responsive active-session/event counters with previously stale roadmap tasks.
+- [x] Record the recovered remembered-profile combined Overview and player preview shown in the user's Nobara screenshot.
+- [ ] Verify controlled SSH read interruptions/cleanup and future login or browser-reload edge cases independently.
+
+
 ## 2026-11-05 — Discover new Morkahja Overview metrics safely
 
 - [x] Inspect the actual Morkahja game source for room, player-presence, achievement, gem, expansion/dice and commerce data definitions.
@@ -17,8 +25,8 @@
 - [x] Confirm the failed live read was caused by an empty desktop SSH agent. The operator loaded the approved key and recovered the Overview.
 - [x] Implement a removable per-user XDG login helper that recognizes only the approved public-key fingerprint, uses the existing agent and graphical askpass, and stores no passphrases.
 - [x] Add synthetic tests for installation, idempotence, key reuse, no GUI, unsafe private config and uninstall.
-- [ ] Verify this new helper on Nobara **after a graphical logout/login**; manual-key recovery is not proof that startup loading works.
-- [ ] Inspect and define future aggregate-only game statistics after SSH startup reliability is verified.
+- [x] Operator-reported post-login readiness check on Nobara: `SSH_LOGIN_IDENTITY_READY` and `ssh-add -l` showed the expected ED25519 fingerprint `SHA256:2Anm1mb+Uyn2mFh84KYpCENDjGW0PnSkwG2joBOLaes`. This followed the requested fresh-login procedure; the terminal output alone cannot independently prove a logout occurred or that no manual `ssh-add` ran beforehand.
+- [x] Inspect Morkahja game source and prepare candidate definitions plus a metadata-only SQL audit for future aggregate statistics. Live schema confirmation and view implementation remain pending in the discovery milestone above.
 
 [Desktop login setup](docs/SSH_AGENT_DESKTOP_LOGIN.md).
 
@@ -39,7 +47,7 @@
 - [x] Remember the selected Morkahja profile UUID locally, validate it against current saved profiles on reload and automatically request a new authorized snapshot; store no credentials, session tokens or player data.
 - [x] Combine overview and player preview into one fixed, bounded request and one temporary SSH/READ ONLY transaction; keep a manual refresh button and independent player-page navigation.
 - [x] Move connection controls below the two data panels; add **Players online*** as a session-based estimate explicitly distinct from actual room or live-presence data.
-- [ ] Confirm restored selection, automatic refresh and merged snapshot in the real Nobara browser; existing live page navigation has already been verified separately.
+- [x] Operator screenshot on Nobara after restarting the updated local service showed the previously selected connection and both Overview and player-preview data populated together. The snapshot displayed 62 players, 90 avatars, 1 active session and 5 recent events. This confirms the recovered combined view with remembered selection; it does not prove every future browser reload or failure mode.
 - [ ] Design additional restricted aggregates only after confirming schemas and metric meanings: multiplayer rooms, achievements, currency/gems, unlocks/dice and economic transactions. Do not infer purchases from ownership or treat sessions as rooms.
 
 
@@ -48,7 +56,9 @@
 - [x] Verify the updated `/read-only` overview through the actual configured SSH/PostgreSQL connection on Nobara. Operator screenshots report 62 players, 90 avatars, 0 active sessions and 0 game events in the prior 24 hours.
 - [x] Verify a real player preview displays approved fields (display name, avatar count and last-played time) without internal IDs, identity keys or session tokens in the visible UI.
 - [x] Observe success states and UI confirmation that the temporary SSH tunnel closes after each snapshot.
-- [ ] Verify clicking Next and Previous through multiple player pages on the live system; inspect counts under actual game activity and exercise interrupted/error recovery separately. Zero active sessions and zero recent events were observed but not independently reconciled with gameplay.
+- [x] Operator navigated the live player-preview list across all four pages (20/20/20/2 rows) and back to page one.
+- [x] Operator played Morkahja and observed active-session and recent-event counts increase, confirming that the reported statistics respond to gameplay (not that a session equals an occupied room).
+- [ ] Exercise controlled read interruption/error recovery and confirm a failed request never leaves an SSH tunnel or stale success state.
 
 
 ## 2026-11-04 — Align application reads with restricted live PostgreSQL views
@@ -85,7 +95,7 @@
 
 **Creative direction:** Babuni  
 **Purpose:** One private administration application with separate workspaces for Morkahja, Babuni Dev, and future projects.  
-**Status (2026-11-04):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection-manager design are documented. Read-only profile checks, structured local connection status and terminal-only Linux keyring storage are implemented slices. Live outbound adapters remain planned. The creative has verified the unlocked Nobara desktop keyring with a synthetic credential round trip; a deliberately unreachable D-Bus session bus was verified in an isolated child process on Nobara; the real locked default keyring and subsequent unlock recovery were also verified by operator-reported inspection output on Nobara.
+**Status (updated 2026-11-05):** Phase 1 code and fixture verification is complete; the local-only Phase 2 architecture and shared connection manager are documented. Local profiles, keyring, and the Morkahja-only SSH/PostgreSQL health and restricted-view read adapter are implemented, with operator-reported live verification. Other outbound adapters, live writes, GitHub and publishing remain planned. The creative has verified the unlocked Nobara desktop keyring with a synthetic credential round trip; a deliberately unreachable D-Bus session bus was verified in an isolated child process on Nobara; the real locked default keyring and subsequent unlock recovery were also verified by operator-reported inspection output on Nobara.
 
 ## Initial restructuring completed (verification scope detailed below)
 
@@ -145,9 +155,9 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Strengthen local Vite proxy Host/Origin/Fetch Metadata checks and add a per-run browser session capability while keeping the service key server-side.
 - [x] Add Morkahja-only offline SSH host-key trust preflight: dedicated operator-managed known_hosts file, exact host matching, OpenSSH parser check, invalid/unsafe store denial and no outbound connection; verified only by fixture CI tests. [Design](docs/LOCAL_CONNECTION_MANAGER.md).
 - [x] Implement a **disabled-by-default**, operator-gated Morkahja SSH/PostgreSQL health probe: exact host and approved fingerprint, private identity file, keyring password, hardened OpenSSH invocation, temporary loopback tunnel, fixed read-only PostgreSQL metadata/privilege query and tunnel cleanup. Fixture tests verify code paths; **no live Morkahja host has been contacted**. [Configuration and safety](docs/MORKAHJA_SSH_READONLY_PROBE.md).
-- [ ] Independently verify the real Morkahja SSH host, remote identity, database role and safe live health-check behavior before enabling the probe for an actual server.
+- [x] Operator configured the approved SSH host identity and dedicated database read-only role and demonstrated a successful live health check followed by view-only data retrieval on Nobara. Independent hardening of future write-capable adapters remains open.
 - [ ] Implement GitHub remote transport and future authenticated project-scoped content workflows; neither is enabled.
-- [ ] Authorize and verify a **live** Morkahja PostgreSQL connection through the protected outbound health-probe tunnel using a dedicated audited read-only role. Only disposable PostgreSQL fixtures have been exercised.
+- [x] Operator verified the live protected SSH/PostgreSQL health probe and subsequently the restricted-view dashboard using the dedicated `babuni_admin_probe` role. The observed real Morkahja data access remained SELECT-only; this does not authorize moderation, arbitrary SQL or remote writes.
 - [x] Add read-only inspection of five known Morkahja JSON datasets through the local service; file counts and status only, using isolated fixtures.
 - [x] Add local service/keyring health, per-profile timestamps and structured error codes; distinguish complete, degraded and failed content inspection without claiming remote connectivity.
 - [x] Correct the portrait JSON key to `Avatar` and add regression coverage for its real-shape fixture.

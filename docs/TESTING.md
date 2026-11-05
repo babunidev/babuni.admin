@@ -1,5 +1,15 @@
 # Testing Babuni Admin
 
+## Operator-reported acceptance evidence reconciled — 2026-11-05
+
+- **SSH identity:** Following the requested fresh-login procedure, the operator reported `SSH_LOGIN_IDENTITY_READY` and an `ssh-add -l` ED25519 fingerprint matching the approved identity. The command output does not independently establish when the desktop was last logged out or whether a manual key addition occurred.
+- **Read-only pagination:** The operator previously verified live Next/Previous navigation over 62 player-preview records across four pages (20, 20, 20, 2) and returned to page one.
+- **Activity counters:** The operator reported actual gameplay increased active-session and recent-event counts, without interpreting sessions as online presence or rooms.
+- **Remembered combined Overview:** A later Nobara screenshot showed a selected saved connection, overview statistics (62 players, 90 avatars, 1 active session, 5 recent events), and player-preview data in the same successful view after service restart.
+
+Remaining verifications: deliberately interrupted or failed reads, cross-session reliability, and fresh live-schema metadata inspection for additional statistics. This entry records evidence from prior operator reports, **not** new server access or a new CI execution.
+
+
 ## Morkahja metric-source discovery audit (2026-11-05)
 
 The source-backed `scripts/morkahja-overview-metadata.sql` inspects PostgreSQL catalog relations, column metadata, view ownership and existing reader privileges inside a `BEGIN READ ONLY` transaction. It returns **no** game rows, player data, commerce records or credentials. The static test `tests/morkahja-overview-metadata.test.mjs` verifies the read-only transaction and disallows mutation statements and raw game-table SELECT patterns.

@@ -61,6 +61,10 @@ python3 scripts/ssh-agent-login.py uninstall
 
 The login-time `run` mode prints no diagnostics and does not log paths, agent contents, SSH arguments, credentials or passphrases.
 
+## Operator-reported acceptance status — 2026-11-05
+
+The operator installed the XDG helper on Nobara (reporting `SSH_LOGIN_AUTOSTART_INSTALLED`) and confirmed `ksshaskpass` was already available. Following the instructed fresh-login check, `status` returned `SSH_LOGIN_IDENTITY_READY` and `ssh-add -l` displayed the expected approved ED25519 key fingerprint. This supports the desktop readiness milestone; the terminal transcript alone is not independent proof that logout/login occurred or that no manual key addition happened. No private passphrase or key material is included in these records.
+
 ## Security and verification boundaries
 
 The helper is **not a service autostart for Babuni Admin** and does **not** enable database reading or moderation. It only makes the approved SSH identity available to the already running desktop agent, with user consent during setup. The existing SSH host key pin, keyring database password, server-side read permission and per-request tunnel teardown are unchanged.

@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-05 — Roadmap and operator-verification reconciliation
+
+- Updated previously stale roadmap tasks for live player-preview pagination, gameplay-responsive session/event counters and the recovered remembered-profile combined Overview.
+- Recorded operator-reported SSH-agent readiness with the approved public-key fingerprint after the requested fresh-login check, preserving the distinction between command output and independently observed login behavior.
+- Clarified that controlled SSH read interruption, live database metadata auditing and new aggregate metrics remain pending.
+- Documentation only; no runtime code, database, server configuration or test suite was changed.
+
+
 ## 2026-11-05 — Read-only Morkahja metrics discovery
 
 - Reviewed the actual Morkahja game data sources for rooms, player presence, achievements, gem balances, dice/expansion unlocks and purchase records.

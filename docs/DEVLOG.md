@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-05 — Bringing the roadmap up to date
+
+The requested SSH-agent check on my Nobara desktop returned `SSH_LOGIN_IDENTITY_READY` and the expected public-key fingerprint. Earlier live tests had also shown all four player-preview pages working, game activity changing the session/event totals, and a recovered Overview populated under my remembered connection after the service was restarted. AI reconciled those observations with older unchecked roadmap items instead of treating the same tasks as unfinished. The post-login output is operator-reported evidence, not an independently observed logout sequence; controlled connection failure tests and the live schema audit remain open.
+
+
 ## 2026-11-05 — Finding the source of future Overview counters
 
 With the secure dashboard now reading real player information, more interesting figures could be added: actual online presence, open rooms, achievements, gems, dice, expansions and purchases. A review of Morkahja's code showed that these are separate kinds of information, not interchangeable counts. AI traced their storage models and prepared a metadata-only SQL audit to compare the source definitions with the real database. The new counters remain unimplemented until the live schema is confirmed and restricted aggregate views are approved.
