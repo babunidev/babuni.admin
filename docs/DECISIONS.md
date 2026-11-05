@@ -1,5 +1,14 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-05 — Separate deployed catalog verification from SQL migration
+
+**Creative direction:** Continue the Morkahja Overview statistics milestone step by step, preserving the established read-only and operator-approval boundaries.
+
+**AI implementation:** Add a small standalone Python helper to inspect the game server's deployed `expansiondata.json` in place. Compare its IDs against the candidate aggregate SQL and report only a fixed, non-sensitive summary. Reject duplicate keys, symlink targets, invalid entries and unexpected identifiers. Add disposable tests.
+
+**Decision boundary:** The user's request to proceed with development does not imply that a production PostgreSQL view or new permissions are approved. The migration stays manual and unapplied. The actual deployed JSON path and contents can only be confirmed by the operator on the game host.
+
+
 ## 2026-11-05 — Prepare Batch A without auto-deploying database changes
 
 **Creative direction:** Proceed step by step after defining additional Morkahja Overview statistics.
