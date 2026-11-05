@@ -1,5 +1,10 @@
 # Testing Babuni Admin
 
+## Deployed expansion-catalog audit helper — 2026-11-05
+
+The operator-run Python helper `scripts/verify-morkahja-deployed-catalog.py` reads one local JSON catalog and checks its IDs and embedded ID/active fields against the proposed Batch A SQL allowlist. Four isolated Node tests with temporary JSON files verify a matching catalog, missing/extra/malformed IDs, duplicate keys, symbolic-link refusal and pinned-ID agreement with the SQL. The helper itself performs no write or network call. Unit tests do **not** verify which JSON catalog is deployed on the Ubuntu server, and no production SQL is authorized by their result.
+
+
 ## Batch A restricted aggregate-view fixtures — 2026-11-05
 
 The proposed `scripts/morkahja-batch-a-aggregate-views.sql` must not run automatically in production. A new offline static test checks its owner-controlled security boundary, grant scope and absence of table mutations. A disposable PostgreSQL 16 test runs the same view definition with only synthetic schema/role identifiers substituted; it checks rank-based achievement counts, unique earning players, deduplicated non-default dice/expansion ownership, malformed-data NULL behavior and SELECT privilege isolation. The test refuses any database other than `babuni_fixture` with the expected local fixture user. It is added to `npm run test:postgres`.
