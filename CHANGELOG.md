@@ -6,7 +6,7 @@
 - Added a database-owner boundary with view-only SELECT grant to `babuni_admin_probe`, leaving the six audited raw game tables inaccessible.
 - Added invalid ownership diagnostics so malformed JSON or unknown catalog values produce unavailable aggregates rather than plausible but incorrect zeros.
 - Added offline SQL-contract and isolated PostgreSQL fixture tests; included the new PostgreSQL test in `npm run test:postgres`.
-- Awaiting CI verification, deployed expansion catalog confirmation and separate explicit authorization before any production DDL. No live database operation, dashboard change or new runtime adapter was performed.
+- The initial implementation CI passed all five jobs, including disposable PostgreSQL fixture and browser regression checks ([run 42047478095](https://github.com/babunidev/babuni.admin/actions/runs/42047478095)); deployed expansion catalog confirmation and separate explicit authorization remain required before any production DDL. No live database operation, dashboard change or new runtime adapter was performed.
 
 
 

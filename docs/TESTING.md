@@ -4,7 +4,7 @@
 
 The proposed `scripts/morkahja-batch-a-aggregate-views.sql` must not run automatically in production. A new offline static test checks its owner-controlled security boundary, grant scope and absence of table mutations. A disposable PostgreSQL 16 test runs the same view definition with only synthetic schema/role identifiers substituted; it checks rank-based achievement counts, unique earning players, deduplicated non-default dice/expansion ownership, malformed-data NULL behavior and SELECT privilege isolation. The test refuses any database other than `babuni_fixture` with the expected local fixture user. It is added to `npm run test:postgres`.
 
-**Verification state:** The implementation and fixture definitions are committed to a development branch; CI pass/fail evidence will be recorded separately after the run. No live PostgreSQL schema, records, permissions or Babuni Admin UI behavior changed. Deployed expansion catalog IDs must still be validated before any operator-controlled production DDL.
+**Verification:** All five GitHub Actions jobs passed for the implementation branch at commit `09b46696`: build (including the offline SQL-contract test), browser, browser-connections, PostgreSQL fixtures (including the Batch A aggregate SQL execution/role-denial test), and audit. [Run 42047478095](https://github.com/babunidev/babuni.admin/actions/runs/42047478095). The audit job's success reports execution, not an absence of advisories. No live PostgreSQL schema, records, permissions or Babuni Admin UI behavior changed. Deployed expansion catalog IDs must still be validated before any operator-controlled production DDL.
 
 
 
