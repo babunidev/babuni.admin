@@ -1,5 +1,16 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-06 — Store Morkahja images on the operator's computer
+
+**Creative direction:** Loading artwork again when changing tabs makes the Content workspace unusable. All five image categories should be present locally after an initial workspace sync and reused through navigation and restarts. Changed or added files must be refreshed without re-downloading unchanged files.
+
+**Decision:** Use the existing pinned administrator SSH connection for one incremental, read-only scan of fixed WebP directories, with a profile/host-scoped cache in the standard user cache directory. Recheck while the workspace remains open; continue showing cached artwork if the server is offline. The frontend reads those local files, backed by a larger bounded memory layer. Do not require a public domain, a separate SSH connection, extra database rights or a general-purpose filesystem explorer.
+
+**Alternative rejected:** A small per-tab browser-memory cache, because it evicts images during normal navigation and never persists across app restarts. Per-image SSH reads remain insufficient for initial workspace-wide preloading.
+
+**Verification:** Source implemented and synthetic test suite added. Live first-fill duration, volume and update detection remain operator acceptance items.
+
+
 ## 2026-11-06 — One Connection page and automatic administration routing
 
 **Creative decision:** Connection management belongs in one page named **Connection**, not a collection of dropdowns inside the workspaces. With only one operator, the configured server connection must be reused automatically by Overview, Moderation and Content. Multiple independent profiles and repeated selection are unnecessary for the current workflow.
