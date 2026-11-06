@@ -97,6 +97,7 @@ export function ContentPage() {
   const queryClient = useQueryClient()
   const [contentProfileId, setContentProfileId] = useState(() => getContentProfileId() || '')
   const [contentProfileStatus, setContentProfileStatus] = useState('Checking Morkahja administrator connection…')
+  const [connectionReady,setConnectionReady] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -106,11 +107,15 @@ export function ContentPage() {
       if (!mounted) return
       const active = activateMorkahjaConnection(result.profiles)
       setContentProfileId(active?.id || '')
+      setConnectionReady(true)
       setContentProfileStatus(active
         ? 'Using your administrator connection. Catalog revisions and backups protect edits.'
         : 'Administrator connection unavailable. Configure it in Connection.')
     }).catch(() => {
-      if (mounted) setContentProfileStatus('Connection service unavailable; live content access not verified.')
+      if (mounted) {
+        setContentProfileStatus('Connection service unavailable; live content access not verified.')
+        setConnectionReady(true)
+      }
     })
     return () => {mounted = false}
   }, [])
@@ -130,11 +135,11 @@ export function ContentPage() {
   const encountersQuery = useQuery({
     queryKey: ['content', 'encounters', contentProfileId],
     queryFn: fetchEncounters,
-    enabled:
+    enabled: connectionReady && (
       activeTab === 'encounters' ||
       activeTab === 'solutions' ||
       detailKind === 'encounters' ||
-      detailKind === 'solutions',
+      detailKind === 'solutions'),
   })
   const solutionsQuery = useQuery({
     queryKey: ['content', 'solutions', contentProfileId],
@@ -150,17 +155,17 @@ export function ContentPage() {
     enabled:
       activeTab === 'expansions' ||
       activeTab === 'encounters' ||
-      detailKind === 'expansions',
+      detailKind === 'expansions'),
   })
   const framesQuery = useQuery({
     queryKey: ['content', 'frames', contentProfileId],
     queryFn: fetchFrames,
-    enabled: activeTab === 'frames' || detailKind === 'frames',
+    enabled: connectionReady && (activeTab === 'frames' || detailKind === 'frames'),
   })
   const portraitsQuery = useQuery({
     queryKey: ['content', 'portraits', contentProfileId],
     queryFn: fetchPortraits,
-    enabled: activeTab === 'portraits' || detailKind === 'portraits',
+    enabled: connectionReady && (activeTab === 'portraits' || detailKind === 'portraits'),
   })
 
   const activeContentLoaded =
