@@ -1,5 +1,9 @@
 # Babuni Admin — instructions for future human and AI developers
 
+## One Morkahja operator profile (creative decision, 2026-11-06)
+
+Babuni Admin is a single-operator tool. Do not reintroduce separate read-only moderator accounts, different Content logins, or multiple password prompts for the same server. The `postgres-ssh-moderation` internal profile is the current administrator identity shared across Overview, Moderation and Content. Preserve the existing restricted Overview as a migration fallback only. All actions must remain fixed and validated, with SSH trust, transaction rollback, content backups, and clear errors. Database role setup remains operator-controlled; do not claim production activation from CI or source work alone. Remote images are unfinished.
+
 ## Privileged Morkahja connection separation (2026-11-06)
 
 The `postgres-ssh-moderation` profile is separate from the restricted `postgres-ssh` Overview. Its private config, OS-keyring credential, enabled environment gate, database privileges and per-operation role check must be independently authorized. Never grant `babuni_admin_probe` raw game tables or write privileges to make moderation work. The moderator adapter permits only fixed player list/detail and timeout/ban/unban operations. Account listing and detail require independently approved SELECT-only rights; a separate `BABUNI_MORKAHJA_MODERATION_WRITES=enabled` gate and narrowly scoped UPDATE/DELETE privileges are required for mutations. The operator-reviewed read-role SQL is never auto-applied. Preserve row locks, rollback, session revocation, statement limits and SSH cleanup.
