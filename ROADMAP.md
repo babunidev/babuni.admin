@@ -18,7 +18,7 @@
 - [x] Operator verified totals 75/52/10/6, five zero quality counters, expected owner/view SELECT and raw player/achievement table and column denial.
 - [x] Implement the fixed aggregate adapter, independent metric-field approval and four Overview cards with unavailable handling.
 - [x] Verify current-change unit, PostgreSQL recovery, browser, build and lint checks in CI. The first run exposed an outdated four-field legacy test expectation; commit `6e479a8` updated it to require all eight fields and null optional metrics without approval. All five jobs passed in [CI run 42079244053](https://github.com/babunidev/babuni.admin/actions/runs/42079244053).
-- [ ] Enable the separate metric-field list on Nobara and verify the four cards through the live local service.
+- [x] Operator-provided Nobara screenshot (2026-11-06) verifies the four live cards (75 achievements, 52 earning players, 10 dice unlocks, 6 expansion unlocks), original overview counters, player preview, and a successful refresh status indicating SSH disconnected after snapshot. Unavailable/error branches and connection cleanup under failure are covered by fixtures but not separately exercised live.
 
 [Prepared SQL](scripts/morkahja-batch-a-aggregate-views.sql) · [Candidate contract](docs/MORKAHJA_OVERVIEW_METRICS.md).
 
