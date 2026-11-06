@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-06 — Seeing the new totals in my local Overview
+
+After the feature branch was synchronized and the private metric approval enabled, my Nobara screenshot showed all four new Overview totals: 75 earned achievements, 52 players with achievements, 10 dice unlocks and 6 expansion unlocks. The original activity counters and player preview were still present, and the interface reported a successful refresh with SSH disconnected. AI reviewed the screenshot and recorded this success-path observation; unavailable states and interrupted connections still need separate live exercises.
+
 ## 2026-11-05 — Verifying the new cards against regressions
 
 The new Overview fields initially broke an older PostgreSQL fixture that expected only the four original counts. After the CI failure identified that mismatch, AI updated the test to preserve the four new nullable fields and check their unavailable state without separate authorization. The next CI run passed its five jobs, including disposable PostgreSQL tests, browser checks, build and lint; my live Nobara display still needs its own confirmation.
