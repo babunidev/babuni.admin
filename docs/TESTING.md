@@ -1,5 +1,12 @@
 # Testing Babuni Admin
 
+## Persistent image cache — 2026-11-06
+
+New `tests/morkahja-image-cache.test.mjs` exercises first workspace preload from a simulated one-session SSH stream; readback from cache after a fresh process; an unchanged-asset scan that transfers no bytes; changed-file replacement; preservation of cached artwork during an offline check; and path traversal/unknown-folder rejection. Existing tests retain the session-protected endpoint and the fixed WebP allowlist. GitHub Actions build, lint, unit, browser and PostgreSQL fixtures provide source-level validation, not live performance evidence.
+
+**Still to verify on Nobara:** first workspace-wide sync for all five categories, locally cached display on revisits and after restart, and replacement of changed images without retransfer of unchanged files. This change does not implement image uploads.
+
+
 ## Remote game images — 2026-11-06
 
 The image route rejects non-WebP, traversal, unknown folder kinds and unexpected fields before making an SSH request. Tests check same-profile configuration reuse, strict host-key arguments, bounded file reads and a session-protected, capability-checked POST route. The browser uses lazy images with limited concurrency. Live verification still required: confirm one encounter image, a solution icon, an expansion image, a frame and a portrait from the real `/var/www/morkahja` deployment; check missing-file placeholders. No remote image uploads are supported.
