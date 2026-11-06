@@ -171,7 +171,7 @@ const server=createServer(async(req,res)=>{
       let payload
       try {payload=await body(req,128*1024)}
       catch {return send(res,400,{error:'CONTENT_INVALID_REQUEST'})}
-      const request={action:action==='content-read'?'read':'write',...payload}
+      const request={...payload,action:action==='content-read'?'read':'write'}
       const report=await performMorkahjaContent(profile,request)
       if(!report.ok) {
         const status=report.code==='REMOTE_CONTENT_BUSY'?409:
