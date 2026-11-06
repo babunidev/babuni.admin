@@ -1,5 +1,6 @@
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
 import {
   validateModerationRequest, queryMorkahjaModeration,
 } from '../local-service/morkahjaModeration.mjs'
@@ -281,4 +282,13 @@ test('player detail returns avatars, achievements, currency, unlocks and encount
   assert.equal(d.recentEncounters[0].title,'Old Ruins')
   assert.equal(d.recentEncounters[0].outcome,'success')
   assert.doesNotMatch(JSON.stringify(d),/private-session-id|never-send-to-ui/)
+})
+
+test('prepared inspection role grants only SELECT and has no password in source',()=>{
+  const sql=readFileSync('scripts/morkahja-moderation-read-role.sql','utf8')
+  assert.match(sql,/CREATE ROLE babuni_admin_moderation[\s\S]*PASSWORD NULL;/)
+  assert.match(sql,/GRANT SELECT ON TABLE[\s\S]*public\.active_encounters\s+TO babuni_admin_moderation;/)
+  assert.doesNotMatch(sql,/^\s*GRANT\s+(UPDATE|DELETE|INSERT|TRUNCATE|ALL)\b/im)
+  assert.doesNotMatch(sql,/^\s*ALTER ROLE\b/im)
+  assert.doesNotMatch(sql,/babuni_admin_probe\s*;/)
 })
