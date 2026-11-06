@@ -8,7 +8,7 @@ import { PlayerModerationActions } from '../components/PlayerModerationActions'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { Table, type Column } from '../../../shared/components/Table'
 import { PLAYERS_POLL_MS, useLocalPostgres } from '../../../config/constants'
-import { getApiDisplayLabel, useMockData } from '../../../config/api'
+import { getApiDisplayLabel } from '../../../config/api'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 import {
   fetchPlayersWithMeta,
