@@ -15,6 +15,10 @@ interface Overview {
   avatars: number
   activeSessions: number
   eventsLast24h: number
+  achievementsUnlocked?: number | null
+  playersWithAchievements?: number | null
+  diceUnlocks?: number | null
+  expansionUnlocks?: number | null
 }
 interface PlayerPreview {
   displayName: string
@@ -36,6 +40,9 @@ interface Snapshot {
   overview: Overview
   playerPage: PlayerPage
 }
+
+const metricValue = (value: number | null | undefined): number | string =>
+  typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 'Unavailable'
 
 const PROFILE_KEY = 'babuni-admin:morkahja:overview-profile'
 const border = 'rounded-lg border border-gold/20 bg-slate/50 p-4'
@@ -199,6 +206,16 @@ export function ReadOnlyDashboardPage() {
           <StatCard label="Recent events" value={overview.data.eventsLast24h}
             hint="Game events in the previous 24 hours" />
         </div>
+        <div aria-label="Achievements and ownership" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Achievements unlocked" value={metricValue(overview.data.achievementsUnlocked)}
+            hint="Earned player-achievement records, not summed ranks" />
+          <StatCard label="Players with achievements" value={metricValue(overview.data.playersWithAchievements)} />
+          <StatCard label="Dice unlocks" value={metricValue(overview.data.diceUnlocks)}
+            hint="Non-default ownership across players; not purchases" />
+          <StatCard label="Expansion unlocks" value={metricValue(overview.data.expansionUnlocks)}
+            hint="Non-default ownership, including inactive expansions; not purchases" />
+        </div>
+        <p className="text-xs text-fog">Unavailable means the metric is not enabled or a valid aggregate could not be read.</p>
         <p className="text-xs text-fog">Checked: {checkedTime(overview.checkedAt)} · SSH disconnected after snapshot.</p>
       </> : <p className="text-sm text-fog">Choose your authorized connection in the section below to load the figures.</p>}
     </section>

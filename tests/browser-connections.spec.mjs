@@ -127,3 +127,45 @@ test('Overview restores selected profile and blocks unapproved automatic reads',
     await context.close()
   }
 })
+
+test('Overview renders aggregate totals, real zeros and unavailable values without background polling',async()=>{
+  const context=await browser.newContext({viewport:{width:1280,height:900}})
+  const page=await context.newPage()
+  let reads=0
+  let metrics={achievementsUnlocked:3,playersWithAchievements:2,diceUnlocks:0,expansionUnlocks:4}
+  try {
+    await page.route('**/local-connections-api/**',async route=>{
+      const path=new URL(route.request().url()).pathname
+      let body
+      if(path.endsWith('/session')) body={session:'fixture-session-'.repeat(4)}
+      else if(path.endsWith('/read-dashboard')) {
+        reads++
+        body={ok:true,checkedAt:'2026-11-05T12:00:00Z',data:{
+          overview:{players:4,avatars:6,activeSessions:1,eventsLast24h:2,...metrics},
+          playerPage:{page:1,pageSize:20,total:0,players:[]},
+        }}
+      } else body={profiles:[{id:'fixture',projectId:'morkahja',kind:'postgres-ssh',
+        displayName:'Aggregate fixture',target:'fixture.example.invalid'}]}
+      await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)})
+    })
+    await page.goto(origin+'/')
+    await page.getByRole('combobox',{name:'Authorized Morkahja connection'})
+      .selectOption('fixture')
+    const cards=page.getByLabel('Achievements and ownership')
+    await cards.getByText('Achievements unlocked',{exact:true}).waitFor()
+    const card=label=>cards.locator('article').filter({has:page.getByText(label,{exact:true})})
+    assert.equal(await card('Achievements unlocked').locator('p').nth(1).textContent(),'3')
+    assert.equal(await card('Players with achievements').locator('p').nth(1).textContent(),'2')
+    assert.equal(await card('Dice unlocks').locator('p').nth(1).textContent(),'0')
+    assert.equal(await card('Expansion unlocks').locator('p').nth(1).textContent(),'4')
+    metrics={achievementsUnlocked:null,playersWithAchievements:null,diceUnlocks:-1,expansionUnlocks:'0'}
+    await page.getByRole('button',{name:'Refresh overview and players'}).click()
+    await card('Dice unlocks').getByText('Unavailable',{exact:true}).waitFor()
+    assert.equal(await cards.getByText('Unavailable',{exact:true}).count(),4)
+    const settledReads=reads
+    await page.waitForTimeout(1200)
+    assert.equal(reads,settledReads)
+    const stored=await page.evaluate(()=>Object.entries(localStorage))
+    assert.deepEqual(stored,[['babuni-admin:morkahja:overview-profile','fixture']])
+  } finally {await context.close()}
+})

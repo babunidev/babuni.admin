@@ -1,5 +1,10 @@
 # Babuni Admin — visual and interaction design
 
+## Batch A Overview cards
+
+Four existing-style StatCards appear below the original overview: Achievements unlocked, Players with achievements, Dice unlocks and Expansion unlocks. The grid uses one column on small screens, two at the small breakpoint and four on wide screens. Valid zero is shown as 0; absent, unsafe or invalid values show Unavailable. Ownership hints distinguish unlocks from purchases and include inactive expansion ownership. The existing checked-at timestamp and explicit refresh flow apply to all cards.
+
+
 **Creative director:** Babuni.dev.  
 **Implementation evidence:** `.cursor/rules/morkahja-admin.mdc`, `src/index.css`, React components and page structure.
 

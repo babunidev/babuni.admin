@@ -1,5 +1,12 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-05 — Approve Batch A deployment and local display
+
+The creative explicitly approved applying the reviewed Batch A SQL after the deployed catalog matched, executed it and supplied successful aggregate and permission checks. The subsequent instruction authorizes the local service/UI integration and documentation.
+
+AI retained the player-preview field contract and added a separate exact `readOnlyMetricFields` list for the four counters, so an existing private configuration does not silently gain another data read. The new query shares the existing read-only transaction, SSH tunnel and manual/initial snapshot triggers. Expected optional-view failures recover via a savepoint; connection failures still fail the request. Missing values and invalid quality signals remain unavailable. Purchases, gems and presence/room definitions remain outside this batch.
+
+
 ## 2026-11-05 — Separate deployed catalog verification from SQL migration
 
 **Creative direction:** Continue the Morkahja Overview statistics milestone step by step, preserving the established read-only and operator-approval boundaries.

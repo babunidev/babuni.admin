@@ -1,5 +1,16 @@
 # Testing Babuni Admin
 
+## 2026-11-05 — Batch A deployed; local Overview integration
+
+The operator verified the catalog belonging to the running backend: IDs `1001,1002,1003,1004`, with `1002` inactive, and `CATALOG_MATCH`. After explicit approval, the operator applied the reviewed SQL from commit `8d42562`; PostgreSQL reported `COMMIT`.
+
+The subsequent read-only verification as `babuni_admin_probe` returned 75 earned achievement records, 52 players with achievements, 10 non-default dice unlocks and 6 non-default expansion unlocks. All five quality counters were zero. The view owner was `morkahjadbadmin`; probe SELECT on the view was true, while table and any-column SELECT on `public.players` and `public.player_achievements` were false. These are operator-reported observations at that snapshot, not fixed expected future totals.
+
+The local service now supports the four counters and Overview cards. Independent private `readOnlyMetricFields` approval is required; absent approval, a missing/inaccessible view, malformed values or failed quality checks produce null/unavailable, never a fabricated zero. The optional query runs within the existing snapshot transaction and recovers expected SQL errors through a savepoint. No polling, raw-table grant or new endpoint is introduced.
+
+**Verification status:** All five GitHub Actions jobs passed for the corrected implementation in [run 42079244053](https://github.com/babunidev/babuni.admin/actions/runs/42079244053): build (`npm ci`, TypeScript/Vite, ESLint, unit and integration tests), disposable PostgreSQL fixtures, browser, Connections browser and audit. An earlier run [42078887889](https://github.com/babunidev/babuni.admin/actions/runs/42078887889) failed in the legacy PostgreSQL Overview test because it expected four response keys; the updated interface intentionally includes four additional nullable fields. Commit `6e479a8` checks eight keys and null values when metric access is not approved. These are CI fixture results, not a second live database check. An operator-provided Nobara screenshot dated 2026-11-06 verifies rendered live aggregate cards at 75/52/10/6 together with existing Overview statistics (62 players, 90 avatars, 1 active session, 7 recent events), a populated player preview, and the application's post-refresh status reporting SSH disconnected. The screenshot establishes visible success-path behavior, not independent network inspection or live error/unavailable-state testing. The database has already been deployed by the operator; do not reapply the SQL merely to enable the cards.
+
+
 ## Deployed expansion-catalog audit helper — 2026-11-05
 
 The operator-run Python helper `scripts/verify-morkahja-deployed-catalog.py` reads one local JSON catalog and checks its IDs and embedded ID/active fields against the proposed Batch A SQL allowlist. Four isolated Node tests with temporary JSON files verify a matching catalog, missing/extra/malformed IDs, duplicate keys, symbolic-link refusal and pinned-ID agreement with the SQL. The helper itself performs no write or network call. Unit tests do **not** verify which JSON catalog is deployed on the Ubuntu server, and no production SQL is authorized by their result.

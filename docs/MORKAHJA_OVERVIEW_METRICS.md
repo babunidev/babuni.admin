@@ -1,8 +1,18 @@
 # Morkahja Overview — Candidate statistics and database discovery
 
-**Status (2026-11-05): Source-code review and operator-reported live schema/role audits complete; a proposed metric definition contract is documented.** Thresholds, names and counting rules remain subject to the creative's approval and live validation. New owner-controlled aggregate views and dashboard counters remain unimplemented. No live database definitions or privileges were changed.
+## 2026-11-05 — Batch A deployed; local Overview integration
 
-## Operator-gated catalog verification (prepared; not run on VPS)
+The operator verified the catalog belonging to the running backend: IDs `1001,1002,1003,1004`, with `1002` inactive, and `CATALOG_MATCH`. After explicit approval, the operator applied the reviewed SQL from commit `8d42562`; PostgreSQL reported `COMMIT`.
+
+The subsequent read-only verification as `babuni_admin_probe` returned 75 earned achievement records, 52 players with achievements, 10 non-default dice unlocks and 6 non-default expansion unlocks. All five quality counters were zero. The view owner was `morkahjadbadmin`; probe SELECT on the view was true, while table and any-column SELECT on `public.players` and `public.player_achievements` were false. These are operator-reported observations at that snapshot, not fixed expected future totals.
+
+The local service now supports the four counters and Overview cards. Independent private `readOnlyMetricFields` approval is required; absent approval, a missing/inaccessible view, malformed values or failed quality checks produce null/unavailable, never a fabricated zero. The optional query runs within the existing snapshot transaction and recovers expected SQL errors through a savepoint. No polling, raw-table grant or new endpoint is introduced.
+
+**Verification status:** New unit, PostgreSQL and browser fixtures are prepared; current-change CI results are pending. The AI execution environment is unavailable. Nobara card rendering against the live service remains unverified. The database has already been deployed by the operator; do not reapply the SQL merely to enable the cards.
+
+**Historical preparation record below:** Pending/deferred statements describe the pre-deployment stages. Batch A is now approved and operator-deployed; other metric proposals remain pending.
+
+## Historical preparation — operator-gated catalog verification
 
 The prepared SQL allowlist is pinned to expansion IDs `1001,1002,1003,1004`. The current Morkahja repository's three tracked JSON catalogs (`server/game`, `client/public/game`, `client/src/data/game`) agree on those IDs and flag `1002` inactive. Repository snapshots do **not** prove what the deployed game server currently uses.
 

@@ -1,3 +1,4 @@
+import { PROGRESSION_FIELDS } from './progressionMetrics.mjs'
 import { readFile, lstat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { isAbsolute, join } from 'node:path'
@@ -8,7 +9,7 @@ const namePattern=/^[a-zA-Z_][a-zA-Z0-9_]{0,62}$/
 const sshUserPattern=/^[a-z_][a-z0-9_-]{0,31}$/
 const fingerprintPattern=/^SHA256:[A-Za-z0-9+/]{43}$/
 const keys=['enabled','host','sshUser','sshPort','sshIdentityFile','dbUser','dbName','dbPort','approvedHostKeyFingerprint']
-const dataKeys=['readOnlyDataEnabled','readOnlyDataFields']
+const dataKeys=['readOnlyDataEnabled','readOnlyDataFields','readOnlyMetricFields']
 const approvedFields=['displayName','avatarCount','lastPlayedAt']
 
 function isPort(value) { return Number.isInteger(value) && value>=1 && value<=65535 }
@@ -49,6 +50,9 @@ export async function readMorkahjaProbeConfig(profile,env=process.env) {
         (!Array.isArray(config.readOnlyDataFields) ||
          JSON.stringify(config.readOnlyDataFields)!==JSON.stringify(approvedFields))) ||
       (config.readOnlyDataEnabled===true && !config.readOnlyDataFields) ||
+      (config.readOnlyMetricFields!==undefined &&
+        (!Array.isArray(config.readOnlyMetricFields) ||
+         JSON.stringify(config.readOnlyMetricFields)!==JSON.stringify(PROGRESSION_FIELDS))) ||
       config.enabled!==true || config.host!==profile.target ||
       !validSshHostname(config.host) ||
       !sshUserPattern.test(config.sshUser) ||

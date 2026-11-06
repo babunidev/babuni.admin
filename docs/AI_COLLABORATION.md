@@ -1,5 +1,10 @@
 # Morkahja Admin — human–AI collaboration and provenance
 
+## 2026-11-05 — Operator deployment and AI integration
+
+Babuni approved and executed the production view installation and supplied the catalog, aggregate and permission outputs. AI did not execute live PostgreSQL commands. At Babuni's request, AI implemented the local fixed aggregate query, authorization list, Overview cards, fixtures and documentation. The unavailable execution environment prevents local test execution; repository CI and operator desktop verification are recorded separately from implementation.
+
+
 **Human project creator / creative director:** Babuni.dev.
 
 ## Evidence and creative ownership

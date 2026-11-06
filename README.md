@@ -1,6 +1,6 @@
 # Babuni Admin
 
-**Morkahja statistics expansion:** A source-backed investigation now identifies candidate data for rooms, player presence, achievements, gem balances, dice/expansion unlocks and purchase transactions. No new live counters have been enabled. A metadata-only audit script is provided to verify the actual server schema before creating any additional restricted aggregate views. [Metric discovery](docs/MORKAHJA_OVERVIEW_METRICS.md).
+**Morkahja statistics expansion:** The operator deployed and verified the Batch A aggregate view. The local Overview supports achievement and non-default dice/expansion ownership cards with explicit field approval and unavailable states. Enable the separate metric list in the existing private configuration; no repeat database migration is needed. [Setup and verification](docs/MORKAHJA_READ_ONLY_DASHBOARD.md) · [Metric definitions](docs/MORKAHJA_OVERVIEW_METRICS.md). Nobara verification of the new cards remains pending.
 
 
 **Browser and visual identity:**
