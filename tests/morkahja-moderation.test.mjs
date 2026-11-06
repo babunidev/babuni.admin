@@ -12,7 +12,7 @@ const profile={id:'e6200e1c-e539-4949-9865-aa1707a22878',
 const player={id:'test-player',data:{playerName:'Test',
   activeSessionId:'test-session',activeSessionExpiresAt:10000,
   moderation:{banned:false}}}
-function fixture({failDelete=false,badRole=false}={}) {
+function fixture({failDelete=false,badRole=false,readOnlyRole=false}={}) {
   const queries=[]
   let ended=false
   const client={
@@ -22,7 +22,15 @@ function fixture({failDelete=false,badRole=false}={}) {
       if(sql.startsWith('SELECT current_user='))return {rows:[{
         right_user:!badRole,right_db:true,nonprivileged:true,
         no_database_create:true,no_membership:true,no_schema_create:true,
-        can_edit_player:true,can_revoke_sessions:true,no_extra_write:true,
+        can_edit_player:!readOnlyRole,can_revoke_sessions:!readOnlyRole,no_extra_write:true,
+        can_read_players:true,
+        can_read_avatars:true,
+        can_read_sessions:true,
+        can_read_player_achievements:true,
+        can_read_game_events:true,
+        can_read_progressions:true,
+        can_read_inventories:true,
+        can_read_active_encounters:true,
       }]}
       if(sql.includes('FOR UPDATE'))return {rows:[structuredClone(player)]}
       if(sql.startsWith('DELETE') && failDelete)throw Object.assign(
@@ -54,7 +62,7 @@ test('moderation requests have an exact operation and bounded payload contract',
 test('ban commits only after player update and matching session revocation',async()=>{
   const f=fixture()
   const result=await queryMorkahjaModeration(config,'/socket','fixture','ban',
-    {playerId:'test-player',reason:'test reason'},{createClient:()=>f.client})
+    {playerId:'test-player',reason:'test reason'},{createClient:()=>f.client,writeEnabled:'enabled'})
   assert.deepEqual(result.data,{ok:true,playerId:'test-player',message:'Ban applied'})
   assert.equal(result.ok,true)
   const statements=f.queries.map(q=>q.sql)
@@ -88,6 +96,23 @@ test('unexpected role privileges block access before any database writes',async(
   assert.equal(f.queries.some(q=>q.sql.startsWith('UPDATE')),false)
   assert.equal(f.queries.some(q=>q.sql==='BEGIN READ WRITE'),false)
   assert.equal(f.ended(),true)
+})
+test('read-only moderator role can list accounts without mutation privileges',async()=>{
+  const f=fixture({readOnlyRole:true})
+  const result=await queryMorkahjaModeration(config,'/socket','fixture','players',
+    {},{createClient:()=>f.client,writeEnabled:'disabled'})
+  assert.equal(result.ok,true)
+  assert.deepEqual(result.data,[])
+  assert.equal(f.queries.some(q=>q.sql==='BEGIN READ WRITE'),false)
+  assert.equal(f.queries.some(q=>q.sql.startsWith('DELETE')),false)
+  assert.equal(f.ended(),true)
+})
+test('modification is refused before opening a database client unless explicitly enabled',async()=>{
+  let attempted=false
+  const result=await queryMorkahjaModeration(config,'/socket','fixture','ban',
+    {playerId:'test-player'},{createClient:()=>{attempted=true},writeEnabled:'disabled'})
+  assert.deepEqual(result,{ok:false,code:'REMOTE_MODERATION_WRITE_DISABLED'})
+  assert.equal(attempted,false)
 })
 test('moderation runner refuses disabled config without opening a tunnel',async()=>{
   let opened=false
