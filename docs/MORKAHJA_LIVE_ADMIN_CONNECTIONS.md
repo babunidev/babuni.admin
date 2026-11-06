@@ -7,7 +7,8 @@
 | Feature | Profile kind | Server-side private gate | Rights |
 | --- | --- | --- | --- |
 | Overview | `postgres-ssh` | `BABUNI_MORKAHJA_REMOTE_PROBE=enabled` | Fixed restricted views only |
-| Moderation | `postgres-ssh-moderation` | `BABUNI_MORKAHJA_REMOTE_MODERATION=enabled` | Distinct narrowly authorized PostgreSQL role |
+| Moderation reads | `postgres-ssh-moderation` | `BABUNI_MORKAHJA_REMOTE_MODERATION=enabled` | Distinct SELECT-only PostgreSQL role |
+| Moderation mutations | same separate profile | additional `BABUNI_MORKAHJA_MODERATION_WRITES=enabled` | Explicitly authorized UPDATE of player data and DELETE of sessions |
 | Content | `ssh-content` | `BABUNI_MORKAHJA_REMOTE_CONTENT=enabled` | One-shot SSH worker, five fixed JSON catalogs |
 
 Keep each profile's authorization and configuration separate. The existing `babuni_admin_probe` role must never gain UPDATE, DELETE, or direct SELECT on raw game tables. The localhost connection service validates browser session and origin, and every remote request repeats the authorized private host and identity check.
