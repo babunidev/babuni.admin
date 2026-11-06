@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-06 — Simplifying the way I connect
+
+The real Moderation table finally loaded 62 accounts from my Morkahja database. That confirmed the administrator path works, but I still had to choose the same connection on every page. For a tool used by one person, that was needless repetition. After I asked for a single **Connection** tab, AI changed the interface so Overview, Moderation and Content automatically use the administrator configuration. The older read-only profile stays available as an archived migration detail, while the connection page now contains the relevant settings and diagnostic checks. Live content edits and Babuni Dev publishing still need separate verification.
+
 ## 2026-11-06 — Returning to one administrator connection
 
 The first connection migration split my administration tool into separate accounts for reading, moderating and editing content. That was more complex than the project needed: this is my own workbench, and one authenticated administrator should reach all existing features. After I rejected the multi-user setup, AI revised the implementation so Overview, Moderation and Content share one administrator profile, pinned SSH identity and stored database password. Fixed operations, rollback and content backups remain; the old read-only Overview path survives only for migration. No new credentials were installed or live data changed, and remote image handling still needs work.
