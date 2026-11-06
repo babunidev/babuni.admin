@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-06 — Returning to Moderation and Content
+
+With the restricted Overview working, the more useful goal is getting my existing player management and game-content editors back onto the live server. Source review exposed that they still follow older connection paths, separate from the new read-only tunnel. AI began by removing a misleading fallback that could display sample player details after a database failure and marking the old page sources explicitly. Actual moderation and publishing permissions remain separate work; nothing was changed on the game server.
+
 ## 2026-11-06 — Seeing the new totals in my local Overview
 
 After the feature branch was synchronized and the private metric approval enabled, my Nobara screenshot showed all four new Overview totals: 75 earned achievements, 52 players with achievements, 10 dice unlocks and 6 expansion unlocks. The original activity counters and player preview were still present, and the interface reported a successful refresh with SSH disconnected. AI reviewed the screenshot and recorded this success-path observation; unavailable states and interrupted connections still need separate live exercises.
