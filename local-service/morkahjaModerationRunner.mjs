@@ -10,6 +10,9 @@ export async function performMorkahjaModeration(profile,action,body,deps={}) {
   if(active)return {ok:false,code:'REMOTE_MODERATION_BUSY'}
   try {validateModerationRequest(action,body)}
   catch {return {ok:false,code:'INVALID_MODERATION_BODY'}}
+  if(['timeout','ban','unban'].includes(action) &&
+    (deps.writeEnabled ?? process.env.BABUNI_MORKAHJA_MODERATION_WRITES)!=='enabled')
+    return {ok:false,code:'REMOTE_MODERATION_WRITE_DISABLED'}
   active=true
   let tunnel
   try {
