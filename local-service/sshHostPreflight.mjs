@@ -50,7 +50,7 @@ async function findWithOpenSsh(host, file) {
 
 export async function preflightSshHost(profile) {
   const checkedAt=new Date().toISOString()
-  if (profile.projectId!=='morkahja' || !['postgres-ssh','postgres-ssh-moderation'].includes(profile.kind)) {
+  if (profile.projectId!=='morkahja' || !['postgres-ssh','postgres-ssh-moderation','ssh-content'].includes(profile.kind)) {
     return result('ADAPTER_NOT_IMPLEMENTED','SSH trust inspection not allowed for this project.',checkedAt)
   }
   if (!validSshHostname(profile.target)) {
