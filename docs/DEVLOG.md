@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-06 — Content connection error
+
+After the Overview loaded real statistics through the single administrator profile, the Content page instead returned `REMOTE_CONTENT_FAILED`. Inspection revealed an AI implementation mistake: the unified Content configuration called a helper without importing it. AI corrected the import and added a regression check. The actual remote catalog has not been verified yet.
+
+
 ## 2026-11-06 — Simplifying the way I connect
 
 The real Moderation table finally loaded 62 accounts from my Morkahja database. That confirmed the administrator path works, but I still had to choose the same connection on every page. For a tool used by one person, that was needless repetition. After I asked for a single **Connection** tab, AI changed the interface so Overview, Moderation and Content automatically use the administrator configuration. The older read-only profile stays available as an archived migration detail, while the connection page now contains the relevant settings and diagnostic checks. Live content edits and Babuni Dev publishing still need separate verification.
