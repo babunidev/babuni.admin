@@ -36,6 +36,7 @@ test('one admin SSH identity serves content without a second config or privilege
   const config=source('local-service/morkahjaContentConfig.mjs')
   const runner=source('local-service/sshPostgresProbe.mjs')
   const moderation=source('local-service/morkahjaModerationRunner.mjs')
+  assert.match(config,/import \{readMorkahjaModerationConfig\} from '\.\/morkahjaModerationConfig\.mjs'/)
   assert.match(config,/return readMorkahjaModerationConfig\(profile,env\)/)
   assert.match(runner,/readMorkahjaModerationConfig/)
   assert.doesNotMatch(moderation,/BABUNI_MORKAHJA_MODERATION_WRITES/)
