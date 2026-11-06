@@ -87,7 +87,7 @@ sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
 sudo -u postgres psql -d "$DB_NAME"
 ```
 
-In the interactive `psql` prompt, issue `\\password babuni_admin_moderation`, enter a new strong password when prompted, then `\\q`. Never paste the password into chat, shell arguments, the JSON profile, or a repository file. If PostgreSQL is not locally administered by the `postgres` system user, the operator must use the verified database owner login instead; the commands above make no assumption about that user's password.
+In the interactive `psql` prompt, issue `\password babuni_admin_moderation`, enter a new strong password when prompted, then `\q`. Never paste the password into chat, shell arguments, the JSON profile, or a repository file. If PostgreSQL is not locally administered by the `postgres` system user, the operator must use the verified database owner login instead; the commands above make no assumption about that user's password.
 
 ### C. On Nobara: create private moderator config
 
