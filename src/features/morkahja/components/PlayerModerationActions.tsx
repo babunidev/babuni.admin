@@ -24,7 +24,7 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['players'] })
-    void queryClient.invalidateQueries({ queryKey: ['playerDetail', player.id] })
+    void queryClient.invalidateQueries({ queryKey: ['playerDetail'] })
     void queryClient.invalidateQueries({ queryKey: ['onlinePlayers'] })
     void queryClient.invalidateQueries({ queryKey: ['dashboardStats'] })
     void queryClient.invalidateQueries({ queryKey: ['activityFeed'] })
