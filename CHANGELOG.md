@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-06 — Read live Morkahja images through existing administrator SSH
+
+- Added an authenticated, bounded `content-image` request to the local service. It uses the same configured and pinned SSH identity as Content catalogs, not a new public domain or another password.
+- Whitelisted only WebP filenames in five fixed deployed game image folders; no arbitrary browser paths, writes or shell arguments. Remote files are checked for size, type and symlinks before returning bounded image bytes.
+- Integrated lazy image loading into encounters, solutions, expansions, frames, portraits and content detail views with two concurrent transfers and a bounded in-memory image cache.
+- Added tests covering request validation, worker invocation, fixed paths and the session-protected endpoint. Live asset delivery is pending Nobara acceptance.
+
+
 ## 2026-11-06 — Fix unified Content config import
 
 - Corrected missing `readMorkahjaModerationConfig` import in `local-service/morkahjaContentConfig.mjs`. Before this fix, a real Content request using the administrator profile threw a reference error that the runner reported as `REMOTE_CONTENT_FAILED`; Overview and Moderation were unaffected.
