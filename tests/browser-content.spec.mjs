@@ -132,16 +132,16 @@ test('a pinned legacy Morkahja WebP asset decodes in Chromium', async () => {
   })
 })
 
-test('local Connections screen can save and remove a non-secret project profile', async () => {
+test('single Connection screen creates an owner administrator without exposing secrets', async () => {
   await withPage(async page => {
     await page.goto(base + '/connections')
-    await page.getByRole('heading', { name: 'Connections', exact: true }).waitFor()
-    await page.getByLabel('Profile name').fill('Browser fixture connection')
-    await page.getByLabel('Target (no credentials)').fill('/tmp/babuni-browser-fixture')
-    await page.getByRole('button', { name: 'Save profile' }).click()
-    await page.getByRole('heading', { name: 'Browser fixture connection' }).waitFor()
-    await page.getByText('Not connected — profile only.').waitFor()
-    await page.getByRole('button', { name: 'Remove' }).click()
-    await page.getByText('No profiles configured.').waitFor()
+    await page.getByRole('heading', { name: 'Connection', exact: true }).waitFor()
+    await page.getByRole('textbox', { name: 'Connection name' }).fill('Browser owner connection')
+    await page.getByRole('textbox', { name: 'Server host' }).fill('fixture.example.invalid')
+    await page.getByRole('button', { name: 'Save connection' }).click()
+    await page.getByRole('heading', { name: 'Browser owner connection' }).waitFor()
+    await page.getByText('fixture.example.invalid', { exact: true }).waitFor()
+    const credential = page.getByText('Database password missing from Linux keyring')
+    await credential.waitFor()
   })
 })
