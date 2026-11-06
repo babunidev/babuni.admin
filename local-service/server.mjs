@@ -8,7 +8,7 @@ import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from '
 import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { parsePlayerPage } from './morkahjaReadOnly.mjs'
 import { performMorkahjaModeration, isModerationActive } from './morkahjaModerationRunner.mjs'
-import { performMorkahjaContent, isContentActive } from './morkahjaContentRunner.mjs'
+import { performMorkahjaContent, isContentActive, stopAllContentSsh } from './morkahjaContentRunner.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -218,6 +218,6 @@ const server=createServer(async(req,res)=>{
 })
 server.on('error',error=>{console.error('Local service could not bind to loopback:',error.code||error.message);process.exitCode=1})
 server.listen(PORT,'127.0.0.1',()=>console.log('Local profile service ready on loopback (remote probe disabled by default).'))
-const close=()=>{void stopAllSshTunnels().finally(()=>server.close(()=>process.exit(0)))}
+const close=()=>{void Promise.allSettled([stopAllSshTunnels(),stopAllContentSsh()]).finally(()=>server.close(()=>process.exit(0)))}
 process.on('SIGTERM',close)
 process.on('SIGINT',close)
