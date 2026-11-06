@@ -156,7 +156,7 @@ const server=createServer(async(req,res)=>{
       if(!result.ok) {
         const status=result.code==='REMOTE_MODERATION_BUSY'?409:
           result.code==='INVALID_MODERATION_BODY'?400:
-          ['REMOTE_MODERATION_DISABLED','REMOTE_SCOPE_DENIED'].includes(result.code)?403:422
+          ['REMOTE_MODERATION_DISABLED','REMOTE_MODERATION_WRITE_DISABLED','REMOTE_SCOPE_DENIED'].includes(result.code)?403:422
         return send(res,status,{error:result.code})
       }
       states.set(id,{
