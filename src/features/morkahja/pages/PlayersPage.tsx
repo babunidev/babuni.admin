@@ -1,5 +1,5 @@
-import { useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useMemo, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PlayerDetailPanel } from '../components/PlayerDetailPanel'
 import { ConnectionBanner } from '../../../shared/components/ConnectionBanner'
@@ -9,9 +9,12 @@ import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { Table, type Column } from '../../../shared/components/Table'
 import { PLAYERS_POLL_MS, useLocalPostgres } from '../../../config/constants'
 import { getApiDisplayLabel, useMockData } from '../../../config/api'
+import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 import {
   fetchPlayersWithMeta,
   formatPlayersLoadError,
+  getModerationProfileId,
+  MODERATION_PROFILE_KEY,
 } from '../services/adminApi'
 import type { Player } from '../../../types'
 import { formatDateTime, formatRelative } from '../../../shared/utils/format'
@@ -79,12 +82,53 @@ const columns: Column<Player>[] = [
 export function PlayersPage() {
   const { playerId } = useParams<{ playerId?: string }>()
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [profileId, setProfileId] = useState(() => getModerationProfileId() || '')
+  const [profilesLoaded, setProfilesLoaded] = useState(false)
+  const [profiles, setProfiles] = useState<{id:string;displayName:string}[]>([])
+  const [profileStatus, setProfileStatus] = useState('Checking scoped moderation profiles…')
+
+  useEffect(() => {
+    let mounted = true
+    void localConnectionApi<{profiles:{
+      id:string;projectId:string;kind:string;displayName:string
+    }[]}>().then(result => {
+      if (!mounted) return
+      const available = result.profiles.filter(p =>
+        p.projectId === 'morkahja' && p.kind === 'postgres-ssh-moderation')
+      setProfiles(available)
+      const current = getModerationProfileId()
+      if (current && !available.some(p => p.id === current)) {
+        window.localStorage.removeItem(MODERATION_PROFILE_KEY)
+        setProfileId('')
+      }
+      setProfileStatus(available.length
+        ? 'Select a separate authorized moderation profile; reads and writes are not enabled by the Overview profile.'
+        : 'No separate live moderation profile is configured. Legacy/demo mode remains available.')
+      setProfilesLoaded(true)
+    }).catch(() => {
+      if (!mounted) return
+      setProfileStatus('Local connection service unavailable; privileged SSH moderation not verified.')
+      setProfilesLoaded(true)
+    })
+    return () => {mounted = false}
+  }, [])
+
+  function selectProfile(id: string) {
+    if (id) window.localStorage.setItem(MODERATION_PROFILE_KEY, id)
+    else window.localStorage.removeItem(MODERATION_PROFILE_KEY)
+    setProfileId(id)
+    queryClient.removeQueries({ queryKey: ['players'] })
+    queryClient.removeQueries({ queryKey: ['playerDetail'] })
+    navigate('/players')
+  }
 
   const { data, error, isError, isLoading, isFetching } = useQuery({
-    queryKey: ['players'],
+    queryKey: ['players', profileId],
     queryFn: fetchPlayersWithMeta,
+    enabled: profilesLoaded,
     refetchInterval: (query) =>
-      query.state.data?.dbError ? false : PLAYERS_POLL_MS,
+      profileId || query.state.data?.dbError ? false : PLAYERS_POLL_MS,
     retry: 1,
   })
 
@@ -107,15 +151,25 @@ export function PlayersPage() {
             : 'All players from the server — online listed first.'
         }
       />
-      <p className="mb-3 text-xs text-fog" role="status">
-        Moderation source: {getApiDisplayLabel()}
-        {useLocalPostgres
-          ? ' · Legacy direct database adapter; separate from the restricted Overview connection.'
-          : useMockData
-            ? ' · Sample data only; no live server connection.'
-            : ' · Legacy API; connection must be independently verified.'}
-        {' · '}Live moderation through Connections is not enabled.
-      </p>
+      <div className="mb-3 rounded border border-gold/20 bg-slate/40 p-3">
+        <label htmlFor="moderation-profile" className="block text-xs text-fog">
+          Live moderation connection (separate from Overview)
+        </label>
+        <select id="moderation-profile" value={profileId}
+          onChange={event => selectProfile(event.target.value)}
+          className="mt-2 w-full rounded border border-gold/20 bg-ash p-2 text-sm text-parchment">
+          <option value="">Legacy / demo source (not verified by Connections)</option>
+          {profiles.map(p => <option key={p.id} value={p.id}>{p.displayName}</option>)}
+        </select>
+        <p className="mt-2 text-xs text-fog" role="status">
+          {profileStatus}
+          {profileId
+            ? isError ? ' · Moderation SSH request failed; no mock fallback.'
+              : data ? ' · Last scoped read succeeded; SSH disconnected after snapshot.'
+                : ' · Awaiting scoped database authorization.'
+            : ' · Current source: ' + getApiDisplayLabel()}
+        </p>
+      </div>
       {(dbError || isError) && (
         <ConnectionBanner
           {...formatPlayersLoadError(
