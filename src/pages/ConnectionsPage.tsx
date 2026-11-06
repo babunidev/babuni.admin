@@ -147,7 +147,7 @@ export function ConnectionsPage() {
 
   const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
   return <div className="max-w-4xl space-y-6">
-    <PageHeader title="Connections" description="Private connections. Remote SSH/PostgreSQL health checks require a separate operator-only configuration and are disabled by default; no live editing."/>
+    <PageHeader title="Connections" description="Private connections. Overview, moderation and content use separate operator-owned approval gates; privileged operations are disabled by default."/>
     <p role="status" className="text-sm text-fog">{status}</p>
     <p className="text-xs text-fog">
       Local service: {health?.service==='available'?'Available (loopback only)':'Not verified'}
@@ -194,7 +194,7 @@ export function ConnectionsPage() {
             <p className="mt-1 text-xs text-fog">Result: {p.code||'NOT_CHECKED'} · Checked: {checkedTime(p.checkedAt)}</p>
             {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last successful check: {checkedTime(p.lastSuccessAt)}</p>}
             {p.kind!=='local-files' && <p className="mt-1 text-xs text-fog">
-              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · No persistent connection or write permission
+              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · No persistent connection; write operations require a separate private opt-in
             </p>}
             <p className="mt-1 text-xs text-fog">Allowed operations: {p.capabilities?.join(', ')||'None (adapter planned)'}</p>
           </div>
