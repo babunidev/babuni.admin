@@ -1,5 +1,13 @@
 # Testing Babuni Admin
 
+## Single Connection UI checks — 2026-11-06
+
+- Verify browser Connection page shows the unique administrator host and keyring state, supports host preflight and a one-shot database read check, and edits the existing profile without altering credentials.
+- Verify Overview, Moderation and Content render no connection selector and reuse one profile ID; error states must not invent/mock live data.
+- Verify Overview's fixed SQL runs in a read-only transaction, with no background polling.
+- Verify Connection displays no raw key material, passwords, database records or session tokens.
+- Actual Moderation list was manually verified on Nobara: 62 accounts, one estimated active session. Live account writes and remote content mutation have **not** been verified.
+
 ## 2026-11-06 — Single Morkahja administrator profile
 
 New integration behavior to verify: one saved `postgres-ssh-moderation` profile may invoke restricted-view Overview reads, fixed player list/detail and timeout/ban/unban operations, and fixed five-catalog Content SSH operations. The administrator role must have the exact expected player write privileges and view reads. Existing transaction rollback, backup and SSH cleanup fixtures remain required. The previous extra moderation write environment opt-in was removed by creative direction.
