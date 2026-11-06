@@ -1,5 +1,9 @@
 # Babuni Admin — instructions for future human and AI developers
 
+## Single Connection interface (creative decision, 2026-11-06)
+
+Babuni Admin is a private workbench for one operator. Maintain one clearly named **Connection** page with all relevant server/credential health details; workspace pages must reuse the owner administrator connection without asking the user to choose profiles repeatedly. Never reintroduce per-page connection dropdowns or unnecessary multi-account provisioning. Preserve working credentials and legacy profiles during migration; remove obsolete infrastructure only after proven replacement. Keep fixed operations, transactions, SSH host pinning, backups and clear failures. Do not claim website publishing, remote images or live writes are connected until verified.
+
 ## One Morkahja operator profile (creative decision, 2026-11-06)
 
 Babuni Admin is a single-operator tool. Do not reintroduce separate read-only moderator accounts, different Content logins, or multiple password prompts for the same server. The `postgres-ssh-moderation` internal profile is the current administrator identity shared across Overview, Moderation and Content. Preserve the existing restricted Overview as a migration fallback only. All actions must remain fixed and validated, with SSH trust, transaction rollback, content backups, and clear errors. Database role setup remains operator-controlled; do not claim production activation from CI or source work alone. Remote images are unfinished.
