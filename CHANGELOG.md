@@ -1,5 +1,11 @@
 # Babuni Admin — Changelog
 
+## 2026-11-06 — Fix unified Content config import
+
+- Corrected missing `readMorkahjaModerationConfig` import in `local-service/morkahjaContentConfig.mjs`. Before this fix, a real Content request using the administrator profile threw a reference error that the runner reported as `REMOTE_CONTENT_FAILED`; Overview and Moderation were unaffected.
+- Added a regression assertion for the import. This is a source fix; live remote Content access needs a new operator test.
+
+
 ## 2026-11-06 — One Connection interface
 
 - Renamed the global navigation entry and page from Connections to **Connection**.
