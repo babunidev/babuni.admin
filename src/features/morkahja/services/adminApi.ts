@@ -12,6 +12,7 @@ import type {
 import type { PlayerDetail } from '../types/playerDetail'
 import { getMockPlayerDetail } from './mockPlayerDetail'
 import { apiGet, apiPost } from '../../../services/http'
+import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 import {
   getMockActivityFeed,
   getMockDashboardStats,
@@ -22,6 +23,23 @@ import {
   mockTimeoutPlayer,
   mockUnbanPlayer,
 } from './mockState'
+
+export const MODERATION_PROFILE_KEY = 'babuni-admin:morkahja:moderation-profile'
+
+export function getModerationProfileId(): string | null {
+  try {
+    const value = window.localStorage.getItem(MODERATION_PROFILE_KEY)
+    return value && /^[0-9a-f-]{36}$/i.test(value) ? value : null
+  } catch { return null }
+}
+
+async function authorizedModeration<T>(operation: string, data: unknown = {}): Promise<T> {
+  const id = getModerationProfileId()
+  if (!id) throw new Error('MODERATION_PROFILE_REQUIRED')
+  const result = await localConnectionApi<{ok:true;data:T}>(
+    'POST', '/' + id + '/moderation-' + operation, data)
+  return result.data
+}
 
 async function localGet<T>(path: string): Promise<T> {
   const response = await fetch(`${localAdminApiBase}${path}`)
@@ -91,6 +109,9 @@ export type PlayersQueryResult = {
 }
 
 export async function fetchPlayersWithMeta(): Promise<PlayersQueryResult> {
+  if (getModerationProfileId()) return {
+    players: await authorizedModeration<Player[]>('players'), isSample: false,
+  }
   if (useLocalPostgres) {
     // A failed privileged source must never silently become mock or another API.
     return { players: await localGet<Player[]>('/players'), isSample: false }
@@ -110,6 +131,7 @@ export async function fetchPlayers(): Promise<Player[]> {
 }
 
 export async function fetchPlayerDetail(playerId: string): Promise<PlayerDetail> {
+  if (getModerationProfileId()) return authorizedModeration<PlayerDetail>('detail', {playerId})
   if (useLocalPostgres) {
     return localGet<PlayerDetail>(`/players/${encodeURIComponent(playerId)}`)
   }
@@ -175,6 +197,8 @@ function ensureModerationSuccess(result: ModerationResult): ModerationResult {
 export async function timeoutPlayer(
   request: TimeoutPlayerRequest,
 ): Promise<ModerationResult> {
+  if (getModerationProfileId()) return ensureModerationSuccess(
+    await authorizedModeration<ModerationResult>('timeout', request))
   if (useLocalPostgres) {
     return ensureModerationSuccess(await localPost<ModerationResult>('/players/timeout', request))
   }
@@ -196,6 +220,8 @@ export async function timeoutPlayer(
 }
 
 export async function banPlayer(request: BanPlayerRequest): Promise<ModerationResult> {
+  if (getModerationProfileId()) return ensureModerationSuccess(
+    await authorizedModeration<ModerationResult>('ban', request))
   if (useLocalPostgres) {
     return ensureModerationSuccess(await localPost<ModerationResult>('/players/ban', request))
   }
@@ -211,6 +237,8 @@ export async function banPlayer(request: BanPlayerRequest): Promise<ModerationRe
 }
 
 export async function unbanPlayer(playerId: string): Promise<ModerationResult> {
+  if (getModerationProfileId()) return ensureModerationSuccess(
+    await authorizedModeration<ModerationResult>('unban', {playerId}))
   if (useLocalPostgres) {
     return ensureModerationSuccess(await localPost<ModerationResult>('/players/unban', { playerId }))
   }
