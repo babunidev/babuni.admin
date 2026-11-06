@@ -28,6 +28,12 @@ GRANT SELECT ON TABLE
 TO babuni_admin;
 GRANT UPDATE (data) ON public.players TO babuni_admin;
 GRANT DELETE ON public.sessions TO babuni_admin;
+GRANT USAGE ON SCHEMA babuni_admin_ro TO babuni_admin;
+GRANT SELECT ON TABLE
+  babuni_admin_ro.overview,
+  babuni_admin_ro.player_preview,
+  babuni_admin_ro.progression_ownership_totals
+TO babuni_admin;
 -- Content catalogs use the same SSH identity and separate filesystem access,
 -- not additional PostgreSQL users.
 COMMIT;
