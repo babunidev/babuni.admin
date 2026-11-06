@@ -1,5 +1,11 @@
 # Babuni Admin — Architecture
 
+## Unified Connection UI
+
+`src/shared/services/morkahjaConnection.ts` resolves the unique `postgres-ssh-moderation` administrator profile. A nonsecret profile ID in local browser storage identifies the selected local profile; no password or SSH key is copied to browser storage. The Connection page exposes management, credential availability and manual diagnostic actions. Overview, Moderation and Content call the same resolver and no longer expose independent profile pickers. Overview retains a legacy read-only profile fallback if the administrator is absent. The underlying local service still validates profile types, request bodies, SSH trust, database role privileges and fixed allowed operations on every request.
+
+The one-shot SSH tunnel and catalog worker remain separate protocols under the same owner identity. **Automatic page loading does not mean a persistent SSH connection**: each request authenticates, accesses the fixed resource, and closes. The old profiles are not deleted by migrations. The interface does not yet control babuni.dev publishing, remote image uploads or all host administration capabilities.
+
 ## Current Morkahja administrator model — supersedes the separate-profile proposal
 
 **One local operator, one administrator profile.** The internal `postgres-ssh-moderation` connection kind is presented as **Morkahja administrator (Moderation + Content)** and provides `ssh:read`, `ssh:moderation` and `ssh:content` operations. Its single Linux keyring credential authenticates the `babuni_admin` PostgreSQL role. The existing owner-approved pinned SSH identity is reused for short-lived database tunnels and one-shot fixed-content operations. The profile ID is shared by the Overview, Moderation and Content pages.
