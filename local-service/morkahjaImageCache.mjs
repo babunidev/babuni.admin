@@ -124,6 +124,7 @@ export function createMorkahjaImageCache({
     const unavailable=new Set()
     const missingFolders=new Set()
     let completed=false,exitError=null,closeCode=null,closeSignal=null
+    let checkedBytes=0
     const child=startSsh('ssh',buildContentSshArgs(approved.config),{
       shell:false,stdio:['pipe','pipe','pipe'],env:childEnv(),
     })
@@ -159,6 +160,8 @@ export function createMorkahjaImageCache({
         throw new Error('IMAGE_SYNC_INVALID_RESPONSE')
       imageRequest({kind:item.kind,name:item.name})
       const key=item.kind+'/'+item.name
+      if(status.verified>=MAX_FILES || Object.hasOwn(next,key))
+        throw new Error('IMAGE_SYNC_TOO_LARGE')
       if(item.type==='unavailable') {
         unavailable.add(key)
         return
@@ -166,6 +169,8 @@ export function createMorkahjaImageCache({
       if(!validEntry(key,item.meta))throw new Error('IMAGE_SYNC_INVALID_RESPONSE')
       if(item.type==='keep' && JSON.stringify(previous[key])!==JSON.stringify(item.meta))
         throw new Error('IMAGE_SYNC_INVALID_RESPONSE')
+      checkedBytes+=item.meta.size
+      if(checkedBytes>8*1024*1024*1024)throw new Error('IMAGE_SYNC_TOO_LARGE')
       if(item.type==='file') {
         if(typeof item.base64!=='string' || item.base64.length>MAX_LINE ||
           !/^[A-Za-z0-9+/]+={0,2}$/.test(item.base64))
