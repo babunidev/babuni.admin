@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-06 — Keeping the pictures nearby
+
+The image reader finally displayed real artwork, but switching between Content tabs still forced fresh downloads from my server, sometimes taking long enough to interrupt ordinary editing. A small memory cache turned out to be the wrong approach: only a handful of thumbnails survived navigation, and none survived a restart. At my direction, AI implemented a persistent local image cache that fills for the whole Morkahja workspace and checks for changed files instead of downloading them again. Automated tests cover persistence and incremental updates; the first real-server cache sync remains to be verified.
+
+
 ## 2026-11-06 — Connecting the missing pictures
 
 Content records finally loaded from my server, but their images were absent. Local checks confirmed that the files exist under `/var/www/morkahja` and can be read using the already configured SSH account; the earlier proposed public hostname did not resolve. Rather than introducing another connection, AI added a small image reader to the existing administrator SSH workflow and updated the image views to request only visible pictures. The change is committed and covered by automated tests, but real-server image display still needs checking before I call it finished.
