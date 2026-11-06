@@ -326,8 +326,6 @@ export async function queryMorkahjaModeration(config,socketDir,password,action,p
   try { request=validateModerationRequest(action,payload) }
   catch(error) {return {ok:false,code:classifyModerationError(error)}}
   const writing=['timeout','ban','unban'].includes(action)
-  if(writing && (deps.writeEnabled ?? process.env.BABUNI_MORKAHJA_MODERATION_WRITES)!=='enabled')
-    return {ok:false,code:'REMOTE_MODERATION_WRITE_DISABLED'}
   const client=(deps.createClient||((options)=>new pg.Client(options)))({
     host:socketDir,port:5432,user:config.dbUser,database:config.dbName,
     password,ssl:false,connectionTimeoutMillis:4500,
