@@ -204,9 +204,14 @@ async function playerDetail(client,playerId) {
   const inventory=await collect('inventories')
   const encounter=await collect('active_encounters')
   const active=avatars.find(a=>a.id===d.activeAvatarId)?.data
+  const activeProgression=progression.get(d.activeAvatarId)
+  const activeWithLevel=active && activeProgression &&
+    typeof activeProgression==='object'
+    ? {...active,level:activeProgression.level ?? active.level}
+    : active
   const sessions=await activeSessionIds(client,[playerId],now)
   const live=new Set(sessions.has(playerId+':'+d.activeSessionId)?[playerId]:[])
-  const summary=mapPlayer(row,active,avatars,live,now)
+  const summary=mapPlayer(row,activeWithLevel,avatars,live,now)
   const detailAvatars=avatars.map(a=>{
     const p=progression.get(a.id)||{},inv=inventory.get(a.id)||{},en=encounter.get(a.id)||{}
     const level=safeInt(p.level,safeInt(a.data?.level,1))
