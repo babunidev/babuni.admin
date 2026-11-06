@@ -1,5 +1,14 @@
 # Babuni Admin — Changelog
 
+## 2026-11-06 — Persistent workspace artwork cache
+
+- Replaced the 48-item, memory-only gallery cache with profile-scoped local disk storage in `~/.cache/babuni-admin/morkahja-images` (or `$XDG_CACHE_HOME/babuni-admin/morkahja-images`).
+- A single outbound, host-pinned SSH session checks the five approved WebP asset directories and streams new or changed files to the cache. Unchanged files are not transferred; removed filenames are pruned after a complete sync.
+- Every Morkahja workspace entry starts a cache check; changes are checked again every ten minutes while that workspace is open. Existing local art remains available when the SSH server cannot be reached.
+- Content previews now read files from the local service instead of opening SSH per image. A separate bounded browser memory layer makes repeated tab switches immediate, with visible sync progress and automatic refresh of changed images.
+- Added cache integrity/bounds, offline and persistence fixtures. Initial real-server bulk sync and performance require operator verification.
+
+
 ## 2026-11-06 — Read live Morkahja images through existing administrator SSH
 
 - Added an authenticated, bounded `content-image` request to the local service. It uses the same configured and pinned SSH identity as Content catalogs, not a new public domain or another password.
