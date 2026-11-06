@@ -1,5 +1,17 @@
 # Babuni Admin — Development Roadmap
 
+## Workspace-wide persistent images — 2026-11-06
+
+- [x] Save downloaded WebP artwork to a persistent local cache scoped by administrator profile and host.
+- [x] Fetch all five supported asset directories in one incremental SSH session; transfer only new or changed filenames.
+- [x] Begin syncing when opening the Morkahja workspace, rather than when opening each Content tab.
+- [x] Serve previously downloaded files locally even when the server is unavailable.
+- [x] Refresh visible thumbnails when the sync reports changed files and expose simple cache progress.
+- [x] Test first sync, unchanged sync, changed-image replacement, process restart and offline cache use with synthetic fixtures.
+- [ ] Verify the first bulk sync, tab navigation, warm restart, and replacement behavior on the real Nobara/Ubuntu environment.
+- [ ] Implement verified image upload and deployment separately from this read-only cache.
+
+
 ## Morkahja remote image delivery — 2026-11-06
 
 - [x] Implement an authenticated image read through the existing administrator SSH configuration, no domain/DNS setup.
