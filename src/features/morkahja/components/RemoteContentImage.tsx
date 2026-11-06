@@ -88,7 +88,7 @@ export function RemoteContentImage({
   const current=image.key===profileId+':'+kind+':'+name
   const failed=current && image.failed
   const src=profileId?(current && !failed?image.src:''):fallbackSrc
-  return <span ref={element} className="contents">
+  return <span ref={element} className="block min-h-px min-w-px">
     {src?<img src={src} alt={alt} loading="lazy" className={className}/>:
       <span className={`flex items-center justify-center bg-void/30 text-[10px] text-fog ${className}`}
         title={failed?'Image unavailable on server':undefined}>
