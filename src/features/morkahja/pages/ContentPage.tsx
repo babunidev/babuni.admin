@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 import { ContentDetailPanel } from '../components/ContentDetailPanel'
 import {
   ContentImageGrid,
@@ -41,6 +42,8 @@ import {
   fetchSolutions,
   uploadEncounterImageFromTitle,
   uploadSolutionImage,
+  getContentProfileId,
+  CONTENT_PROFILE_KEY,
 } from '../services/contentApi'
 import type {
   EncounterData,
@@ -92,6 +95,44 @@ export function ContentPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  const [contentProfileId, setContentProfileId] = useState(() => getContentProfileId() || '')
+  const [contentProfiles, setContentProfiles] = useState<{id:string;displayName:string}[]>([])
+  const [contentProfileStatus, setContentProfileStatus] = useState('Checking authorized content profiles…')
+
+  useEffect(() => {
+    let mounted = true
+    void localConnectionApi<{profiles:{
+      id:string;projectId:string;kind:string;displayName:string
+    }[]}>().then(result => {
+      if (!mounted) return
+      const options = result.profiles.filter(p =>
+        p.projectId === 'morkahja' && p.kind === 'ssh-content')
+      setContentProfiles(options)
+      const stored = getContentProfileId()
+      if (stored && !options.some(p => p.id === stored)) {
+        try {window.localStorage.removeItem(CONTENT_PROFILE_KEY)} catch {}
+        setContentProfileId('')
+      }
+      setContentProfileStatus(options.length
+        ? 'Choose a separately authorized SSH content profile. Writes require a matching catalog revision.'
+        : 'No SSH content profile is configured; legacy/local content mode is available.')
+    }).catch(() => {
+      if (mounted) setContentProfileStatus('Connection service unavailable; live content access not verified.')
+    })
+    return () => {mounted = false}
+  }, [])
+
+  function selectContentProfile(id: string) {
+    try {
+      if (id) window.localStorage.setItem(CONTENT_PROFILE_KEY, id)
+      else window.localStorage.removeItem(CONTENT_PROFILE_KEY)
+    } catch {
+      setContentProfileStatus('Local profile selection cannot be persisted in this browser.')
+    }
+    setContentProfileId(id)
+    void queryClient.invalidateQueries({queryKey:['content']})
+    navigate('/content')
+  }
 
   const detailKind =
     kindParam && tabs.some((entry) => entry.id === kindParam)
@@ -106,7 +147,7 @@ export function ContentPage() {
   }
 
   const encountersQuery = useQuery({
-    queryKey: ['content', 'encounters'],
+    queryKey: ['content', 'encounters', contentProfileId],
     queryFn: fetchEncounters,
     enabled:
       activeTab === 'encounters' ||
@@ -115,7 +156,7 @@ export function ContentPage() {
       detailKind === 'solutions',
   })
   const solutionsQuery = useQuery({
-    queryKey: ['content', 'solutions'],
+    queryKey: ['content', 'solutions', contentProfileId],
     queryFn: fetchSolutions,
     enabled:
       activeTab === 'solutions' ||
@@ -123,7 +164,7 @@ export function ContentPage() {
       detailKind === 'solutions',
   })
   const expansionsQuery = useQuery({
-    queryKey: ['content', 'expansions'],
+    queryKey: ['content', 'expansions', contentProfileId],
     queryFn: fetchExpansions,
     enabled:
       activeTab === 'expansions' ||
@@ -131,12 +172,12 @@ export function ContentPage() {
       detailKind === 'expansions',
   })
   const framesQuery = useQuery({
-    queryKey: ['content', 'frames'],
+    queryKey: ['content', 'frames', contentProfileId],
     queryFn: fetchFrames,
     enabled: activeTab === 'frames' || detailKind === 'frames',
   })
   const portraitsQuery = useQuery({
-    queryKey: ['content', 'portraits'],
+    queryKey: ['content', 'portraits', contentProfileId],
     queryFn: fetchPortraits,
     enabled: activeTab === 'portraits' || detailKind === 'portraits',
   })
@@ -298,10 +339,10 @@ export function ContentPage() {
       closeEncounterEditor()
       setStatus(
         wasEdit
-          ? useLocalContent
+          ? contentProfileId ? 'Encounter updated in deployed game catalog via SSH.' : useLocalContent
             ? 'Encounter updated in encountersdata.json.'
             : 'Encounter updated on VPS.'
-          : useLocalContent
+          : contentProfileId ? 'Encounter saved to deployed game catalog via SSH.' : useLocalContent
             ? 'Encounter saved to encountersdata.json on disk.'
             : 'Encounter saved on VPS.',
       )
@@ -317,7 +358,7 @@ export function ContentPage() {
     },
     onSuccess: () => {
       setStatus(
-        useLocalContent
+        contentProfileId ? 'Solution saved to deployed game catalog via SSH.' : useLocalContent
           ? 'Solution saved to solutiondata.json on disk.'
           : 'Solution saved on VPS.',
       )
@@ -326,7 +367,9 @@ export function ContentPage() {
     onError: (err: Error) => setStatus(err.message),
   })
 
-  const dataSourceHint = useLocalContent
+  const dataSourceHint = contentProfileId
+    ? 'Approved remote catalog via SSH · /var/www/morkahja/game · images still use separately configured asset URLs'
+    : useLocalContent
     ? `Local files: MorkahjaWebApp/client/public/game + /UI (saves go to disk)`
     : gameDataBaseUrl
       ? `Loading from ${gameDataBaseUrl}`
@@ -338,11 +381,23 @@ export function ContentPage() {
         title="Content"
         description="Browse and add encounters, solutions, expansions, frames, and portraits."
       />
-      <p className="mb-2 text-xs text-fog" role="status">
-        Content source: {useLocalContent
-          ? 'Local game-data files · local writes only; not a verified live-server connection'
-          : 'Static game assets / legacy remote API · live read/write connection not verified'}
-      </p>
+      <div className="mb-3 rounded border border-gold/20 bg-slate/40 p-3">
+        <label htmlFor="content-profile" className="block text-xs text-fog">
+          Live content connection (separately authorized)
+        </label>
+        <select id="content-profile" value={contentProfileId}
+          onChange={event => selectContentProfile(event.target.value)}
+          className="mt-2 w-full rounded border border-gold/20 bg-ash p-2 text-sm text-parchment">
+          <option value="">Local files / legacy static source</option>
+          {contentProfiles.map(p => <option value={p.id} key={p.id}>{p.displayName}</option>)}
+        </select>
+        <p className="mt-2 text-xs text-fog" role="status">
+          {contentProfileStatus}
+          {contentProfileId ? ' · SSH is opened only for each individual request.'
+            : useLocalContent ? ' · Local files only, not live SSH.'
+              : ' · Static assets and legacy API; live SSH not selected.'}
+        </p>
+      </div>
       <p className="mb-4 text-xs text-fog">{dataSourceHint}</p>
       {activeContentError && (
         <p role="alert" className="mb-4 rounded border border-ember/40 bg-ember/10 p-3 text-sm text-red-300">
@@ -433,7 +488,7 @@ export function ContentPage() {
               onClose={closeEncounterEditor}
               isSaving={saveEncounter.isPending}
               onUploadImage={
-                useLocalContent
+                useLocalContent && !contentProfileId
                   ? (file) =>
                       uploadEncounterImageFromTitle(
                         encounterDraft.mEncounterTitle.trim() ||
@@ -539,7 +594,7 @@ export function ContentPage() {
                   }
                 />
               </Field>
-              {useLocalContent && (
+              {useLocalContent && !contentProfileId && (
                 <ImageUploadField
                   label="Upload solution icon (.webp)"
                   fileName={solutionDraft.mSolutionIconName}
