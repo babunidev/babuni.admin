@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {RemoteContentImage} from './RemoteContentImage'
 import {
   encounterImageUrl,
   solutionImageUrl,
@@ -14,6 +15,7 @@ import {
 
 interface EncounterDetailPanelProps {
   detail: EncounterDetail
+  profileId?: string
   onClose: () => void
   onEdit?: () => void
 }
@@ -56,16 +58,19 @@ function StatGrid({ items }: { items: { label: string; value: string }[] }) {
 function SolutionCard({
   solution,
   badge,
+  profileId,
 }: {
   solution: SolutionData
   badge: string
+  profileId?: string
 }) {
   const iconSrc = solutionImageUrl(solution.mSolutionIconName)
 
   return (
     <div className="rounded-md border border-gold/15 bg-void/30 p-3">
       <div className="flex gap-3">
-        {iconSrc ? (
+        {profileId ? <RemoteContentImage profileId={profileId} kind="solution" name={solution.mSolutionIconName}
+          className="h-12 w-12 shrink-0 rounded object-cover" /> : iconSrc ? (
           <img
             src={iconSrc}
             alt=""
@@ -159,6 +164,7 @@ function SlotBlock({ slot }: { slot: EncounterSolutionSlotDetail }) {
 
 export function EncounterDetailPanel({
   detail,
+  profileId,
   onClose,
   onEdit,
 }: EncounterDetailPanelProps) {
@@ -221,7 +227,9 @@ export function EncounterDetailPanel({
 
         <div className="scrollbar-thin flex-1 overflow-y-auto px-5 py-5">
           <div className="space-y-6">
-            {imageSrc && (
+            {profileId ? <RemoteContentImage profileId={profileId} kind="encounter"
+              name={encounter.mEncounterImageName}
+              className="max-h-48 w-full rounded-lg border border-gold/15 object-cover" /> : imageSrc && (
               <img
                 src={imageSrc}
                 alt=""
