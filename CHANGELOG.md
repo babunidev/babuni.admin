@@ -6,6 +6,7 @@
 - Displayed the configured source and live-authorization limitation on existing Moderation and Content pages; content fetch failures now show an explicit error instead of an apparently empty catalog.
 - Added regression checks for legacy source fallback and source disclosure.
 - Added a separately opted-in SSH/PostgreSQL moderation connection profile, fixed list/detail and atomic timeout/ban/unban service operations, a profile selector, and failure/cleanup tests. No existing restricted Overview privilege is widened.
+- Separated SELECT-only player inspection from separately gated moderation writes; prepared unapplied SQL for a dedicated read-role. Fixed player list progression levels, source-qualified player details cache, error versus missing-player handling and sample/online-estimate labeling; added full detail and privacy fixtures.
 - Added a separately gated SSH content profile, fixed remote JSON catalog reads, per-profile revision checks and atomic backed-up catalog writes for the five existing Content editors. Image upload through this profile remains unavailable.
 - No production moderation/content credentials, remote filesystem permissions, database migration or game-data mutation were applied in this change; activation and live verification are pending.
 
