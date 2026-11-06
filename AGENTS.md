@@ -1,5 +1,11 @@
 # Babuni Admin — instructions for future human and AI developers
 
+## Privileged Morkahja connection separation (2026-11-06)
+
+The `postgres-ssh-moderation` profile is separate from the restricted `postgres-ssh` Overview. Its private config, OS-keyring credential, enabled environment gate, database privileges and per-operation role check must be independently authorized. Never grant `babuni_admin_probe` raw game tables or write privileges to make moderation work. The moderator adapter permits only fixed player list/detail and timeout/ban/unban operations; preserve row locks, rollback, session revocation, statement limits and SSH cleanup.
+
+The `ssh-content` profile is a separate, opt-in, no-forwarding SSH content transport. Its Python worker may access only the five fixed deployed game JSON catalog files; preserve readback SHA-256 revision requirements, exclusive backups, atomic replacement, schema validation and failure-safe behavior. Remote images are not yet enabled. Do not confuse developer files or static artwork with the deployed server catalog. Never claim user-triggered remote writes succeeded without an observed server response and readback. Both adapters remain disabled by default and require live operator verification before use on actual accounts or published assets.
+
 **Human creative and project authority:** Babuni. The current repository is `babunidev/babuni.admin`, publicly named **Babuni Admin**. `arcanitebrothers` is the historical package/repository name. Browser-tab identity and shared sidebar branding use **Babuni Admin**; **Morkahja** is the game workspace, not the whole admin application.
 
 ## Start with the actual architecture
