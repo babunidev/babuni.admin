@@ -1,5 +1,11 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-06 — One administrator instead of separate read-only and writer accounts
+
+**Decision from the creative:** Babuni Admin is operated by one person. One login/profile should cover Overview, Moderation, and Content. Separate read-only, moderator and content users were explicitly rejected as unnecessary complexity. The earlier split was an AI-proposed safety design, not an approved requirement.
+
+**Implementation:** The `postgres-ssh-moderation` internal adapter remains as a compatibility name but serves as the single Morkahja administrator profile. It shares one profile UUID and database credential with Overview/Content, reuses the approved SSH identity, and permits only fixed moderation and catalog operations. No general SQL command endpoint or unbounded remote filesystem access was introduced. Transactions, backups, host-key pinning and error handling remain protections against accidental errors without additional passwords. The `babuni_admin` PostgreSQL role is prepared but not deployed; server-side tests and remote images remain outstanding.
+
 ## 2026-11-06 — Prioritize existing live administration over more dashboard features
 
 **Creative direction:** Restore live Moderation (player details, timeout, ban and unban) and all existing Content browsing/editing (encounters, solutions, expansions, frames and portraits), without feature expansion.
