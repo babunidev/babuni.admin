@@ -104,7 +104,7 @@ function SolutionCard({
   )
 }
 
-function SlotBlock({ slot }: { slot: EncounterSolutionSlotDetail }) {
+function SlotBlock({ slot, profileId }: { slot: EncounterSolutionSlotDetail; profileId?: string }) {
   const hasRequirement =
     slot.primarySolutionId > 0 || slot.secondarySolutionType > 0
 
@@ -308,7 +308,7 @@ export function EncounterDetailPanel({
               ) : (
                 <div className="space-y-5">
                   {detail.slots.map((slot) => (
-                    <SlotBlock key={slot.slot} slot={slot} />
+                    <SlotBlock key={slot.slot} slot={slot} profileId={profileId} />
                   ))}
                 </div>
               )}
