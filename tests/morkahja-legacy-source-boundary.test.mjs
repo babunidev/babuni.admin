@@ -23,9 +23,9 @@ test('legacy PostgreSQL player detail does not fall back to mock accounts',()=>{
 })
 
 test('privileged pages disclose old data sources rather than impersonating the approved Overview tunnel',()=>{
-  assert.match(players,/Morkahja administrator connection/)
-  assert.match(players,/Last scoped read succeeded/)
-  assert.match(content,/Morkahja administrator connection/)
+  assert.match(players,/activateMorkahjaConnection/)
+  assert.match(players,/Live player data loaded/)
+  assert.match(content,/activateMorkahjaConnection/)
   assert.match(content,/Static assets and legacy API/)
 })
 
