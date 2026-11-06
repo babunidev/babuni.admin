@@ -1,5 +1,14 @@
 # Babuni Admin — Architecture
 
+## Persistent Morkahja image workspace cache
+
+The Morkahja workspace mounts `src/app/MorkahjaImageCacheController.tsx` exactly once while active, triggering a new `POST /local-connections-api/:profileId/content-image-sync` request and polling `GET .../content-image-status` for progress. The local service deduplicates sync attempts and rechecks every ten minutes. Neither tab switching nor ordinary preview rendering opens an SSH connection.
+
+`local-service/morkahjaImageCache.mjs` retains only allowlisted WebP files below the XDG user cache directory (`~/.cache/babuni-admin/morkahja-images/<profile-and-host-hash>/` by default). It validates basename/kind, size and WebP headers before serving. Files and manifest are written atomically with user-private permissions. The signed-off SSH host/key verification is reused from the administrator Content configuration. The one-shot `scripts/morkahja-image-cache-sync.py` worker scans only five fixed deployed image folders, compares size and nanosecond modification time with the saved manifest, sends unchanged records as metadata, and streams updated WebP bytes over the existing SSH session. Cache entries removed from the deployed server are pruned only after a complete scan; partial or failed scans leave previous cached files available. The transfer caps are 2 MiB per image, 50,000 files and 8 GiB of remote images.
+
+`POST .../content-image` returns a local cached WebP as base64; while initial sync is in progress, missing images return `IMAGE_CACHE_PENDING` and the React component retries without opening per-image SSH connections. A bounded 512 MiB browser memory layer speeds repeated tab visits. Successful syncs change the shared generation only after actual downloads or removals, prompting visible thumbnails to update. Live first-fill and changed-file behavior have not yet been checked on the operator's server.
+
+
 ## Administrator image reads
 
 Images use the existing Morkahja administrator profile and the local session-protected `POST /local-connections-api/:id/content-image` operation. The browser sends a fixed category plus a basename, never an arbitrary filesystem path. The SSH worker reads only `.webp` files under the five mapped Morkahja public image directories (`game/encounterimages`, `game/solutionimages`, `UI/03_DASHBOARD/expansions`, `UI/02_AvatarCreation/Frames`, `UI/02_AvatarCreation/Avatare`). A remote Python read opens the selected directory and basename without following symlinks and rejects files larger than 2 MiB. The local service checks a valid WebP header and bounds returned JSON to 3 MiB. No remote changes or new server account are required.
