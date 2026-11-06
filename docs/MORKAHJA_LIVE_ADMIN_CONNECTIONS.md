@@ -42,6 +42,71 @@ The trusted one-shot worker `scripts/morkahja-content-ssh-worker.py` is delivere
 
 **Limitations:** Image uploads, remote image delivery, and game-process cache/reload behavior have not yet been implemented or verified for the SSH content profile. Artwork displayed through separately configured static URLs is not proof that images belong to the deployed catalog revision.
 
+## Reach the live player list — operator workflow
+
+### A. On Nobara: update and identify the actual game database
+
+```bash
+cd /home/babuni/Projects/babuni.admin
+git fetch origin
+git switch feat/morkahja-write-connection-foundation
+git pull --ff-only origin feat/morkahja-write-connection-foundation
+python3 scripts/prepare-morkahja-moderation-config.py
+```
+
+The helper reads the existing private, working Overview connection metadata and prints only its database name and the new login name, not passwords or SSH fingerprints. Keep the database name for the server commands.
+
+### B. On Nobara: review deployed schema and the SELECT-only role SQL
+
+```bash
+scp scripts/morkahja-moderation-schema-preflight.sql \
+  scripts/morkahja-moderation-read-role.sql babuni@babunidev:~/
+```
+
+On the game server, set the database name printed by step A; verify it exists before continuing:
+
+```bash
+DB_NAME='REPLACE_WITH_DB_NAME_FROM_STEP_A'
+sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
+  -f ~/morkahja-moderation-schema-preflight.sql
+```
+
+The preflight reads schema metadata only. **Stop if any required column is MISSING** or if the database is wrong. After independent review and operator approval, apply the new SELECT-only role; the script contains a CREATE ROLE and grants but no UPDATE or DELETE:
+
+```bash
+sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
+  -f ~/morkahja-moderation-read-role.sql
+sudo -u postgres psql -d "$DB_NAME"
+```
+
+In the interactive `psql` prompt, issue `\\password babuni_admin_moderation`, enter a new strong password when prompted, then `\\q`. Never paste the password into chat, shell arguments, the JSON profile, or a repository file. If PostgreSQL is not locally administered by the `postgres` system user, the operator must use the verified database owner login instead; the commands above make no assumption about that user's password.
+
+### C. On Nobara: create private moderator config
+
+```bash
+cd /home/babuni/Projects/babuni.admin
+python3 scripts/prepare-morkahja-moderation-config.py --create
+```
+
+The file `~/.config/babuni-admin/morkahja-moderation.json` is created with mode `0600` and contains the same pinned SSH host, SSH identity and actual database name as Overview, with the separate `babuni_admin_moderation` database login. It does not copy the Overview database password or enable write access. The helper refuses overwriting an existing moderator config.
+
+### D. On Nobara: run and select the new profile
+
+```bash
+cd /home/babuni/Projects/babuni.admin
+npm ci
+npm test
+npm run build
+npm run lint
+BABUNI_MORKAHJA_REMOTE_PROBE=enabled \
+BABUNI_MORKAHJA_REMOTE_MODERATION=enabled \
+npm run dev
+```
+
+Use the local Connections page to create a Morkahja profile of kind **PostgreSQL via SSH (separate moderation profile)**, target the exact same pinned SSH host as Overview, and store the new moderation database password through the UI's OS-keyring credential control. Then open Moderation and select the new profile. Compare the player total with the verified Overview; click one account to inspect avatar details, achievements, unlocks, currencies and encounters. The tool opens an outbound SSH tunnel only for the request and closes it after the snapshot.
+
+Do **not** set `BABUNI_MORKAHJA_MODERATION_WRITES` at this stage. This phase explicitly tests player inspection; timeout/ban/unban are a separately authorized milestone.
+
 ## Acceptance checks before activation
 
 1. Keep the existing read-only Overview working and verify it cannot invoke moderation or content operations.
