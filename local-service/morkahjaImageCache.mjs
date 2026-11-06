@@ -205,15 +205,17 @@ export function createMorkahjaImageCache({
         if(missingFolders.has(key.split('/')[0]) || unavailable.has(key))
           next[key]=meta
       }
+      let removed=0
       for(const key of Object.keys(previous)) {
         if(Object.hasOwn(next,key))continue
+        removed++
         const [kind,name]=key.split('/')
         await unlink(join(folder,kind,name)).catch(()=>{})
       }
       await saveManifest(folder,next)
       status.cached=Object.keys(next).length
       status.updatedAt=new Date().toISOString()
-      status.generation++
+      if(status.downloaded>0||removed>0)status.generation++
       status.phase='ready'
       status.error=missingFolders.size?
         'Some remote image folders were unavailable; existing cached images were kept.':null
