@@ -1,6 +1,6 @@
 export type ProjectId = 'morkahja' | 'babuni-dev'
-export type ConnectionKind = 'local-files' | 'postgres-ssh' | 'postgres-ssh-moderation' | 'github' | 'remote-publish'
-export type Capability = 'local:test' | 'local:inspect' | 'local:connect' | 'ssh:preflight' | 'ssh:probe' | 'ssh:read' | 'ssh:moderation'
+export type ConnectionKind = 'local-files' | 'postgres-ssh' | 'postgres-ssh-moderation' | 'ssh-content' | 'github' | 'remote-publish'
+export type Capability = 'local:test' | 'local:inspect' | 'local:connect' | 'ssh:preflight' | 'ssh:probe' | 'ssh:read' | 'ssh:moderation' | 'ssh:content'
 export interface AdapterSpec {
   projectId: ProjectId
   kind: ConnectionKind
@@ -22,6 +22,10 @@ export const adapterSpecs: Record<ConnectionKind, AdapterSpec> = {
   'postgres-ssh-moderation': {
     projectId: 'morkahja', kind: 'postgres-ssh-moderation', transport: 'local',
     requiresCredential: true, capabilities: ['ssh:preflight','ssh:moderation'],
+  },
+  'ssh-content': {
+    projectId: 'morkahja', kind: 'ssh-content', transport: 'local',
+    requiresCredential: false, capabilities: ['ssh:preflight','ssh:content'],
   },
   github: {
     projectId: 'babuni-dev', kind: 'github', transport: 'planned',
