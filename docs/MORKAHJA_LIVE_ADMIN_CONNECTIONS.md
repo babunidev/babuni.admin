@@ -68,14 +68,14 @@ On the game server, set the database name printed by step A; verify it exists be
 ```bash
 DB_NAME='REPLACE_WITH_DB_NAME_FROM_STEP_A'
 sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
-  -f ~/morkahja-moderation-schema-preflight.sql
+  < "$HOME/morkahja-moderation-schema-preflight.sql"
 ```
 
 The preflight reads schema metadata only. **Stop if any required column is MISSING** or if the database is wrong. After independent review and operator approval, apply the new SELECT-only role; the script contains a CREATE ROLE and grants but no UPDATE or DELETE:
 
 ```bash
 sudo -u postgres psql -d "$DB_NAME" -v ON_ERROR_STOP=1 \
-  -f ~/morkahja-moderation-read-role.sql
+  < "$HOME/morkahja-moderation-read-role.sql"
 sudo -u postgres psql -d "$DB_NAME"
 ```
 
