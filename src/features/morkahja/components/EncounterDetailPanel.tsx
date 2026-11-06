@@ -130,7 +130,7 @@ function SlotBlock({ slot }: { slot: EncounterSolutionSlotDetail }) {
             </span>
           </p>
           {slot.primarySolution ? (
-            <SolutionCard solution={slot.primarySolution} badge="Primary" />
+            <SolutionCard solution={slot.primarySolution} badge="Primary" profileId={profileId} />
           ) : (
             <p className="rounded border border-ember/30 bg-ember/10 px-3 py-2 text-xs text-red-300/90">
               Solution {slot.primarySolutionId} not found in solutiondata.json
@@ -148,6 +148,7 @@ function SlotBlock({ slot }: { slot: EncounterSolutionSlotDetail }) {
           </p>
           {slot.secondaryTypeExample ? (
             <SolutionCard
+              profileId={profileId}
               solution={slot.secondaryTypeExample}
               badge="Type example"
             />
