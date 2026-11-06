@@ -46,6 +46,14 @@ const ROLE_CHECK=[
   ' AS no_schema_create,',
   ' has_column_privilege(current_user,\'public.players\',\'data\',\'UPDATE\') AS can_edit_player,',
   ' has_table_privilege(current_user,\'public.sessions\',\'DELETE\') AS can_revoke_sessions,',
+  ' has_table_privilege(current_user,\'public.players\',\'SELECT\') AS can_read_players,',
+  ' has_table_privilege(current_user,\'public.avatars\',\'SELECT\') AS can_read_avatars,',
+  ' has_table_privilege(current_user,\'public.sessions\',\'SELECT\') AS can_read_sessions,',
+  ' has_table_privilege(current_user,\'public.player_achievements\',\'SELECT\') AS can_read_player_achievements,',
+  ' has_table_privilege(current_user,\'public.game_events\',\'SELECT\') AS can_read_game_events,',
+  ' has_table_privilege(current_user,\'public.progressions\',\'SELECT\') AS can_read_progressions,',
+  ' has_table_privilege(current_user,\'public.inventories\',\'SELECT\') AS can_read_inventories,',
+  ' has_table_privilege(current_user,\'public.active_encounters\',\'SELECT\') AS can_read_active_encounters,',
   ' NOT EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace',
   ' WHERE n.nspname<>\'information_schema\' AND n.nspname NOT LIKE \'pg_%\'',
   ' AND c.relkind IN (\'r\',\'p\',\'v\',\'m\') AND',
@@ -58,9 +66,14 @@ const ROLE_CHECK=[
   ' FROM pg_roles r WHERE r.rolname=current_user',
 ].join('\n')
 
-export async function verifyModerationRole(client,config) {
+export async function verifyModerationRole(client,config,writing=false) {
   const rows=(await client.query(ROLE_CHECK,[config.dbUser,config.dbName])).rows
-  if(rows.length!==1 || !Object.values(rows[0]).every(x=>x===true)) {
+  if(rows.length!==1)throw new Error('DB_MODERATION_ROLE_REJECTED')
+  const {can_edit_player,can_revoke_sessions,...baseline}=rows[0]
+  if(!Object.values(baseline).every(x=>x===true) ||
+    (writing && (can_edit_player!==true || can_revoke_sessions!==true)) ||
+    // A partially privileged role is not a supported state.
+    (can_edit_player!==can_revoke_sessions)) {
     throw new Error('DB_MODERATION_ROLE_REJECTED')
   }
 }
@@ -314,17 +327,19 @@ export async function queryMorkahjaModeration(config,socketDir,password,action,p
     application_name:'babuni-admin-moderation',
     options:'-c default_transaction_read_only=on',
   })
+  const writing=['timeout','ban','unban'].includes(action)
+  if(writing && process.env.BABUNI_MORKAHJA_MODERATION_WRITES!=='enabled')
+    return {ok:false,code:'REMOTE_MODERATION_WRITE_DISABLED'}
   let transaction=false
   try {
     await client.connect()
     // Validate exact permissions without exposing untrusted rows.
     await client.query('BEGIN READ ONLY')
     transaction=true
-    await verifyModerationRole(client,config)
+    await verifyModerationRole(client,config,writing)
     await client.query('ROLLBACK')
     transaction=false
     // The transaction mode is chosen locally, never from browser input.
-    const writing=['timeout','ban','unban'].includes(action)
     await client.query(writing?'BEGIN READ WRITE':'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
     transaction=true
     await client.query('SET LOCAL statement_timeout = \'5s\'')
