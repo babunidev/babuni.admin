@@ -6,7 +6,7 @@
 - Added separate exact `readOnlyMetricFields` approval while preserving existing player-field authorization, SSH lifecycle and no polling.
 - Validate nonnegative safe-integer counts and quality signals; missing or invalid aggregates remain unavailable. Recover expected optional-view SQL failures inside the same read-only snapshot.
 - Extended raw-table boundary rejection to `player_achievements`.
-- Added unit, PostgreSQL recovery and browser display fixtures. Updated a legacy PostgreSQL Overview assertion for four additional nullable fields; all five CI jobs passed in [run 42079244053](https://github.com/babunidev/babuni.admin/actions/runs/42079244053). Live Nobara card rendering remains pending.
+- Added unit, PostgreSQL recovery and browser display fixtures. Updated a legacy PostgreSQL Overview assertion for four additional nullable fields; all five CI jobs passed in [run 42079244053](https://github.com/babunidev/babuni.admin/actions/runs/42079244053). Operator-provided Nobara screenshot on 2026-11-06 confirms live rendering of all four new cards at 75/52/10/6 alongside original counters and player preview; live error-state exercises remain pending.
 - Recorded the operator's separately approved and committed live view, catalog match, aggregate results and permission checks.
 
 
