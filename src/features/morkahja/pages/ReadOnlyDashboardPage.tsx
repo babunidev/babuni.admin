@@ -114,10 +114,6 @@ export function ReadOnlyDashboardPage() {
         ? 'Using the configured Morkahja connection.'
         : 'No configured administrator connection. Open Connection to set one up.')
       setProfileReady(true)
-      setStatus(found ? 'Restoring your selected Morkahja Overview…'
-        : eligible.length > 0
-          ? 'Select a saved SSH profile below to load the overview and players.'
-          : 'No Morkahja PostgreSQL/SSH profile is configured.')
     }).catch(error => {
       if (!mounted) return
       setProfileReady(true)
