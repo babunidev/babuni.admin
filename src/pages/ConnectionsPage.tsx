@@ -34,8 +34,8 @@ const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
   morkahja:[
     {value:'local-files',label:'Local files'},
     {value:'postgres-ssh',label:'PostgreSQL via SSH (restricted Overview)'},
-    {value:'postgres-ssh-moderation',label:'PostgreSQL via SSH (separate moderation profile; operator-gated)'},
-    {value:'ssh-content',label:'Morkahja game content via SSH (operator-gated)'},
+    {value:'postgres-ssh-moderation',label:'Morkahja administrator (Moderation + Content)'},
+    {value:'ssh-content',label:'Legacy separate SSH Content profile'},
   ],
   'babuni-dev':[
     {value:'github',label:'GitHub repository (planned)'},
@@ -83,7 +83,7 @@ export function ConnectionsPage() {
       ])
       setProfiles(data.profiles||[])
       setHealth(service)
-      setStatus('Profiles are stored on this PC. SSH health and approved read-only access are separate from editing.')
+      setStatus('Profiles are stored on this PC. Use one administrator profile for Moderation and Content.')
     } catch(error) {
       setProfiles([])
       setHealth(null)
@@ -147,7 +147,7 @@ export function ConnectionsPage() {
 
   const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
   return <div className="max-w-4xl space-y-6">
-    <PageHeader title="Connections" description="Private connections. Overview, moderation and content use separate operator-owned approval gates; privileged operations are disabled by default."/>
+    <PageHeader title="Connections" description="Private connections. One administrator profile controls Moderation and Content; existing restricted Overview remains available."/>
     <p role="status" className="text-sm text-fog">{status}</p>
     <p className="text-xs text-fog">
       Local service: {health?.service==='available'?'Available (loopback only)':'Not verified'}
@@ -194,7 +194,7 @@ export function ConnectionsPage() {
             <p className="mt-1 text-xs text-fog">Result: {p.code||'NOT_CHECKED'} · Checked: {checkedTime(p.checkedAt)}</p>
             {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last successful check: {checkedTime(p.lastSuccessAt)}</p>}
             {p.kind!=='local-files' && <p className="mt-1 text-xs text-fog">
-              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · No persistent connection; write operations require a separate private opt-in
+              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · No persistent connection; administrative actions use the verified operator profile
             </p>}
             <p className="mt-1 text-xs text-fog">Allowed operations: {p.capabilities?.join(', ')||'None (adapter planned)'}</p>
           </div>
