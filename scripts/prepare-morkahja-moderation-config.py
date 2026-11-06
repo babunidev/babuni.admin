@@ -37,10 +37,10 @@ def safe_read(path):
 
 def prepare(source, destination, create=False):
     data = safe_read(source)
-    if data["enabled"] is not True or data["dbUser"] == "babuni_admin_moderation":
+    if data["enabled"] is not True or data["dbUser"] == "babuni_admin":
         raise ValueError("SOURCE_CONFIG_INVALID")
     output = {key: data[key] for key in REQUIRED}
-    output["dbUser"] = "babuni_admin_moderation"
+    output["dbUser"] = "babuni_admin"
     # No reader field approvals are transferred to the new role.
     if create:
         if not destination.is_absolute() or destination.parent.is_symlink():
