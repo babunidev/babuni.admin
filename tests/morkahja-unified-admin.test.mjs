@@ -20,7 +20,7 @@ test('Overview and Content share Moderation profile key, with legacy Overview co
   const overview=source('src/features/morkahja/pages/ReadOnlyDashboardPage.tsx')
   assert.match(admin,/export const MODERATION_PROFILE_KEY/)
   assert.match(content,/export const CONTENT_PROFILE_KEY = MODERATION_PROFILE_KEY/)
-  assert.match(overview,/const PROFILE_KEY = MODERATION_PROFILE_KEY/)
+  assert.match(overview,/activateMorkahjaConnection/)
   assert.match(overview,/const LEGACY_PROFILE_KEY/)
 })
 
@@ -39,4 +39,17 @@ test('one admin SSH identity serves content without a second config or privilege
   assert.match(config,/return readMorkahjaModerationConfig\(profile,env\)/)
   assert.match(runner,/readMorkahjaModerationConfig/)
   assert.doesNotMatch(moderation,/BABUNI_MORKAHJA_MODERATION_WRITES/)
+})
+
+test('Connection is the only user-facing profile manager',()=>{
+  const connection=source('src/pages/ConnectionsPage.tsx')
+  const players=source('src/features/morkahja/pages/PlayersPage.tsx')
+  const content=source('src/features/morkahja/pages/ContentPage.tsx')
+  const overview=source('src/features/morkahja/pages/ReadOnlyDashboardPage.tsx')
+  assert.match(connection,/PageHeader title="Connection"/)
+  assert.match(connection,/Previous and unused profiles/)
+  assert.match(connection,/Test database read/)
+  assert.doesNotMatch(players,/moderation-profile|Select your Morkahja administrator connection/)
+  assert.doesNotMatch(content,/id="content-profile"/)
+  assert.doesNotMatch(overview,/id="readonly-profile"/)
 })
