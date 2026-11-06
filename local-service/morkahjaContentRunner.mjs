@@ -8,7 +8,11 @@ const KINDS=new Set(['encounters','solutions','expansions','frames','portraits']
 const MAX_REQUEST=128*1024
 const MAX_RESPONSE=10*1024*1024
 let active=false
+const contentChildren=new Set()
 export const isContentActive=()=>active
+export async function stopAllContentSsh() {
+  for(const child of contentChildren)child.kill('SIGKILL')
+}
 
 export function validateContentRequest(request) {
   if(!request || typeof request!=='object' || Array.isArray(request) ||
@@ -69,21 +73,25 @@ export async function runContentSsh(config,request,deps={}) {
     const child=start('ssh',buildContentSshArgs(config),{
       shell:false,stdio:['pipe','pipe','pipe'],env:childEnvironment(),
     })
-    let stdout='',stderr='',overflow=false,timedOut=false,done=false
+    let stdoutBytes=0,stdoutChunks=[],stderr='',overflow=false,timedOut=false,done=false
+    contentChildren.add(child)
     const timer=setTimeout(()=>{timedOut=true;child.kill('SIGKILL')},15000)
     const settle=result=>{
       if(done)return
       done=true
       clearTimeout(timer)
+      contentChildren.delete(child)
       resolve(result)
     }
     child.stdout?.on('data',chunk=>{
       if(overflow)return
-      stdout+=String(chunk)
-      if(Buffer.byteLength(stdout)>MAX_RESPONSE) {
+      const bytes=Buffer.from(chunk)
+      stdoutBytes+=bytes.length
+      if(stdoutBytes>MAX_RESPONSE) {
         overflow=true
+        stdoutChunks=[]
         child.kill('SIGKILL')
-      }
+      } else stdoutChunks.push(bytes)
     })
     child.stderr?.on('data',chunk=>{if(stderr.length<4096)
       stderr=(stderr+String(chunk)).slice(0,4096)})
@@ -94,7 +102,7 @@ export async function runContentSsh(config,request,deps={}) {
       if(code!==0||signal)return settle({
         ok:false,code:classifySshExitDiagnostic(stderr)})
       let parsed
-      try {parsed=JSON.parse(stdout)}catch{return settle({
+      try {parsed=JSON.parse(Buffer.concat(stdoutChunks).toString('utf8'))}catch{return settle({
         ok:false,code:'REMOTE_CONTENT_INVALID_RESPONSE'})}
       const safeCodes=['CONTENT_INVALID_REQUEST','CONTENT_INVALID_RECORD',
         'CONTENT_INVALID_SCHEMA','CONTENT_INVALID_JSON','CONTENT_NOT_FOUND',
@@ -114,7 +122,8 @@ export async function runContentSsh(config,request,deps={}) {
       return settle({ok:true,data:parsed.data,revision:parsed.revision})
     })
     child.stdin?.on('error',()=>{})
-    child.stdin?.end(code)
+    try {child.stdin?.end(code)}
+    catch {child.kill('SIGKILL');settle({ok:false,code:'REMOTE_CONTENT_SSH_FAILED'})}
   })
 }
 
