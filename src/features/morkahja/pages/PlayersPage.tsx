@@ -10,11 +10,11 @@ import { Table, type Column } from '../../../shared/components/Table'
 import { PLAYERS_POLL_MS, useLocalPostgres } from '../../../config/constants'
 import { getApiDisplayLabel } from '../../../config/api'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
 import {
   fetchPlayersWithMeta,
   formatPlayersLoadError,
   getModerationProfileId,
-  MODERATION_PROFILE_KEY,
 } from '../services/adminApi'
 import type { Player } from '../../../types'
 import { formatDateTime, formatRelative } from '../../../shared/utils/format'
@@ -85,7 +85,6 @@ export function PlayersPage() {
   const queryClient = useQueryClient()
   const [profileId, setProfileId] = useState(() => getModerationProfileId() || '')
   const [profilesLoaded, setProfilesLoaded] = useState(false)
-  const [profiles, setProfiles] = useState<{id:string;displayName:string}[]>([])
   const [profileStatus, setProfileStatus] = useState('Checking Morkahja administrator connection…')
 
   useEffect(() => {
@@ -94,17 +93,11 @@ export function PlayersPage() {
       id:string;projectId:string;kind:string;displayName:string
     }[]}>().then(result => {
       if (!mounted) return
-      const available = result.profiles.filter(p =>
-        p.projectId === 'morkahja' && p.kind === 'postgres-ssh-moderation')
-      setProfiles(available)
-      const current = getModerationProfileId()
-      if (current && !available.some(p => p.id === current)) {
-        window.localStorage.removeItem(MODERATION_PROFILE_KEY)
-        setProfileId('')
-      }
-      setProfileStatus(available.length
-        ? 'Select your Morkahja administrator connection to manage accounts.'
-        : 'No Morkahja administrator connection is configured; legacy/demo remains available.')
+      const active = activateMorkahjaConnection(result.profiles)
+      setProfileId(active?.id || '')
+      setProfileStatus(active
+        ? 'Using your Morkahja administrator connection. SSH closes after each request.'
+        : 'Administrator connection unavailable. Configure it in Connection.')
       setProfilesLoaded(true)
     }).catch(() => {
       if (!mounted) return
@@ -113,15 +106,6 @@ export function PlayersPage() {
     })
     return () => {mounted = false}
   }, [])
-
-  function selectProfile(id: string) {
-    if (id) window.localStorage.setItem(MODERATION_PROFILE_KEY, id)
-    else window.localStorage.removeItem(MODERATION_PROFILE_KEY)
-    setProfileId(id)
-    queryClient.removeQueries({ queryKey: ['players'] })
-    queryClient.removeQueries({ queryKey: ['playerDetail'] })
-    navigate('/players')
-  }
 
   const { data, error, isError, isLoading, isFetching } = useQuery({
     queryKey: ['players', profileId || 'legacy'],
@@ -146,31 +130,20 @@ export function PlayersPage() {
       <PageHeader
         title="Moderation"
         description={profileId
-          ? 'Authorized account list from the selected Morkahja moderator profile.'
+          ? 'Live accounts from your Morkahja administrator connection.'
           : useLocalPostgres
             ? 'Legacy PostgreSQL account list — online estimates first.'
             : 'Players from the selected legacy or demo source.'}
 
       />
-      <div className="mb-3 rounded border border-gold/20 bg-slate/40 p-3">
-        <label htmlFor="moderation-profile" className="block text-xs text-fog">
-          Morkahja administrator connection
-        </label>
-        <select id="moderation-profile" value={profileId}
-          onChange={event => selectProfile(event.target.value)}
-          className="mt-2 w-full rounded border border-gold/20 bg-ash p-2 text-sm text-parchment">
-          <option value="">Legacy / demo source (not verified by Connections)</option>
-          {profiles.map(p => <option key={p.id} value={p.id}>{p.displayName}</option>)}
-        </select>
-        <p className="mt-2 text-xs text-fog" role="status">
-          {profileStatus}
-          {profileId
-            ? isError ? ' · Moderation SSH request failed; no mock fallback.'
-              : data ? ' · Last scoped read succeeded; SSH disconnected after snapshot.'
-                : ' · Awaiting scoped database authorization.'
-            : ' · Current source: ' + getApiDisplayLabel()}
-        </p>
-      </div>
+      <p className="mb-3 text-xs text-fog" role="status">
+        {profileStatus}
+        {profileId
+          ? isError ? ' · Database read failed; no mock fallback.'
+            : data ? ' · Live player data loaded.'
+              : ' · Loading player data.'
+          : ' · Current source: ' + getApiDisplayLabel()}
+      </p>
       {(dbError || isError) && (
         <ConnectionBanner
           {...formatPlayersLoadError(
