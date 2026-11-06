@@ -9,6 +9,7 @@ import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { parsePlayerPage } from './morkahjaReadOnly.mjs'
 import { performMorkahjaModeration, isModerationActive } from './morkahjaModerationRunner.mjs'
 import { performMorkahjaContent, isContentActive, stopAllContentSsh } from './morkahjaContentRunner.mjs'
+import { fetchMorkahjaImage } from './morkahjaImages.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -84,7 +85,7 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban|content-read|content-write))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban|content-read|content-write|content-image))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
@@ -185,6 +186,18 @@ const server=createServer(async(req,res)=>{
         detail:'Scoped content operation completed; temporary SSH session closed.',
         checkedAt:report.checkedAt,lastSuccessAt:report.checkedAt,
       })
+      return send(res,200,report)
+    }
+    if (req.method==='POST' && action==='content-image') {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      let request
+      try{request=await body(req,512)}
+      catch{return send(res,400,{error:'INVALID_IMAGE_REQUEST'})}
+      const report=await fetchMorkahjaImage(profile,request)
+      if(!report.ok)return send(res,
+        report.code==='INVALID_IMAGE_REQUEST'?400:
+        ['REMOTE_MODERATION_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:422,
+        {error:report.code})
       return send(res,200,report)
     }
     if (req.method==='GET' && action==='inspect') {
