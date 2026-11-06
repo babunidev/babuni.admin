@@ -8,6 +8,7 @@ import { PlayerModerationActions } from '../components/PlayerModerationActions'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { Table, type Column } from '../../../shared/components/Table'
 import { PLAYERS_POLL_MS, useLocalPostgres } from '../../../config/constants'
+import { getApiDisplayLabel, useMockData } from '../../../config/api'
 import {
   fetchPlayersWithMeta,
   formatPlayersLoadError,
@@ -106,6 +107,15 @@ export function PlayersPage() {
             : 'All players from the server — online listed first.'
         }
       />
+      <p className="mb-3 text-xs text-fog" role="status">
+        Moderation source: {getApiDisplayLabel()}
+        {useLocalPostgres
+          ? ' · Legacy direct database adapter; separate from the restricted Overview connection.'
+          : useMockData
+            ? ' · Sample data only; no live server connection.'
+            : ' · Legacy API; connection must be independently verified.'}
+        {' · '}Live moderation through Connections is not enabled.
+      </p>
       {(dbError || isError) && (
         <ConnectionBanner
           {...formatPlayersLoadError(
