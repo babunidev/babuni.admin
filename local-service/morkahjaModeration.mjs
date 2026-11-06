@@ -286,11 +286,11 @@ export function classifyModerationError(error) {
   if(typeof error?.code==='string' && error.code.startsWith('08'))return 'DB_MODERATION_CONNECTION_LOST'
   return 'DB_MODERATION_FAILED'
 }
-export async function queryMorkahjaModeration(config,socketDir,password,action,payload) {
+export async function queryMorkahjaModeration(config,socketDir,password,action,payload,deps={}) {
   let request
   try { request=validateModerationRequest(action,payload) }
   catch(error) {return {ok:false,code:classifyModerationError(error)}}
-  const client=new pg.Client({
+  const client=(deps.createClient||((options)=>new pg.Client(options)))({
     host:socketDir,port:5432,user:config.dbUser,database:config.dbName,
     password,ssl:false,connectionTimeoutMillis:4500,
     query_timeout:6000,statement_timeout:5000,
@@ -316,6 +316,11 @@ export async function queryMorkahjaModeration(config,socketDir,password,action,p
     if(action==='players')data=await listPlayers(client)
     else if(action==='detail')data=await playerDetail(client,request.playerId)
     else data=await mutate(client,action,request)
+    if(data?.ok===false) {
+      await client.query('ROLLBACK')
+      transaction=false
+      return data
+    }
     await client.query(writing?'COMMIT':'ROLLBACK')
     transaction=false
     return {ok:true,data}
