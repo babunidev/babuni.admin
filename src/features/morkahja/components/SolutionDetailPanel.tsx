@@ -5,9 +5,11 @@ import {
 } from '../../../config/constants'
 import type { EncounterData, EncounterMap, SolutionData } from '../types/gameContent'
 import { ContentDetailPanel } from './ContentDetailPanel'
+import {RemoteContentImage} from './RemoteContentImage'
 
 interface SolutionDetailPanelProps {
   keyId: string
+  profileId?: string
   solution: SolutionData
   encounters: EncounterMap
   onClose: () => void
@@ -15,6 +17,7 @@ interface SolutionDetailPanelProps {
 
 export function SolutionDetailPanel({
   keyId,
+  profileId,
   solution,
   encounters,
   onClose,
@@ -49,6 +52,7 @@ export function SolutionDetailPanel({
       title={solution.mSolutionName}
       subtitle={`Key ${keyId} · ID ${solution.mSolutionID}`}
       imageSrc={solutionImageUrl(solution.mSolutionIconName)}
+      remoteImage={profileId ? {profileId,kind:'solution',name:solution.mSolutionIconName} : undefined}
       imageClassName="mx-auto max-h-32 w-32 rounded-lg border border-gold/15 object-cover"
       textSection={{
         title: 'Description',
@@ -83,7 +87,10 @@ export function SolutionDetailPanel({
                   key={key}
                   className="flex items-center gap-3 rounded-md border border-gold/10 bg-void/30 px-3 py-2 text-sm"
                 >
-                  {src ? (
+                  {profileId ? (
+                    <RemoteContentImage profileId={profileId} kind="encounter" name={encounter.mEncounterImageName}
+                      className="h-10 w-14 shrink-0 rounded object-cover"/>
+                  ) : src ? (
                     <img
                       src={src}
                       alt=""
