@@ -1,5 +1,11 @@
 # Testing Babuni Admin
 
+## 2026-11-06 — Single Morkahja administrator profile
+
+New integration behavior to verify: one saved `postgres-ssh-moderation` profile may invoke restricted-view Overview reads, fixed player list/detail and timeout/ban/unban operations, and fixed five-catalog Content SSH operations. The administrator role must have the exact expected player write privileges and view reads. Existing transaction rollback, backup and SSH cleanup fixtures remain required. The previous extra moderation write environment opt-in was removed by creative direction.
+
+Operator-only acceptance is documented in `docs/MORKAHJA_LIVE_ADMIN_CONNECTIONS.md`. No new server role/password/permissions have been installed, and no live moderation or content mutation has been observed. The existing local Nobara SSH askpass test failure is independent of these changes.
+
 ## 2026-11-06 — Scoped live administration adapters (development branch)
 
 The new `tests/morkahja-moderation.test.mjs` checks separation between Overview and moderation capabilities, strict action/payload validation, atomic update-before-session-revocation, and rollback when session deletion fails. It also checks that an unapproved role cannot begin a write and that the SSH runner neither opens a tunnel without approval nor leaves a failed tunnel open.
