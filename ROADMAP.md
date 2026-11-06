@@ -1,5 +1,18 @@
 # Babuni Admin — Development Roadmap
 
+## Connection consolidation — 2026-11-06
+
+- [x] One **Connection** page and navigation entry for the owner-managed server configuration.
+- [x] Automatic sharing of the existing Morkahja administrator profile in Overview, Moderation and Content; no repeated dropdowns.
+- [x] View stored credential availability, SSH host check, one-shot database read check, server address and last successful connection in Connection.
+- [x] Preserve older profiles without automatically deleting credentials or changing PostgreSQL roles.
+- [x] Verify actual Moderation account list on the operator's desktop: 62 players displayed using the administrator account.
+- [ ] Verify automatic Overview and Content live loads on Nobara after updating.
+- [ ] Verify a disposable test content edit and its backup and game-side reload.
+- [ ] Wire babuni.dev website administration and deployment to the same operator's server setup; this is not yet implemented.
+- [ ] Complete remote image management.
+- [ ] Remove unused legacy APIs and profile kinds after live workflows are confirmed.
+
 ## 2026-11-06 — One owner-managed administrator connection (revised direction)
 
 **Creative decision:** Reject separate read-only, Moderation and Content user accounts. Babuni Admin is a single-operator tool; one administrator profile must run Overview, player management and the five content catalogs with one stored database password and the already approved SSH identity. This replaces the earlier multi-profile proposal below without erasing its development history.
