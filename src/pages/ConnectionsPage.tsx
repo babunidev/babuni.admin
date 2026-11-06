@@ -62,7 +62,22 @@ export function ConnectionsPage() {
     }
   }
   useEffect(()=>{
-    void reload()
+    let mounted=true
+    void Promise.all([
+      api<{profiles:Profile[]}>(),api<Health>('GET','/health'),
+    ]).then(([result,service])=>{
+      if(!mounted)return
+      setProfiles(result.profiles)
+      setHealth(service)
+      activateMorkahjaConnection(result.profiles)
+      setLoaded(true)
+      setStatus('Administrator connection details are managed here.')
+    }).catch(error=>{
+      if(!mounted)return
+      setLoaded(true)
+      setStatus(error instanceof Error?error.message:'LOCAL_SERVICE_UNAVAILABLE')
+    })
+    return ()=>{mounted=false}
   },[])
 
   const adminProfiles=profiles.filter(p=>
