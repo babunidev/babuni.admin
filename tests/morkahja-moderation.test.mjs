@@ -134,3 +134,75 @@ test('moderation runner always closes temporary tunnel after failed query',async
   assert.equal(result.code,'DB_MODERATION_FAILED')
   assert.equal(stopped,true)
 })
+
+test('live player listing maps current progression, active session, avatar count and moderation state',async()=>{
+  const now=Date.now()
+  const accounts=[
+    {id:'online-player',data:{playerName:'Online account',activeAvatarId:'a1',
+      activeSessionId:'sid-1',createdAt:now-200000,lastPlayedAt:now-5000}},
+    {id:'banned-player',data:{playerName:'Banned account',activeAvatarId:'b1',
+      activeSessionId:null,createdAt:now-400000,lastPlayedAt:now-200000,
+      moderation:{banned:true,banReason:'Fixture'}}},
+  ]
+  const avatars=[
+    {id:'a1',player_id:'online-player',data:{name:'Hero',level:2,race:'Elf',role:'Rogue'}},
+    {id:'a2',player_id:'online-player',data:{name:'Alt',level:3}},
+    {id:'b1',player_id:'banned-player',data:{name:'Villain',level:5}},
+  ]
+  const sessions=[{id:'sid-1',player_id:'online-player',data:{expiresAt:now+120000,
+    secretToken:'DO_NOT_EXPOSE'}}]
+  const rows=[{player_id:'online-player',avatar_id:'a1',data:{level:21}}]
+  const fixtureClient={
+    async connect(){},
+    async query(sql) {
+      if(sql.startsWith('SELECT current_user='))return {rows:[{
+        right_user:true,right_db:true,nonprivileged:true,
+        no_database_create:true,no_membership:true,no_schema_create:true,
+        can_edit_player:false,can_revoke_sessions:false,no_extra_write:true,
+        ...Object.fromEntries(['players','avatars','sessions','player_achievements',
+          'game_events','progressions','inventories','active_encounters'].map(
+          name=>['can_read_'+name,true])),
+      }]}
+      if(sql.startsWith('SELECT id,data FROM public.players ORDER'))return {rows:accounts}
+      if(sql.startsWith('SELECT id,player_id,data FROM public.avatars'))return {rows:avatars}
+      if(sql.startsWith('SELECT player_id,avatar_id,data FROM public.progressions'))return {rows}
+      if(sql.startsWith('SELECT id,player_id,data FROM public.sessions'))return {rows:sessions}
+      return {rows:[]}
+    },
+    async end(){},
+  }
+  const result=await queryMorkahjaModeration(config,'/socket','fixture','players',
+    {},{createClient:()=>fixtureClient,writeEnabled:'disabled'})
+  assert.equal(result.ok,true)
+  assert.equal(result.data.length,2)
+  const online=result.data.find(p=>p.id==='online-player')
+  const banned=result.data.find(p=>p.id==='banned-player')
+  assert.equal(online.name,'Online account')
+  assert.equal(online.level,21)
+  assert.equal(online.activeAvatar,'Hero')
+  assert.equal(online.avatarCount,2)
+  assert.equal(online.status,'online')
+  assert.equal(banned.status,'banned')
+  assert.equal(banned.banReason,'Fixture')
+  assert.doesNotMatch(JSON.stringify(result.data),/DO_NOT_EXPOSE|sid-1/)
+})
+test('missing player detail returns not-found rather than invalid data or mock profile',async()=>{
+  const fixtureClient={
+    async connect(){},
+    async query(sql) {
+      if(sql.startsWith('SELECT current_user='))return {rows:[{
+        right_user:true,right_db:true,nonprivileged:true,
+        no_database_create:true,no_membership:true,no_schema_create:true,
+        can_edit_player:false,can_revoke_sessions:false,no_extra_write:true,
+        ...Object.fromEntries(['players','avatars','sessions','player_achievements',
+          'game_events','progressions','inventories','active_encounters'].map(
+          name=>['can_read_'+name,true])),
+      }]}
+      return {rows:[]}
+    },
+    async end(){},
+  }
+  const result=await queryMorkahjaModeration(config,'/socket','fixture','detail',
+    {playerId:'missing-player'},{createClient:()=>fixtureClient,writeEnabled:'disabled'})
+  assert.deepEqual(result,{ok:true,data:null})
+})
