@@ -9,7 +9,7 @@ import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { parsePlayerPage } from './morkahjaReadOnly.mjs'
 import { performMorkahjaModeration, isModerationActive } from './morkahjaModerationRunner.mjs'
 import { performMorkahjaContent, isContentActive, stopAllContentSsh } from './morkahjaContentRunner.mjs'
-import { fetchMorkahjaImage } from './morkahjaImages.mjs'
+import { morkahjaImageCache } from './morkahjaImageCache.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -85,7 +85,7 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban|content-read|content-write|content-image))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban|content-read|content-write|content-image|content-image-sync|content-image-status))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
@@ -188,12 +188,22 @@ const server=createServer(async(req,res)=>{
       })
       return send(res,200,report)
     }
+    if(req.method==='POST' && action==='content-image-sync') {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      return send(res,200,{ok:true,...morkahjaImageCache.ensureSync(profile)})
+    }
+    if(req.method==='GET' && action==='content-image-status') {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      return send(res,200,{ok:true,...morkahjaImageCache.status(profile)})
+    }
     if (req.method==='POST' && action==='content-image') {
       if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
       let request
       try{request=await body(req,512)}
       catch{return send(res,400,{error:'INVALID_IMAGE_REQUEST'})}
-      const report=await fetchMorkahjaImage(profile,request)
+      const report=await morkahjaImageCache.readCached(profile,request)
+      if(!report.ok && report.code==='IMAGE_UNAVAILABLE' &&
+        morkahjaImageCache.status(profile).phase==='idle')morkahjaImageCache.ensureSync(profile)
       if(!report.ok)return send(res,
         report.code==='INVALID_IMAGE_REQUEST'?400:
         ['REMOTE_MODERATION_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:422,
@@ -231,6 +241,6 @@ const server=createServer(async(req,res)=>{
 })
 server.on('error',error=>{console.error('Local service could not bind to loopback:',error.code||error.message);process.exitCode=1})
 server.listen(PORT,'127.0.0.1',()=>console.log('Local profile service ready on loopback (remote probe disabled by default).'))
-const close=()=>{void Promise.allSettled([stopAllSshTunnels(),stopAllContentSsh()]).finally(()=>server.close(()=>process.exit(0)))}
+const close=()=>{void Promise.allSettled([stopAllSshTunnels(),stopAllContentSsh(),morkahjaImageCache.stop()]).finally(()=>server.close(()=>process.exit(0)))}
 process.on('SIGTERM',close)
 process.on('SIGINT',close)
