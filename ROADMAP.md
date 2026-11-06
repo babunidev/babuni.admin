@@ -1,5 +1,14 @@
 # Babuni Admin — Development Roadmap
 
+## Morkahja remote image delivery — 2026-11-06
+
+- [x] Implement an authenticated image read through the existing administrator SSH configuration, no domain/DNS setup.
+- [x] Restrict requests to five mapped game asset directories and bounded WebP basenames.
+- [x] Wire lazy images to encounters, solutions, expansions, frames, portraits and detail views.
+- [ ] Verify actual image display on Nobara using the live server; fix any naming/path discrepancies found.
+- [ ] Implement remote image upload, revision checks, backup and atomic replacement separately.
+
+
 ## Connection consolidation — 2026-11-06
 
 - [x] One **Connection** page and navigation entry for the owner-managed server configuration.
