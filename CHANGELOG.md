@@ -3,7 +3,7 @@
 ## 2026-11-06 — Make legacy moderation/content connections explicit
 
 - Removed silent sample-player and mock-player-detail fallbacks after direct PostgreSQL read failures; errors now remain errors.
-- Displayed the configured source and live-authorization limitation on existing Moderation and Content pages.
+- Displayed the configured source and live-authorization limitation on existing Moderation and Content pages; content fetch failures now show an explicit error instead of an apparently empty catalog.
 - Added regression checks for legacy source fallback and source disclosure.
 - No live moderation or content-write path, remote privilege, database migration or game-data mutation was added in this change.
 
