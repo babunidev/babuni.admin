@@ -11,15 +11,12 @@ import { imageFileToWebpBase64 } from '../utils/imageFileToWebpBase64'
 import { apiPost } from '../../../services/http'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 
-export const CONTENT_PROFILE_KEY = 'babuni-admin:morkahja:content-profile'
-const contentRevisions = new Map<string, string>()
+import { MODERATION_PROFILE_KEY, getModerationProfileId } from './adminApi'
 
-export function getContentProfileId(): string | null {
-  try {
-    const value = window.localStorage.getItem(CONTENT_PROFILE_KEY)
-    return value && /^[0-9a-f-]{36}$/i.test(value) ? value : null
-  } catch { return null }
-}
+// One selected administrator profile is shared across Moderation and Content.
+export const CONTENT_PROFILE_KEY = MODERATION_PROFILE_KEY
+const contentRevisions = new Map<string, string>()
+export const getContentProfileId = getModerationProfileId
 
 async function remoteRead<T>(kind: string): Promise<T> {
   const id = getContentProfileId()
