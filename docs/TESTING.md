@@ -6,6 +6,8 @@ The new `tests/morkahja-moderation.test.mjs` checks separation between Overview 
 
 `tests/morkahja-content-ssh.test.mjs` executes the production Python worker logic against disposable local JSON, checking an actual read, one backed-up atomic write, revised SHA-256, a stale-revision rejection and an invalid key. It tests that the Content capability is absent from Overview and moderator profiles and that disabled content config never launches SSH.
 
+Further synthetic read fixtures check the account list's current progression levels, session-based status, avatar counts, and the detail panel's achievements, unlocks, currencies, avatar progression and encounter events. They also verify that private session tokens do not reach the UI, missing accounts do not become mock records, and writes are refused unless independently enabled.
+
 These tests do not create production roles or write to live Morkahja. The local private moderation/content configurations, approved database role grants, server-file write ownership, current contents of every deployed catalog, image paths and live UI behavior are pending operator verification. Never set either remote-write opt-in merely because Overview works; never treat fixture success as deployment approval.
 
 ## 2026-11-05 — Batch A deployed; local Overview integration
