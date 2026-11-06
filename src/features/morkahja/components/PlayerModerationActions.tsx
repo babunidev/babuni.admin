@@ -75,7 +75,7 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {player.status === 'online' && player.isOnline && (
+      {player.status !== 'banned' && (
         <>
           <button
             type="button"
