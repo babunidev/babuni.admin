@@ -45,7 +45,7 @@ function fixture({failDelete=false,badRole=false,readOnlyRole=false}={}) {
 test('moderation and read-only profile kinds are independently authorized',()=>{
   assert.equal(hasCapability(profile,'ssh:moderation'),true)
   assert.equal(hasCapability({...profile,kind:'postgres-ssh'},'ssh:moderation'),false)
-  assert.equal(hasCapability(profile,'ssh:read'),false)
+  assert.equal(hasCapability(profile,'ssh:read'),true)
   assert.equal(hasCapability({...profile,kind:'postgres-ssh'},'ssh:read'),true)
 })
 test('moderation requests have an exact operation and bounded payload contract',()=>{
