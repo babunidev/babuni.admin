@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-06 — Connecting the missing pictures
+
+Content records finally loaded from my server, but their images were absent. Local checks confirmed that the files exist under `/var/www/morkahja` and can be read using the already configured SSH account; the earlier proposed public hostname did not resolve. Rather than introducing another connection, AI added a small image reader to the existing administrator SSH workflow and updated the image views to request only visible pictures. The change is committed and covered by automated tests, but real-server image display still needs checking before I call it finished.
+
+
 ## 2026-11-06 — Content connection error
 
 After the Overview loaded real statistics through the single administrator profile, the Content page instead returned `REMOTE_CONTENT_FAILED`. Inspection revealed an AI implementation mistake: the unified Content configuration called a helper without importing it. AI corrected the import and added a regression check. The actual remote catalog has not been verified yet.
