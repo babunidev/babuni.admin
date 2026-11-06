@@ -141,6 +141,12 @@ export function ContentPage() {
     enabled: activeTab === 'portraits' || detailKind === 'portraits',
   })
 
+  const activeContentError =
+    activeTab === 'encounters' ? encountersQuery.error :
+    activeTab === 'solutions' ? solutionsQuery.error :
+    activeTab === 'expansions' ? expansionsQuery.error :
+    activeTab === 'frames' ? framesQuery.error : portraitsQuery.error
+
   const encounterRows = useMemo(() => {
     const map = encountersQuery.data ?? {}
     return Object.entries(map)
@@ -338,6 +344,12 @@ export function ContentPage() {
           : 'Static game assets / legacy remote API · live read/write connection not verified'}
       </p>
       <p className="mb-4 text-xs text-fog">{dataSourceHint}</p>
+      {activeContentError && (
+        <p role="alert" className="mb-4 rounded border border-ember/40 bg-ember/10 p-3 text-sm text-red-300">
+          Content could not be loaded from the configured source. No fallback data is shown.
+          {' · '}{activeContentError instanceof Error ? activeContentError.message : 'CONTENT_READ_FAILED'}
+        </p>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {tabs.map((item) => (
