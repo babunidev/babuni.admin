@@ -115,9 +115,9 @@ export function ReadOnlyDashboardPage() {
       const remembered = savedProfile()
       const found = eligible.some(profile => profile.id === remembered)
       if (remembered && !found && !owned.length) persistProfile('',true)
-      const chosen = found ? remembered : owned[0]?.id || ''
-      if (owned.length && chosen) persistProfile(chosen)
-      setProfileId(chosen)
+      // A saved choice restores automatically. Merely creating a profile
+      // must not authorize an unrequested remote read.
+      setProfileId(found ? remembered : '')
       setProfileReady(true)
       setStatus(found ? 'Restoring your selected Morkahja Overview…'
         : eligible.length > 0
