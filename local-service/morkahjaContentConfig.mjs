@@ -23,6 +23,12 @@ async function privateFile(path,limit=4096) {
 }
 
 export async function readMorkahjaContentConfig(profile,env=process.env) {
+  // One administrator profile carries the approved SSH identity for both
+  // database moderation and catalog operations, with no second content login.
+  if(profile?.projectId==='morkahja' &&
+      profile?.kind==='postgres-ssh-moderation') {
+    return readMorkahjaModerationConfig(profile,env)
+  }
   if(profile?.projectId!=='morkahja' || profile?.kind!=='ssh-content'||
     !validSshHostname(profile.target))return fail('REMOTE_SCOPE_DENIED')
   if(env.BABUNI_MORKAHJA_REMOTE_CONTENT!=='enabled')return fail('REMOTE_CONTENT_DISABLED')
