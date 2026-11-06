@@ -124,7 +124,7 @@ export function PlayersPage() {
   }
 
   const { data, error, isError, isLoading, isFetching } = useQuery({
-    queryKey: ['players', profileId],
+    queryKey: ['players', profileId || 'legacy'],
     queryFn: fetchPlayersWithMeta,
     enabled: profilesLoaded,
     refetchInterval: (query) =>
@@ -139,17 +139,18 @@ export function PlayersPage() {
 
   const onlineCount = countOnlinePlayers(players)
   const dbError = data?.dbError
-  const showingSampleData = Boolean(data?.isSample && dbError)
+  const showingSampleData = Boolean(data?.isSample)
 
   return (
     <div>
       <PageHeader
         title="Moderation"
-        description={
-          useLocalPostgres
-            ? 'All accounts from PostgreSQL — online players listed first.'
-            : 'All players from the server — online listed first.'
-        }
+        description={profileId
+          ? 'Authorized account list from the selected Morkahja moderator profile.'
+          : useLocalPostgres
+            ? 'Legacy PostgreSQL account list — online estimates first.'
+            : 'Players from the selected legacy or demo source.'}
+
       />
       <div className="mb-3 rounded border border-gold/20 bg-slate/40 p-3">
         <label htmlFor="moderation-profile" className="block text-xs text-fog">
@@ -179,8 +180,8 @@ export function PlayersPage() {
       )}
       {showingSampleData && (
         <ConnectionBanner
-          title="Showing sample players only"
-          message="Connect PostgreSQL (SSH tunnel below) to load real accounts. Moderation actions on sample rows do not affect your database."
+          title="Sample players — not live Morkahja accounts"
+          message="These records are local demonstration data. No live database read or moderation action is implied."
         />
       )}
       <p className="mb-4 text-xs text-fog">
@@ -188,10 +189,11 @@ export function PlayersPage() {
           ? 'Loading players…'
           : isFetching && !isLoading
             ? 'Refreshing…'
-            : `${onlineCount} online · ${players.length} total${data?.isSample ? ' (sample)' : ''}`}
+            : isError ? 'Player list unavailable — no fallback data' :
+              `${onlineCount} accounts with valid sessions (estimate) · ${players.length} total${data?.isSample ? ' (sample)' : ''}`}
       </p>
       <p className="mb-2 text-xs text-fog/80">
-        Click a row to view avatars, achievements, unlocks, and encounter history.
+        Session-based online status is an estimate, not a verified presence heartbeat. Click a row for avatars, achievements, unlocks and encounter history.
       </p>
       <Table
         columns={columns}
