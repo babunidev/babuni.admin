@@ -1,5 +1,15 @@
 # Babuni Admin — Changelog
 
+## 2026-11-06 — One Connection interface
+
+- Renamed the global navigation entry and page from Connections to **Connection**.
+- Reused the configured owner administrator identity automatically in Morkahja Overview, Moderation and Content; removed their separate profile dropdowns.
+- Displayed live-server metadata, keyring credential status, last activity, SSH host checking, database read checking and server metadata editing in Connection.
+- Kept older profiles in collapsed migration details without deleting credentials or server configuration.
+- Prevented the legacy mock API indicator from appearing as a live connection status when an administrator profile is configured.
+- Stopped Content queries from loading the local/static source before connection lookup resolves.
+- Live Moderation player listing was verified by the creative (62 accounts). Other live writes and website publishing remain unverified.
+
 ## 2026-11-06 — Unify Morkahja administration under one operator identity
 
 - Consolidated Overview, Moderation and Content onto one selectable administrator profile and one stored database credential, sharing the existing pinned SSH identity.
