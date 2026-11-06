@@ -3,7 +3,7 @@ import { PageHeader } from '../shared/components/PageHeader'
 import { localConnectionApi as api } from '../shared/services/localConnectionClient'
 
 type ProjectId = 'morkahja' | 'babuni-dev'
-type Kind = 'local-files' | 'postgres-ssh' | 'postgres-ssh-moderation' | 'github' | 'remote-publish'
+type Kind = 'local-files' | 'postgres-ssh' | 'postgres-ssh-moderation' | 'ssh-content' | 'github' | 'remote-publish'
 type ProfileState = 'not-configured' | 'available' | 'connected' | 'disconnected' | 'degraded' | 'error'
 type CredentialState = 'not-required' | 'stored' | 'missing' | 'locked' | 'unavailable'
 interface ContentReport {
@@ -35,6 +35,7 @@ const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
     {value:'local-files',label:'Local files'},
     {value:'postgres-ssh',label:'PostgreSQL via SSH (restricted Overview)'},
     {value:'postgres-ssh-moderation',label:'PostgreSQL via SSH (separate moderation profile; operator-gated)'},
+    {value:'ssh-content',label:'Morkahja game content via SSH (operator-gated)'},
   ],
   'babuni-dev':[
     {value:'github',label:'GitHub repository (planned)'},
