@@ -1,5 +1,13 @@
 # Testing Babuni Admin
 
+## 2026-11-06 — Scoped live administration adapters (development branch)
+
+The new `tests/morkahja-moderation.test.mjs` checks separation between Overview and moderation capabilities, strict action/payload validation, atomic update-before-session-revocation, and rollback when session deletion fails. It also checks that an unapproved role cannot begin a write and that the SSH runner neither opens a tunnel without approval nor leaves a failed tunnel open.
+
+`tests/morkahja-content-ssh.test.mjs` executes the production Python worker logic against disposable local JSON, checking an actual read, one backed-up atomic write, revised SHA-256, a stale-revision rejection and an invalid key. It tests that the Content capability is absent from Overview and moderator profiles and that disabled content config never launches SSH.
+
+These tests do not create production roles or write to live Morkahja. The local private moderation/content configurations, approved database role grants, server-file write ownership, current contents of every deployed catalog, image paths and live UI behavior are pending operator verification. Never set either remote-write opt-in merely because Overview works; never treat fixture success as deployment approval.
+
 ## 2026-11-05 — Batch A deployed; local Overview integration
 
 The operator verified the catalog belonging to the running backend: IDs `1001,1002,1003,1004`, with `1002` inactive, and `CATALOG_MATCH`. After explicit approval, the operator applied the reviewed SQL from commit `8d42562`; PostgreSQL reported `COMMIT`.
