@@ -97,7 +97,7 @@ export function ContentPage() {
   const queryClient = useQueryClient()
   const [contentProfileId, setContentProfileId] = useState(() => getContentProfileId() || '')
   const [contentProfiles, setContentProfiles] = useState<{id:string;displayName:string}[]>([])
-  const [contentProfileStatus, setContentProfileStatus] = useState('Checking authorized content profiles…')
+  const [contentProfileStatus, setContentProfileStatus] = useState('Checking Morkahja administrator connection…')
 
   useEffect(() => {
     let mounted = true
@@ -106,7 +106,7 @@ export function ContentPage() {
     }[]}>().then(result => {
       if (!mounted) return
       const options = result.profiles.filter(p =>
-        p.projectId === 'morkahja' && p.kind === 'ssh-content')
+        p.projectId === 'morkahja' && p.kind === 'postgres-ssh-moderation')
       setContentProfiles(options)
       const stored = getContentProfileId()
       if (stored && !options.some(p => p.id === stored)) {
@@ -114,8 +114,8 @@ export function ContentPage() {
         setContentProfileId('')
       }
       setContentProfileStatus(options.length
-        ? 'Choose a separately authorized SSH content profile. Writes require a matching catalog revision.'
-        : 'No SSH content profile is configured; legacy/local content mode is available.')
+        ? 'Use the saved Morkahja administrator connection for content. Edits retain catalog revision checks and backups.'
+        : 'No Morkahja administrator connection configured; legacy/local content mode is available.')
     }).catch(() => {
       if (mounted) setContentProfileStatus('Connection service unavailable; live content access not verified.')
     })
@@ -374,7 +374,7 @@ export function ContentPage() {
   })
 
   const dataSourceHint = contentProfileId
-    ? 'Approved remote catalog via SSH · /var/www/morkahja/game · images still use separately configured asset URLs'
+    ? 'Administrator catalog via SSH · /var/www/morkahja/game · images still use separately configured asset URLs'
     : useLocalContent
     ? `Local files: MorkahjaWebApp/client/public/game + /UI (saves go to disk)`
     : gameDataBaseUrl
@@ -389,7 +389,7 @@ export function ContentPage() {
       />
       <div className="mb-3 rounded border border-gold/20 bg-slate/40 p-3">
         <label htmlFor="content-profile" className="block text-xs text-fog">
-          Live content connection (separately authorized)
+          Morkahja administrator connection
         </label>
         <select id="content-profile" value={contentProfileId}
           onChange={event => selectContentProfile(event.target.value)}
