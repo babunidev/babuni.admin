@@ -110,7 +110,7 @@ export function ContentPage() {
       setContentProfiles(options)
       const stored = getContentProfileId()
       if (stored && !options.some(p => p.id === stored)) {
-        try {window.localStorage.removeItem(CONTENT_PROFILE_KEY)} catch {}
+        try {window.localStorage.removeItem(CONTENT_PROFILE_KEY)} catch { /* Private mode may disable storage. */ }
         setContentProfileId('')
       }
       setContentProfileStatus(options.length
