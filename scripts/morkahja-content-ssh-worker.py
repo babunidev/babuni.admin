@@ -139,7 +139,8 @@ def replace_with_backup(root, target, source_info, old_raw, new_raw):
         fd, temp_path = tempfile.mkstemp(prefix=".babuni-content-", dir=root)
         try:
             os.fchmod(fd, stat.S_IMODE(source_info.st_mode))
-            os.fchown(fd, source_info.st_uid, source_info.st_gid)
+            if os.fstat(fd).st_gid != source_info.st_gid:
+                os.fchown(fd, -1, source_info.st_gid)
             with os.fdopen(fd, "wb", closefd=False) as handle:
                 handle.write(new_raw)
                 handle.flush()
