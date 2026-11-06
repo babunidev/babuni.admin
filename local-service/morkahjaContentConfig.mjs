@@ -9,12 +9,16 @@ const fingerprint=/^SHA256:[A-Za-z0-9+/]{43}$/
 const sshUser=/^[a-z_][a-z0-9_-]{0,31}$/
 const fields=['enabled','host','sshUser','sshPort','sshIdentityFile','approvedHostKeyFingerprint']
 
-async function privateFile(path,limit=4096) {
+async function privateStat(path,limit=4096) {
   if(!isAbsolute(path))throw new Error('CONFIG_UNSAFE')
   const stat=await lstat(path)
   if(!stat.isFile()||stat.isSymbolicLink()||stat.size>limit||
     (typeof process.getuid==='function' && stat.uid!==process.getuid())||
     (stat.mode & 0o077)!==0)throw new Error('CONFIG_UNSAFE')
+  return stat
+}
+async function privateFile(path,limit=4096) {
+  await privateStat(path,limit)
   return readFile(path,'utf8')
 }
 
@@ -39,7 +43,7 @@ export async function readMorkahjaContentConfig(profile,env=process.env) {
     !fingerprint.test(config.approvedHostKeyFingerprint)) {
     return fail('REMOTE_CONTENT_CONFIG_INVALID')
   }
-  try {await privateFile(config.sshIdentityFile,65536)}
+  try {await privateStat(config.sshIdentityFile,65536)}
   catch {return fail('SSH_IDENTITY_UNSAFE')}
   const preflight=await preflightSshHost(profile)
   if(preflight.code!=='SSH_HOST_KEY_PINNED_OFFLINE')return fail(preflight.code)
