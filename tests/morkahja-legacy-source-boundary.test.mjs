@@ -28,3 +28,9 @@ test('privileged pages disclose old data sources rather than impersonating the a
   assert.match(content,/Content source:/)
   assert.match(content,/not a verified live-server connection/)
 })
+
+test('content page reports source errors rather than silently treating them as empty content',()=>{
+  assert.match(content,/activeContentError/)
+  assert.match(content,/No fallback data is shown/)
+  assert.match(content,/role="alert"/)
+})
