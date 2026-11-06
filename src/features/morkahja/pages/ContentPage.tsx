@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
+import { useMorkahjaImageCacheStatus } from '../../../shared/services/morkahjaImageCacheStatus'
 import { ContentDetailPanel } from '../components/ContentDetailPanel'
 import { RemoteContentImage } from '../components/RemoteContentImage'
 import {
@@ -96,6 +97,7 @@ export function ContentPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  const imageCache=useMorkahjaImageCacheStatus()
   const [contentProfileId, setContentProfileId] = useState(() => getContentProfileId() || '')
   const [contentProfileStatus, setContentProfileStatus] = useState('Checking Morkahja administrator connection…')
   const [connectionReady,setConnectionReady] = useState(false)
@@ -387,6 +389,15 @@ export function ContentPage() {
         {activeContentError ? 'Last remote catalog read failed; no fallback content used.'
           : activeContentLoaded ? 'Last remote catalog read succeeded; SSH session closed.'
             : 'Awaiting approved remote catalog read.'}
+      </p>}
+      {contentProfileId && <p className="mb-3 text-xs text-fog" role="status">
+        {imageCache.phase==='syncing'
+          ? `Images: syncing the whole workspace · ${imageCache.verified} checked, ${imageCache.downloaded} updated · existing local files remain available.`
+          : imageCache.phase==='ready'
+            ? `Images: ${imageCache.cached} stored on this computer · updated files are refreshed automatically.`
+            : imageCache.phase==='failed'
+              ? `Image sync unavailable (${imageCache.error || 'unknown error'}); locally cached images remain available.`
+              : 'Images: preparing persistent local cache.'}
       </p>}
       {activeContentError && (
         <p role="alert" className="mb-4 rounded border border-ember/40 bg-ember/10 p-3 text-sm text-red-300">
