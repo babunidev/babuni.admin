@@ -104,14 +104,19 @@ export function ReadOnlyDashboardPage() {
     let mounted = true
     void localConnectionApi<{profiles: ConnectionOption[]}>().then(result => {
       if (!mounted) return
-      const eligible = result.profiles.filter(profile =>
-        profile.projectId === 'morkahja' && ['postgres-ssh-moderation','postgres-ssh'].includes(profile.kind))
-      eligible.sort((a,b) => Number(b.kind==='postgres-ssh-moderation') - Number(a.kind==='postgres-ssh-moderation'))
+      const owned = result.profiles.filter(profile =>
+        profile.projectId === 'morkahja' && profile.kind === 'postgres-ssh-moderation')
+      // An available administrator profile replaces the old Overview-only
+      // selector. Legacy profiles remain usable until the owner migrates.
+      const eligible = owned.length ? owned : result.profiles.filter(profile =>
+        profile.projectId === 'morkahja' && profile.kind === 'postgres-ssh')
       setProfiles(eligible)
       const remembered = savedProfile()
       const found = eligible.some(profile => profile.id === remembered)
-      if (remembered && !found) persistProfile('')
-      setProfileId(found ? remembered : eligible.find(profile=>profile.kind==='postgres-ssh-moderation')?.id || '')
+      if (remembered && !found && !owned.length) persistProfile('')
+      const chosen = found ? remembered : owned[0]?.id || ''
+      if (owned.length && chosen) persistProfile(chosen)
+      setProfileId(chosen)
       setProfileReady(true)
       setStatus(found ? 'Restoring your selected Morkahja Overview…'
         : eligible.length > 0
