@@ -1,5 +1,11 @@
 # Babuni Admin — Architecture
 
+## Privileged Morkahja workflow migration — 2026-11-06
+
+The existing working Overview is a **restricted read-only** SSH/PostgreSQL path and must not become a general administration identity. Audit confirmed that Moderation still uses `vite/localAdminPlugin.ts` with the separately configured `DATABASE_URL`, and Content still uses `vite/localContentPlugin.ts` for local files or older API routes. Successful Overview reads do not mean these paths are connected to or authorized for the live game server.
+
+The first migration commit removes silent mock/alternate API fallbacks from the legacy direct-PostgreSQL player-list and player-detail paths, and labels Moderation and Content with their actual configured source. It does **not** connect them to the secure connection manager, grant live write access, or establish remote publish success. For the next increment, design separate operator-owned moderation and content permissions, fixed operations and source checks, reversible writes, explicit data/read-versus-write status, and cleanup before exposing live mutations. Do not copy `babuni_admin_probe` or its restricted view grants into a writer identity.
+
 ## Batch A restricted metrics (2026-11-05)
 
 The operator deployed `babuni_admin_ro.progression_ownership_totals` after explicit approval and a matching deployed catalog check. The owner-rights security-barrier view remains owned by `morkahjadbadmin`; the probe has SELECT on the aggregate view and no raw player/achievement table access.
