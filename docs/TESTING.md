@@ -1,5 +1,10 @@
 # Testing Babuni Admin
 
+## Remote game images — 2026-11-06
+
+The image route rejects non-WebP, traversal, unknown folder kinds and unexpected fields before making an SSH request. Tests check same-profile configuration reuse, strict host-key arguments, bounded file reads and a session-protected, capability-checked POST route. The browser uses lazy images with limited concurrency. Live verification still required: confirm one encounter image, a solution icon, an expansion image, a frame and a portrait from the real `/var/www/morkahja` deployment; check missing-file placeholders. No remote image uploads are supported.
+
+
 ## Single Connection UI checks — 2026-11-06
 
 - Verify browser Connection page shows the unique administrator host and keyring state, supports host preflight and a one-shot database read check, and edits the existing profile without altering credentials.
