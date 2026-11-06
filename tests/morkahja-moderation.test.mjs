@@ -108,12 +108,12 @@ test('read-only moderator role can list accounts without mutation privileges',as
   assert.equal(f.queries.some(q=>q.sql.startsWith('DELETE')),false)
   assert.equal(f.ended(),true)
 })
-test('modification is refused before opening a database client unless explicitly enabled',async()=>{
-  let attempted=false
+test('one administrator login can perform fixed writes once its scoped role is verified',async()=>{
+  const f=fixture()
   const result=await queryMorkahjaModeration(config,'/socket','fixture','ban',
-    {playerId:'test-player'},{createClient:()=>{attempted=true},writeEnabled:'disabled'})
-  assert.deepEqual(result,{ok:false,code:'REMOTE_MODERATION_WRITE_DISABLED'})
-  assert.equal(attempted,false)
+    {playerId:'test-player'},{createClient:()=>f.client})
+  assert.equal(result.ok,true)
+  assert.ok(f.queries.some(q=>q.sql==='BEGIN READ WRITE'))
 })
 test('moderation runner refuses disabled config without opening a tunnel',async()=>{
   let opened=false
@@ -284,11 +284,12 @@ test('player detail returns avatars, achievements, currency, unlocks and encount
   assert.doesNotMatch(JSON.stringify(d),/private-session-id|never-send-to-ui/)
 })
 
-test('prepared inspection role grants only SELECT and has no password in source',()=>{
-  const sql=readFileSync('scripts/morkahja-moderation-read-role.sql','utf8')
-  assert.match(sql,/CREATE ROLE babuni_admin_moderation[\s\S]*PASSWORD NULL;/)
-  assert.match(sql,/GRANT SELECT ON TABLE[\s\S]*public\.active_encounters\s+TO babuni_admin_moderation;/)
-  assert.doesNotMatch(sql,/^\s*GRANT\s+(UPDATE|DELETE|INSERT|TRUNCATE|ALL)\b/im)
-  assert.doesNotMatch(sql,/^\s*ALTER ROLE\b/im)
+test('prepared single admin role supports player read and scoped moderation changes',()=>{
+  const sql=readFileSync('scripts/morkahja-admin-role.sql','utf8')
+  assert.match(sql,/CREATE ROLE babuni_admin LOGIN/)
+  assert.match(sql,/GRANT SELECT ON TABLE/)
+  assert.match(sql,/GRANT UPDATE \(data\) ON public\.players TO babuni_admin/)
+  assert.match(sql,/GRANT DELETE ON public\.sessions TO babuni_admin/)
+  assert.doesNotMatch(sql,/SUPERUSER\s*;/)
   assert.doesNotMatch(sql,/babuni_admin_probe\s*;/)
 })
