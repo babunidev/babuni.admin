@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
 import { ContentDetailPanel } from '../components/ContentDetailPanel'
+import { RemoteContentImage } from '../components/RemoteContentImage'
 import {
   ContentImageGrid,
   type ContentGridItem,
@@ -211,6 +212,8 @@ export function ContentPage() {
       .map(([key, row]) => ({
         id: key,
         imageSrc: solutionImageUrl(row.mSolutionIconName),
+        remoteKind: 'solution',
+        remoteName: row.mSolutionIconName,
         title: row.mSolutionName,
       }))
   }, [solutionsQuery.data, search])
@@ -260,7 +263,10 @@ export function ContentPage() {
       header: 'Image',
       render: (row) => {
         const src = encounterImageUrl(row.mEncounterImageName)
-        return src ? (
+        return contentProfileId ? (
+          <RemoteContentImage profileId={contentProfileId} kind="encounter"
+            name={row.mEncounterImageName} className="h-10 w-16 rounded object-cover"/>
+        ) : src ? (
           <img src={src} alt="" className="h-10 w-16 rounded object-cover" />
         ) : (
           <span className="text-xs text-fog">{row.mEncounterImageName}</span>
@@ -360,7 +366,7 @@ export function ContentPage() {
   })
 
   const dataSourceHint = contentProfileId
-    ? 'Administrator catalog via SSH · /var/www/morkahja/game · images still use separately configured asset URLs'
+    ? 'Administrator catalog and images via SSH · /var/www/morkahja'
     : useLocalContent
     ? `Local files: MorkahjaWebApp/client/public/game + /UI (saves go to disk)`
     : gameDataBaseUrl
@@ -488,6 +494,7 @@ export function ContentPage() {
             selectedEncounterDetail &&
             !encounterEditorOpen && (
             <EncounterDetailPanel
+              profileId={contentProfileId}
               detail={selectedEncounterDetail}
               onClose={closeDetail}
               onEdit={() => startEncounterEdit(itemKey)}
@@ -510,6 +517,7 @@ export function ContentPage() {
             Click an icon to view full description and linked encounters.
           </p>
           <ContentImageGrid
+            profileId={contentProfileId}
             items={solutionGridItems}
             selectedId={detailKind === 'solutions' ? itemKey : undefined}
             onSelect={(key) => openItem('solutions', key)}
@@ -517,6 +525,7 @@ export function ContentPage() {
           />
           {detailKind === 'solutions' && selectedSolution && (
             <SolutionDetailPanel
+              profileId={contentProfileId}
               keyId={selectedSolution.key}
               solution={selectedSolution.solution}
               encounters={encountersQuery.data ?? {}}
@@ -627,6 +636,7 @@ export function ContentPage() {
 
       {activeTab === 'expansions' && (
         <ExpansionPanel
+          profileId={contentProfileId}
           data={expansionsQuery.data?.expansions ?? {}}
           search={search}
           selectedKey={detailKind === 'expansions' ? itemKey : undefined}
@@ -639,6 +649,7 @@ export function ContentPage() {
 
       {activeTab === 'frames' && (
         <FramesPanel
+          profileId={contentProfileId}
           data={framesQuery.data?.Frames ?? []}
           search={search}
           selectedKey={detailKind === 'frames' ? itemKey : undefined}
@@ -651,6 +662,7 @@ export function ContentPage() {
 
       {activeTab === 'portraits' && (
         <PortraitsPanel
+          profileId={contentProfileId}
           data={portraitsQuery.data?.Avatar ?? []}
           search={search}
           selectedKey={detailKind === 'portraits' ? itemKey : undefined}
@@ -671,6 +683,7 @@ export function ContentPage() {
 }
 
 function ExpansionPanel({
+  profileId,
   data,
   search,
   selectedKey,
@@ -679,6 +692,7 @@ function ExpansionPanel({
   detailKey,
   onStatus,
 }: {
+  profileId?: string
   data: Record<string, ExpansionData>
   search: string
   selectedKey?: string
@@ -700,6 +714,8 @@ function ExpansionPanel({
   const gridItems: ContentGridItem[] = entries.map(([key, row]) => ({
     id: key,
     imageSrc: expansionImageUrl(row.mExtensioCollectionImage),
+    remoteKind: 'expansion',
+    remoteName: row.mExtensioCollectionImage,
     title: row.mExtensioName,
   }))
 
@@ -730,6 +746,7 @@ function ExpansionPanel({
         Click an image to view expansion text, costs, and assets.
       </p>
       <ContentImageGrid
+        profileId={profileId}
         items={gridItems}
         selectedId={selectedKey}
         onSelect={onSelect}
@@ -741,6 +758,7 @@ function ExpansionPanel({
           title={selected.mExtensioName}
           subtitle={`Key ${detailKey} · ID ${selected.mExtensioID}`}
           imageSrc={expansionImageUrl(selected.mExtensioHeaderImage)}
+          remoteImage={profileId ? {profileId,kind:'expansion',name:selected.mExtensioHeaderImage} : undefined}
           textSection={{
             title: 'Description',
             body: selected.mExtensioText,
@@ -809,6 +827,7 @@ function ExpansionPanel({
 }
 
 function FramesPanel({
+  profileId,
   data,
   search,
   selectedKey,
@@ -817,6 +836,7 @@ function FramesPanel({
   detailKey,
   onStatus,
 }: {
+  profileId?: string
   data: Array<FrameData | null>
   search: string
   selectedKey?: string
@@ -840,6 +860,8 @@ function FramesPanel({
     .map((row) => ({
       id: String(row.frameID),
       imageSrc: frameImageUrl(row.frameID),
+      remoteKind: 'frame',
+      remoteName: `frame_${row.frameID}`,
       title: `Frame ${row.frameID}`,
     }))
 
@@ -867,6 +889,7 @@ function FramesPanel({
         Click a frame to view gem cost and race/role restrictions.
       </p>
       <ContentImageGrid
+        profileId={profileId}
         items={gridItems}
         selectedId={selectedKey}
         onSelect={onSelect}
@@ -877,6 +900,7 @@ function FramesPanel({
           title={`Frame ${selected.frameID}`}
           subtitle={`frames.json entry`}
           imageSrc={frameImageUrl(selected.frameID)}
+          remoteImage={profileId ? {profileId,kind:'frame',name:`frame_${selected.frameID}`} : undefined}
           imageClassName="mx-auto max-h-64 w-64 rounded-lg border border-gold/15 object-contain"
           fields={[
             { label: 'Frame ID', value: String(selected.frameID) },
@@ -929,6 +953,7 @@ function FramesPanel({
 }
 
 function PortraitsPanel({
+  profileId,
   data,
   search,
   selectedKey,
@@ -937,6 +962,7 @@ function PortraitsPanel({
   detailKey,
   onStatus,
 }: {
+  profileId?: string
   data: Array<PortraitData | null>
   search: string
   selectedKey?: string
@@ -961,6 +987,8 @@ function PortraitsPanel({
     .map((row) => ({
       id: String(row.avatarID),
       imageSrc: portraitImageUrl(row.avatarID),
+      remoteKind: 'portrait',
+      remoteName: `avatar_${row.avatarID}`,
       title: row.avatarName,
     }))
 
@@ -990,6 +1018,7 @@ function PortraitsPanel({
         Click a portrait to view avatar stats and creation defaults.
       </p>
       <ContentImageGrid
+        profileId={profileId}
         items={gridItems}
         selectedId={selectedKey}
         onSelect={onSelect}
@@ -1000,6 +1029,7 @@ function PortraitsPanel({
           title={selected.avatarName}
           subtitle={`Avatar ID ${selected.avatarID}`}
           imageSrc={portraitImageUrl(selected.avatarID)}
+          remoteImage={profileId ? {profileId,kind:'portrait',name:`avatar_${selected.avatarID}`} : undefined}
           imageClassName="mx-auto max-h-72 w-72 rounded-lg border border-gold/15 object-contain"
           fields={[
             { label: 'Avatar ID', value: String(selected.avatarID) },
