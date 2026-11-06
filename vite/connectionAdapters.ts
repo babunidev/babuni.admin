@@ -21,7 +21,7 @@ export const adapterSpecs: Record<ConnectionKind, AdapterSpec> = {
   },
   'postgres-ssh-moderation': {
     projectId: 'morkahja', kind: 'postgres-ssh-moderation', transport: 'local',
-    requiresCredential: true, capabilities: ['ssh:preflight','ssh:moderation'],
+    requiresCredential: true, capabilities: ['ssh:preflight','ssh:moderation','ssh:content'],
   },
   'ssh-content': {
     projectId: 'morkahja', kind: 'ssh-content', transport: 'local',
