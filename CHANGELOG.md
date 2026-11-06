@@ -5,6 +5,7 @@
 - Removed silent sample-player and mock-player-detail fallbacks after direct PostgreSQL read failures; errors now remain errors.
 - Displayed the configured source and live-authorization limitation on existing Moderation and Content pages; content fetch failures now show an explicit error instead of an apparently empty catalog.
 - Added regression checks for legacy source fallback and source disclosure.
+- Added a separately opted-in SSH/PostgreSQL moderation connection profile, fixed list/detail and atomic timeout/ban/unban service operations, a profile selector, and failure/cleanup tests. No existing restricted Overview privilege is widened.
 - No live moderation or content-write path, remote privilege, database migration or game-data mutation was added in this change.
 
 ## 2026-11-05 — Connect Batch A aggregates to the local Overview
