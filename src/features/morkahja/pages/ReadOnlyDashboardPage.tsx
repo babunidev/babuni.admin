@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+import { MODERATION_PROFILE_KEY } from '../services/adminApi'
 
 interface ConnectionOption {
   id: string
@@ -44,7 +45,8 @@ interface Snapshot {
 const metricValue = (value: number | null | undefined): number | string =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 'Unavailable'
 
-const PROFILE_KEY = 'babuni-admin:morkahja:overview-profile'
+const LEGACY_PROFILE_KEY = 'babuni-admin:morkahja:overview-profile'
+const PROFILE_KEY = MODERATION_PROFILE_KEY
 const border = 'rounded-lg border border-gold/20 bg-slate/50 p-4'
 const button = 'rounded border border-gold/40 px-3 py-2 text-sm text-gold-bright disabled:opacity-40'
 const checkedTime = (value: string) => new Date(value).toLocaleString()
@@ -54,7 +56,7 @@ const lastPlayed = (value: number | null) =>
 // Only a non-secret profile UUID is persisted on the local PC. No password,
 // identity key, player data, or session capability is stored in the browser.
 function savedProfile():string {
-  try { return window.localStorage.getItem(PROFILE_KEY) || '' } catch { return '' }
+  try { return window.localStorage.getItem(PROFILE_KEY) || window.localStorage.getItem(LEGACY_PROFILE_KEY) || '' } catch { return '' }
 }
 function persistProfile(id:string) {
   try {
@@ -103,14 +105,15 @@ export function ReadOnlyDashboardPage() {
     void localConnectionApi<{profiles: ConnectionOption[]}>().then(result => {
       if (!mounted) return
       const eligible = result.profiles.filter(profile =>
-        profile.projectId === 'morkahja' && profile.kind === 'postgres-ssh')
+        profile.projectId === 'morkahja' && ['postgres-ssh-moderation','postgres-ssh'].includes(profile.kind))
+      eligible.sort((a,b) => Number(b.kind==='postgres-ssh-moderation') - Number(a.kind==='postgres-ssh-moderation'))
       setProfiles(eligible)
       const remembered = savedProfile()
       const found = eligible.some(profile => profile.id === remembered)
       if (remembered && !found) persistProfile('')
-      setProfileId(found ? remembered : '')
+      setProfileId(found ? remembered : eligible.find(profile=>profile.kind==='postgres-ssh-moderation')?.id || '')
       setProfileReady(true)
-      setStatus(found ? 'Restoring your selected read-only overview…'
+      setStatus(found ? 'Restoring your selected Morkahja Overview…'
         : eligible.length > 0
           ? 'Select a saved SSH profile below to load the overview and players.'
           : 'No Morkahja PostgreSQL/SSH profile is configured.')
@@ -186,7 +189,7 @@ export function ReadOnlyDashboardPage() {
   const page = playerPage?.data
   return <div className="max-w-5xl space-y-6">
     <PageHeader title="Morkahja — Overview"
-      description="Read-only realm overview and player activity from the approved PostgreSQL views." />
+      description="Realm overview and player activity from the existing PostgreSQL views; supports the single administrator profile." />
     <div className="flex flex-wrap items-center justify-between gap-3">
       <p className="text-sm text-fog" role="status">{status}</p>
       <button type="button" className={button} disabled={busy || !profileId}
