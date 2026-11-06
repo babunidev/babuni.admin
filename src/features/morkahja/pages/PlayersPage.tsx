@@ -86,7 +86,7 @@ export function PlayersPage() {
   const [profileId, setProfileId] = useState(() => getModerationProfileId() || '')
   const [profilesLoaded, setProfilesLoaded] = useState(false)
   const [profiles, setProfiles] = useState<{id:string;displayName:string}[]>([])
-  const [profileStatus, setProfileStatus] = useState('Checking scoped moderation profiles…')
+  const [profileStatus, setProfileStatus] = useState('Checking Morkahja administrator connection…')
 
   useEffect(() => {
     let mounted = true
@@ -103,8 +103,8 @@ export function PlayersPage() {
         setProfileId('')
       }
       setProfileStatus(available.length
-        ? 'Select a separate authorized moderation profile; reads and writes are not enabled by the Overview profile.'
-        : 'No separate live moderation profile is configured. Legacy/demo mode remains available.')
+        ? 'Select your Morkahja administrator connection to manage accounts.'
+        : 'No Morkahja administrator connection is configured; legacy/demo remains available.')
       setProfilesLoaded(true)
     }).catch(() => {
       if (!mounted) return
@@ -154,7 +154,7 @@ export function PlayersPage() {
       />
       <div className="mb-3 rounded border border-gold/20 bg-slate/40 p-3">
         <label htmlFor="moderation-profile" className="block text-xs text-fog">
-          Live moderation connection (separate from Overview)
+          Morkahja administrator connection
         </label>
         <select id="moderation-profile" value={profileId}
           onChange={event => selectProfile(event.target.value)}
