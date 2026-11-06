@@ -1,5 +1,11 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-06 — One Connection page and automatic administration routing
+
+**Creative decision:** Connection management belongs in one page named **Connection**, not a collection of dropdowns inside the workspaces. With only one operator, the configured server connection must be reused automatically by Overview, Moderation and Content. Multiple independent profiles and repeated selection are unnecessary for the current workflow.
+
+**Implementation:** A shared browser-side resolver uses the unique local Morkahja administrator profile, retaining the already stored keyring password and SSH configuration. The navigation says **Connection**. The page shows the server, database login, credential availability, SSH host check, a deliberately triggered database read check, last successful operation and editable server metadata. Previous profiles are retained for migration in collapsed details rather than deleted. Per-page profile selectors are removed. The top bar no longer represents the old mock status as live when the administrator profile exists. The server's actual PostgreSQL and SSH permissions are unchanged. Babuni Dev publishing still requires implementation and is explicitly not represented as connected.
+
 ## 2026-11-06 — One administrator instead of separate read-only and writer accounts
 
 **Decision from the creative:** Babuni Admin is operated by one person. One login/profile should cover Overview, Moderation, and Content. Separate read-only, moderator and content users were explicitly rejected as unnecessary complexity. The earlier split was an AI-proposed safety design, not an approved requirement.
