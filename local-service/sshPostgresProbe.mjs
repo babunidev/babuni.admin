@@ -1,4 +1,6 @@
 import { readMorkahjaProbeConfig } from './remoteProbeConfig.mjs'
+import { readMorkahjaModerationConfig } from './morkahjaModerationConfig.mjs'
+import { PROGRESSION_FIELDS } from './progressionMetrics.mjs'
 import { startSshTunnel } from './sshTunnel.mjs'
 import { readCredentialForService } from './keyring.mjs'
 
@@ -96,10 +98,14 @@ export async function fetchMorkahjaReadOnly(profile,kind,page=1,deps={}) {
   inFlight=true
   let tunnel
   try {
-    const approved=await (deps.readConfig||readMorkahjaProbeConfig)(profile)
+    const admin=profile.kind==='postgres-ssh-moderation'
+    const approved=await (deps.readConfig||(admin
+      ? readMorkahjaModerationConfig : readMorkahjaProbeConfig))(profile)
     if(!approved.ok)return {ok:false,code:approved.code}
-    const config=approved.config
     const fields=['displayName','avatarCount','lastPlayedAt']
+    const config=admin ? {...approved.config,
+      readOnlyDataEnabled:true,readOnlyDataFields:fields,
+      readOnlyMetricFields:PROGRESSION_FIELDS} : approved.config
     if(config.readOnlyDataEnabled!==true ||
        JSON.stringify(config.readOnlyDataFields)!==JSON.stringify(fields)) {
       return {ok:false,code:'REMOTE_READ_DISABLED'}
@@ -110,7 +116,7 @@ export async function fetchMorkahjaReadOnly(profile,kind,page=1,deps={}) {
       const {queryMorkahjaReadOnly}=await import('./morkahjaReadOnly.mjs')
       return queryMorkahjaReadOnly(...args)
     })
-    const result=await read(config,tunnel.socketDir,password,kind,page)
+    const result=await read(config,tunnel.socketDir,password,kind,page,admin?'admin':'restricted')
     if(!result.ok)return {ok:false,code:result.code}
     return {ok:true,data:result.data,checkedAt:new Date().toISOString()}
   } catch(error) {
