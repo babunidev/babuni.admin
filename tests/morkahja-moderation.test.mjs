@@ -80,7 +80,7 @@ test('ban commits only after player update and matching session revocation',asyn
 test('failed session revocation rolls back the player update and ends the connection',async()=>{
   const f=fixture({failDelete:true})
   const result=await queryMorkahjaModeration(config,'/socket','fixture','timeout',
-    {playerId:'test-player',durationMinutes:15},{createClient:()=>f.client})
+    {playerId:'test-player',durationMinutes:15},{createClient:()=>f.client,writeEnabled:'enabled'})
   assert.equal(result.ok,false)
   const statements=f.queries.map(q=>q.sql)
   assert.ok(statements.some(sql=>sql.startsWith('UPDATE public.players')))
@@ -91,7 +91,7 @@ test('failed session revocation rolls back the player update and ends the connec
 test('unexpected role privileges block access before any database writes',async()=>{
   const f=fixture({badRole:true})
   const result=await queryMorkahjaModeration(config,'/socket','fixture','ban',
-    {playerId:'test-player'},{createClient:()=>f.client})
+    {playerId:'test-player'},{createClient:()=>f.client,writeEnabled:'enabled'})
   assert.deepEqual(result,{ok:false,code:'DB_MODERATION_ROLE_REJECTED'})
   assert.equal(f.queries.some(q=>q.sql.startsWith('UPDATE')),false)
   assert.equal(f.queries.some(q=>q.sql==='BEGIN READ WRITE'),false)
@@ -117,6 +117,7 @@ test('modification is refused before opening a database client unless explicitly
 test('moderation runner refuses disabled config without opening a tunnel',async()=>{
   let opened=false
   const result=await performMorkahjaModeration(profile,'ban',{playerId:'test-player'},{
+    writeEnabled:'enabled',
     readConfig:async()=>({ok:false,code:'REMOTE_MODERATION_DISABLED'}),
     openTunnel:async()=>{opened=true},
   })
@@ -126,6 +127,7 @@ test('moderation runner refuses disabled config without opening a tunnel',async(
 test('moderation runner always closes temporary tunnel after failed query',async()=>{
   let stopped=false
   const result=await performMorkahjaModeration(profile,'ban',{playerId:'test-player'},{
+    writeEnabled:'enabled',
     readConfig:async()=>({ok:true,config}),
     getPassword:async()=> 'fixture',
     openTunnel:async()=>({socketDir:'/tmp/fake',stop:async()=>{stopped=true}}),
