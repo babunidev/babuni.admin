@@ -1,5 +1,17 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-06 — Restore existing live Moderation and Content workflows
+
+**Creative direction:** Reconnect existing player details, timeout/ban/unban and the five content collections (encounters, solutions, expansions, frames, portraits) to the live Morkahja backend. Improve the existing workflows; no extra statistics or new panels.
+
+- [x] Audit old Moderation and Content routing against the working read-only Overview. The legacy moderation adapter uses a separate Vite/PostgreSQL connection; Content uses local game files or an older remote API. Neither inherits authority from the restricted Overview SSH probe.
+- [x] Remove the legacy PostgreSQL failure fallback to sample players or mock player details; show each page's actual configured source and its unverified privileged-connection status.
+- [ ] Implement independently approved, scoped moderation read/write operations in the local connection service without broadening the Overview probe role. Reuse verified outbound SSH trust, private secrets, short-lived transports and cleanup; retain existing player-detail UI.
+- [ ] Implement scoped live content browsing of the five deployed catalogs and media, with source identification and validation.
+- [ ] Implement backed-up and verified remote writes for the existing content editors and image uploads; avoid changing source-of-truth paths incorrectly.
+- [ ] Verify failure recovery, transaction rollback, tunnel cleanup and source/permission gating in isolated fixtures and on designated development data.
+- [ ] Complete CI, controlled live acceptance tests and merge through a reviewed pull request.
+
 ## 2026-11-05 — Reconcile operator-verified desktop and Overview behavior
 
 - [x] Record operator-reported post-login `SSH_LOGIN_IDENTITY_READY` and matching ED25519 agent fingerprint; do not treat terminal output as independent observation of the logout sequence.
