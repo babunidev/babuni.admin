@@ -55,11 +55,9 @@ export function RemoteContentImage({
 }:RemoteContentImageProps) {
   const element=useRef<HTMLSpanElement>(null)
   const [visible,setVisible]=useState(false)
-  const [remoteSrc,setRemoteSrc]=useState('')
-  const [failed,setFailed]=useState(false)
+  const [image,setImage]=useState({key:'',src:'',failed:false})
 
   useEffect(()=>{
-    setVisible(false)
     const node=element.current
     if(!node)return
     if(typeof IntersectionObserver==='undefined') {
@@ -78,18 +76,18 @@ export function RemoteContentImage({
 
   useEffect(()=>{
     let cancelled=false
-    setRemoteSrc('')
-    setFailed(false)
     if(!profileId||!visible||!name)return
     void getImage(profileId,kind,name).then(src=>{
-      if(!cancelled)setRemoteSrc(src)
+      if(!cancelled)setImage({key:profileId+':'+kind+':'+name,src,failed:false})
     }).catch(()=>{
-      if(!cancelled)setFailed(true)
+      if(!cancelled)setImage({key:profileId+':'+kind+':'+name,src:'',failed:true})
     })
     return ()=>{cancelled=true}
   },[profileId,kind,name,visible])
 
-  const src=profileId?(failed?'':remoteSrc):fallbackSrc
+  const current=image.key===profileId+':'+kind+':'+name
+  const failed=current && image.failed
+  const src=profileId?(current && !failed?image.src:''):fallbackSrc
   return <span ref={element} className="contents">
     {src?<img src={src} alt={alt} loading="lazy" className={className}/>:
       <span className={`flex items-center justify-center bg-void/30 text-[10px] text-fog ${className}`}
