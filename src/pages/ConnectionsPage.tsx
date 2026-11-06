@@ -155,7 +155,7 @@ export function ConnectionsPage() {
         <div className="sm:col-span-2"><dt className="text-fog">Access</dt><dd className="text-parchment">Overview, player Moderation, and content catalogs</dd></div>
       </dl>
       <p className="text-xs text-fog">Connection status: {active.code || 'NOT_CHECKED'}. {active.detail}</p>
-      {probeStatus && <p className="text-sm text-gold-bright" role="status">{probeStatus}</p>}
+      {probeStatus && <p data-testid="connection-check-result" className="text-sm text-gold-bright" role="status">{probeStatus}</p>}
       <div className="flex flex-wrap gap-2">
         <button className={button} disabled={busy} onClick={()=>{void checkHost(active)}}>Check SSH host</button>
         <button className={button} disabled={busy} onClick={()=>{void checkDatabase(active)}}>Test database read</button>
