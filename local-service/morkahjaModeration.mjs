@@ -135,11 +135,26 @@ async function listPlayers(client) {
     list.push(avatar)
     byPlayer.set(avatar.player_id,list)
   }
+  // The current progression row is authoritative for avatar level. Older
+  // avatar documents may contain stale level/experience snapshots.
+  const progressionRows=await selectRows(client,
+    'SELECT player_id,avatar_id,data FROM public.progressions '+
+    'WHERE player_id=ANY($1::text[]) AND id=$2 LIMIT 10001',
+    [ids,'current'],10000)
+  const progressionByAvatar=new Map(progressionRows.map(row=>[
+    row.player_id+':'+row.avatar_id,row.data,
+  ]))
   const now=Date.now()
   const sessions=await activeSessionIds(client,ids,now)
   const result=players.map(row=>{
     const avatars=byPlayer.get(row.id)||[]
-    const active=avatars.find(a=>a.id===row.data.activeAvatarId)?.data
+    const activeRow=avatars.find(a=>a.id===row.data.activeAvatarId)
+    const currentProgression=activeRow ?
+      progressionByAvatar.get(row.id+':'+activeRow.id) : undefined
+    const active=activeRow?.data && currentProgression &&
+      typeof currentProgression==='object'
+      ? {...activeRow.data,level:currentProgression.level ?? activeRow.data.level}
+      : activeRow?.data
     const live=new Set()
     if(sessions.has(row.id+':'+row.data.activeSessionId))live.add(row.id)
     return mapPlayer(row,active,avatars,live,now)
@@ -149,8 +164,10 @@ async function listPlayers(client) {
   return result
 }
 async function playerDetail(client,playerId) {
-  const row=ensureDocument((await client.query(
-    'SELECT id,data FROM public.players WHERE id=$1',[playerId])).rows[0])
+  const result=await client.query(
+    'SELECT id,data FROM public.players WHERE id=$1',[playerId])
+  if(result.rows.length===0)return null
+  const row=ensureDocument(result.rows[0])
   const d=row.data,now=Date.now()
   const avatars=await selectRows(client,
     'SELECT id,data FROM public.avatars WHERE player_id=$1 ORDER BY id LIMIT 201',
