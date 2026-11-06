@@ -1,5 +1,9 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-06 — Returning to one administrator connection
+
+The first connection migration split my administration tool into separate accounts for reading, moderating and editing content. That was more complex than the project needed: this is my own workbench, and one authenticated administrator should reach all existing features. After I rejected the multi-user setup, AI revised the implementation so Overview, Moderation and Content share one administrator profile, pinned SSH identity and stored database password. Fixed operations, rollback and content backups remain; the old read-only Overview path survives only for migration. No new credentials were installed or live data changed, and remote image handling still needs work.
+
 ## 2026-11-06 — Returning to Moderation and Content
 
 With the restricted Overview working, the more useful goal is getting my existing player management and game-content editors back onto the live server. Source review exposed that they still follow older connection paths, separate from the new read-only tunnel. AI removed the misleading mock fallback, labeled the old sources and added visible content-read errors. The next implementation created a separate moderation SSH profile and connected the existing list, detail, timeout, ban and unban actions to a narrowly scoped local service adapter. Its role and transaction safeguards have synthetic tests, but no privileged live role has been deployed or exercised. AI also prepared a separate SSH content path for my five existing catalog editors, keeping a version check and backup before remote JSON replacement. Images remain outside that initial transport, and nothing was changed on the game server.
