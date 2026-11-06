@@ -1,4 +1,5 @@
 import {readFile,lstat} from 'node:fs/promises'
+import {readMorkahjaModerationConfig} from './morkahjaModerationConfig.mjs'
 import {homedir} from 'node:os'
 import {join,isAbsolute} from 'node:path'
 import {createHash} from 'node:crypto'
