@@ -308,7 +308,7 @@ export async function queryMorkahjaModeration(config,socketDir,password,action,p
     transaction=false
     // The transaction mode is chosen locally, never from browser input.
     const writing=['timeout','ban','unban'].includes(action)
-    await client.query(writing?'BEGIN READ WRITE':'BEGIN REPEATABLE READ READ ONLY')
+    await client.query(writing?'BEGIN READ WRITE':'BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
     transaction=true
     await client.query('SET LOCAL statement_timeout = \'5s\'')
     await client.query('SET LOCAL lock_timeout = \'2s\'')
