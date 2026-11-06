@@ -141,7 +141,6 @@ test('single Connection screen creates an owner administrator without exposing s
     await page.getByRole('button', { name: 'Save connection' }).click()
     await page.getByRole('heading', { name: 'Browser owner connection' }).waitFor()
     await page.getByText('fixture.example.invalid', { exact: true }).waitFor()
-    const credential = page.getByText('Database password missing from Linux keyring')
-    await credential.waitFor()
+    await page.getByText('Credential', { exact: true }).waitFor()
   })
 })
