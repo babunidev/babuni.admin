@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PlayerDetailPanel } from '../components/PlayerDetailPanel'
 import { ConnectionBanner } from '../../../shared/components/ConnectionBanner'
@@ -82,7 +82,6 @@ const columns: Column<Player>[] = [
 export function PlayersPage() {
   const { playerId } = useParams<{ playerId?: string }>()
   const navigate = useNavigate()
-  const queryClient = useQueryClient()
   const [profileId, setProfileId] = useState(() => getModerationProfileId() || '')
   const [profilesLoaded, setProfilesLoaded] = useState(false)
   const [profileStatus, setProfileStatus] = useState('Checking Morkahja administrator connection…')
