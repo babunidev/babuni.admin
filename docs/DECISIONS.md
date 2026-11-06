@@ -1,5 +1,11 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-06 — Prioritize existing live administration over more dashboard features
+
+**Creative direction:** Restore live Moderation (player details, timeout, ban and unban) and all existing Content browsing/editing (encounters, solutions, expansions, frames and portraits), without feature expansion.
+
+**Architecture decision:** The successful read-only Overview tunnel must remain separate from privileged write operations. The existing Vite/PostgreSQL moderation path and local-file/legacy API content path require explicit connection migration and operator-scoped authorization; their behavior cannot be inferred from the Overview's green status. While this migration is incomplete, read failures must not show fabricated mock accounts or imply a live connection. Privileged production changes require independently verified credentials, resource scope and rollback; development status alone is not authorization to change arbitrary player accounts.
+
 ## 2026-11-05 — Approve Batch A deployment and local display
 
 The creative explicitly approved applying the reviewed Batch A SQL after the deployed catalog matched, executed it and supplied successful aggregate and permission checks. The subsequent instruction authorizes the local service/UI integration and documentation.
