@@ -6,7 +6,8 @@
 
 - [x] Audit old Moderation and Content routing against the working read-only Overview. The legacy moderation adapter uses a separate Vite/PostgreSQL connection; Content uses local game files or an older remote API. Neither inherits authority from the restricted Overview SSH probe.
 - [x] Remove the legacy PostgreSQL failure fallback to sample players or mock player details; show each page's actual configured source and its unverified privileged-connection status. Content read failures now show an explicit error instead of appearing to be an empty catalog.
-- [ ] Implement independently approved, scoped moderation read/write operations in the local connection service without broadening the Overview probe role. Reuse verified outbound SSH trust, private secrets, short-lived transports and cleanup; retain existing player-detail UI.
+- [x] Implement a separate source-level `postgres-ssh-moderation` profile and fixed player list, detail, timeout, ban and unban requests through the private local service. The moderator has a separate config/credential; the reader remains unchanged. Synthetic operation and rollback fixtures are added. **Not yet activated or tested against the live server.**
+- [ ] Independently provision and verify the dedicated moderation role, required SELECT and narrowly scoped UPDATE/DELETE grants, owner-private moderation config and keyring credential; verify production role checks before enabling it.
 - [ ] Implement scoped live content browsing of the five deployed catalogs and media, with source identification and validation.
 - [ ] Implement backed-up and verified remote writes for the existing content editors and image uploads; avoid changing source-of-truth paths incorrectly.
 - [ ] Verify failure recovery, transaction rollback, tunnel cleanup and source/permission gating in isolated fixtures and on designated development data.
