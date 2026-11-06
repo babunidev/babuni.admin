@@ -8,6 +8,7 @@ import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from '
 import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { parsePlayerPage } from './morkahjaReadOnly.mjs'
 import { performMorkahjaModeration, isModerationActive } from './morkahjaModerationRunner.mjs'
+import { performMorkahjaContent, isContentActive } from './morkahjaContentRunner.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -32,11 +33,11 @@ function validKey(supplied) {
   const b = Buffer.from(TOKEN)
   return a.length === b.length && timingSafeEqual(a,b)
 }
-async function body(req) {
+async function body(req,maximum=4096) {
   let content = ''
   for await (const part of req) {
     content += part.toString('utf8')
-    if (Buffer.byteLength(content)>4096) throw Object.assign(new Error('TOO_LARGE'),{status:413})
+    if (Buffer.byteLength(content)>maximum) throw Object.assign(new Error('TOO_LARGE'),{status:413})
   }
   try { return JSON.parse(content) } catch { throw Object.assign(new Error('INVALID_JSON'),{status:400}) }
 }
@@ -83,7 +84,7 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban|content-read|content-write))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
@@ -92,7 +93,8 @@ const server=createServer(async(req,res)=>{
 
     if (['PUT','DELETE'].includes(req.method) && !action &&
         ((profile.kind==='postgres-ssh' && isSshProbeActive()) ||
-        (profile.kind==='postgres-ssh-moderation' && isModerationActive()))) return send(res,409,{error:'REMOTE_PROBE_BUSY'})
+        (profile.kind==='postgres-ssh-moderation' && isModerationActive()) ||
+        (profile.kind==='ssh-content' && isContentActive()))) return send(res,409,{error:'REMOTE_PROBE_BUSY'})
     if (req.method==='PUT' && !action) {
       const previous=profile.target
       const updated=registry.update(id,await body(req))
@@ -163,6 +165,27 @@ const server=createServer(async(req,res)=>{
         checkedAt:result.checkedAt,lastSuccessAt:result.checkedAt,
       })
       return send(res,200,result)
+    }
+    if (req.method==='POST' && ['content-read','content-write'].includes(action)) {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      let payload
+      try {payload=await body(req,128*1024)}
+      catch {return send(res,400,{error:'CONTENT_INVALID_REQUEST'})}
+      const request={action:action==='content-read'?'read':'write',...payload}
+      const report=await performMorkahjaContent(profile,request)
+      if(!report.ok) {
+        const status=report.code==='REMOTE_CONTENT_BUSY'?409:
+          ['REMOTE_CONTENT_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:
+          ['CONTENT_INVALID_REQUEST','CONTENT_TOO_LARGE'].includes(report.code)?400:
+          report.code==='CONTENT_CONFLICT'?409:422
+        return send(res,status,{error:report.code})
+      }
+      states.set(id,{
+        state:'disconnected',code:'REMOTE_CONTENT_COMPLETED',
+        detail:'Scoped content operation completed; temporary SSH session closed.',
+        checkedAt:report.checkedAt,lastSuccessAt:report.checkedAt,
+      })
+      return send(res,200,report)
     }
     if (req.method==='GET' && action==='inspect') {
       if (!hasCapability(profile,'local:inspect')) return send(res,403,{error:'CAPABILITY_DENIED'})
