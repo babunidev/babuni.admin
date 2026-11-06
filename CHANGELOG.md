@@ -1,5 +1,12 @@
 # Babuni Admin — Changelog
 
+## 2026-11-06 — Unify Morkahja administration under one operator identity
+
+- Consolidated Overview, Moderation and Content onto one selectable administrator profile and one stored database credential, sharing the existing pinned SSH identity.
+- Replaced the proposed additional read-only moderator login with a reviewable `babuni_admin` role for the tool's existing player reads, moderation changes and Overview views.
+- Removed the extra ban/timeout write-enable environment switch. Fixed SQL operations, moderation transactions, session revocation, source errors and content-file backup/revision checks remain.
+- The original Overview reader remains supported as a migration fallback. Remote images and live write verification remain unfinished. No server role, account or file change was performed by the AI.
+
 ## 2026-11-06 — Make legacy moderation/content connections explicit
 
 - Removed silent sample-player and mock-player-detail fallbacks after direct PostgreSQL read failures; errors now remain errors.
