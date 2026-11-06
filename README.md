@@ -1,5 +1,8 @@
 # Babuni Admin
 
+**Current Morkahja workspace (2026-11-06):** Overview and Moderation have been observed using the single Morkahja administrator connection on Nobara, and live Content catalogs and individual image previews have loaded successfully. The new persistent image cache uses the same pinned SSH identity for a single incremental workspace-wide sync, stores WebP artwork under the local XDG user cache folder, serves thumbnails locally between tabs and after app restarts, and rechecks for new or changed files without downloading unchanged images. Automated cache tests pass; **the initial bulk sync and warm-cache performance on the real server have not yet been operator-verified**. Remote image upload and Babuni Dev publishing are still unimplemented. [Image cache design](docs/ARCHITECTURE.md).
+
+
 **Morkahja statistics expansion:** The operator deployed and verified the Batch A aggregate view. The local Overview supports achievement and non-default dice/expansion ownership cards with explicit field approval and unavailable states. Enable the separate metric list in the existing private configuration; no repeat database migration is needed. [Setup and verification](docs/MORKAHJA_READ_ONLY_DASHBOARD.md) · [Metric definitions](docs/MORKAHJA_OVERVIEW_METRICS.md). Nobara verification of the new cards remains pending.
 
 
