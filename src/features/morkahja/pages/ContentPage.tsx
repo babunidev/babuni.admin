@@ -144,15 +144,15 @@ export function ContentPage() {
   const solutionsQuery = useQuery({
     queryKey: ['content', 'solutions', contentProfileId],
     queryFn: fetchSolutions,
-    enabled:
+    enabled: connectionReady && (
       activeTab === 'solutions' ||
       activeTab === 'encounters' ||
-      detailKind === 'solutions',
+      detailKind === 'solutions'),
   })
   const expansionsQuery = useQuery({
     queryKey: ['content', 'expansions', contentProfileId],
     queryFn: fetchExpansions,
-    enabled:
+    enabled: connectionReady && (
       activeTab === 'expansions' ||
       activeTab === 'encounters' ||
       detailKind === 'expansions'),
