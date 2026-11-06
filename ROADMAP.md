@@ -9,7 +9,8 @@
 - [x] Implement a separate source-level `postgres-ssh-moderation` profile and fixed player list, detail, timeout, ban and unban requests through the private local service. The moderator has a separate config/credential; the reader remains unchanged. Synthetic operation and rollback fixtures are added. **Not yet activated or tested against the live server.**
 - [ ] Independently provision and verify the dedicated moderation role, required SELECT and narrowly scoped UPDATE/DELETE grants, owner-private moderation config and keyring credential; verify production role checks before enabling it.
 - [x] Implement a separately gated `ssh-content` profile and source-level read/write transport for the five JSON catalogs in the deployed `/var/www/morkahja/game` tree; content editor tabs can select the profile. Remote images and live visual verification remain pending.
-- [ ] Implement backed-up and verified remote writes for the existing content editors and image uploads; avoid changing source-of-truth paths incorrectly.
+- [x] Implement revision-checked, serialized, backed-up atomic JSON writes for encounters, solutions, expansions, frames and portraits through a fixed-path one-shot SSH worker. **Not enabled or executed on the live server.**
+- [ ] Implement secured live image reads and uploads for encounter/solution imagery, frame artwork and portraits; existing local upload paths must not be mistaken for remote publication.
 - [ ] Verify failure recovery, transaction rollback, tunnel cleanup and source/permission gating in isolated fixtures and on designated development data.
 - [ ] Complete CI, controlled live acceptance tests and merge through a reviewed pull request.
 
