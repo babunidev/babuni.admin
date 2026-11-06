@@ -1,5 +1,12 @@
 # Babuni Admin — Architecture
 
+## Administrator image reads
+
+Images use the existing Morkahja administrator profile and the local session-protected `POST /local-connections-api/:id/content-image` operation. The browser sends a fixed category plus a basename, never an arbitrary filesystem path. The SSH worker reads only `.webp` files under the five mapped Morkahja public image directories (`game/encounterimages`, `game/solutionimages`, `UI/03_DASHBOARD/expansions`, `UI/02_AvatarCreation/Frames`, `UI/02_AvatarCreation/Avatare`). A remote Python read opens the selected directory and basename without following symlinks and rejects files larger than 2 MiB. The local service checks a valid WebP header and bounds returned JSON to 3 MiB. No remote changes or new server account are required.
+
+`RemoteContentImage` requests images lazily near the viewport, uses at most two concurrent transfers and keeps a bounded memory cache. A failed asset read displays an unavailable indicator instead of silently using mock media. An image request is a short-lived SSH operation, not a persistent tunnel or a public static file server. Remote image uploads and changes remain unimplemented.
+
+
 ## Unified Connection UI
 
 `src/shared/services/morkahjaConnection.ts` resolves the unique `postgres-ssh-moderation` administrator profile. A nonsecret profile ID in local browser storage identifies the selected local profile; no password or SSH key is copied to browser storage. The Connection page exposes management, credential availability and manual diagnostic actions. Overview, Moderation and Content call the same resolver and no longer expose independent profile pickers. Overview retains a legacy read-only profile fallback if the administrator is absent. The underlying local service still validates profile types, request bodies, SSH trust, database role privileges and fixed allowed operations on every request.
