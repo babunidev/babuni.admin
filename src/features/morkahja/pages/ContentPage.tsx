@@ -332,6 +332,11 @@ export function ContentPage() {
         title="Content"
         description="Browse and add encounters, solutions, expansions, frames, and portraits."
       />
+      <p className="mb-2 text-xs text-fog" role="status">
+        Content source: {useLocalContent
+          ? 'Local game-data files · local writes only; not a verified live-server connection'
+          : 'Static game assets / legacy remote API · live read/write connection not verified'}
+      </p>
       <p className="mb-4 text-xs text-fog">{dataSourceHint}</p>
 
       <div className="mb-4 flex flex-wrap gap-2">
