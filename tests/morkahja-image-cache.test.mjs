@@ -30,7 +30,7 @@ function fakeRemote() {
       child.stdout.end()
       queueMicrotask(()=>child.emit('close',137,'SIGKILL'))
     }
-    child.stdin={on:()=>{},end(input)=>{
+    child.stdin={on:()=>{},end:(input)=>{
       queueMicrotask(()=>{
         const prefix=input.split('\n',1)[0]
         assert.ok(prefix.startsWith('CACHED_JSON='))
