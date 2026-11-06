@@ -58,10 +58,11 @@ const lastPlayed = (value: number | null) =>
 function savedProfile():string {
   try { return window.localStorage.getItem(PROFILE_KEY) || window.localStorage.getItem(LEGACY_PROFILE_KEY) || '' } catch { return '' }
 }
-function persistProfile(id:string) {
+function persistProfile(id:string,legacy=false) {
   try {
-    if(id) window.localStorage.setItem(PROFILE_KEY,id)
-    else window.localStorage.removeItem(PROFILE_KEY)
+    const key=legacy ? LEGACY_PROFILE_KEY : PROFILE_KEY
+    if(id) window.localStorage.setItem(key,id)
+    else window.localStorage.removeItem(key)
   } catch { /* Private browsing may disable storage; manual selection still works. */ }
 }
 const readErrorHints: Record<string,string> = {
@@ -113,7 +114,7 @@ export function ReadOnlyDashboardPage() {
       setProfiles(eligible)
       const remembered = savedProfile()
       const found = eligible.some(profile => profile.id === remembered)
-      if (remembered && !found && !owned.length) persistProfile('')
+      if (remembered && !found && !owned.length) persistProfile('',true)
       const chosen = found ? remembered : owned[0]?.id || ''
       if (owned.length && chosen) persistProfile(chosen)
       setProfileId(chosen)
@@ -162,7 +163,7 @@ export function ReadOnlyDashboardPage() {
 
   function chooseProfile(id:string) {
     if (busy) return
-    persistProfile(id)
+    persistProfile(id,profiles.find(profile=>profile.id===id)?.kind==='postgres-ssh')
     currentPage.current=1
     setOverview(null)
     setPlayerPage(null)
