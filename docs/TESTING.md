@@ -8,6 +8,8 @@ The new `tests/morkahja-moderation.test.mjs` checks separation between Overview 
 
 Further synthetic read fixtures check the account list's current progression levels, session-based status, avatar counts, and the detail panel's achievements, unlocks, currencies, avatar progression and encounter events. They also verify that private session tokens do not reach the UI, missing accounts do not become mock records, and writes are refused unless independently enabled.
 
+The `morkahja-moderation-config-setup.test.mjs` fixture verifies metadata-only configuration preparation, exclusion of reader-only approvals, safe permissions, and refusal to overwrite an existing profile. The schema preflight SQL reads only information-schema column metadata. Source-level and CI outcomes must not be represented as a live account query.
+
 These tests do not create production roles or write to live Morkahja. The local private moderation/content configurations, approved database role grants, server-file write ownership, current contents of every deployed catalog, image paths and live UI behavior are pending operator verification. Never set either remote-write opt-in merely because Overview works; never treat fixture success as deployment approval.
 
 ## 2026-11-05 — Batch A deployed; local Overview integration
