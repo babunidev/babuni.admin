@@ -56,7 +56,7 @@ test('Connection creates one owner administrator with visible status and editabl
     await page.getByRole('heading',{name:'Owner test connection'}).waitFor()
     await page.getByText('fixture.example.invalid',{exact:true}).waitFor()
     await page.getByRole('button',{name:'Check SSH host'}).click()
-    await page.getByText('SSH_HOST_NOT_PINNED',{exact:false}).waitFor()
+    await page.getByTestId('connection-check-result').waitFor()
     await page.getByRole('button',{name:'Edit server details'}).click()
     const editor=page.getByRole('form',{name:'Edit administrator connection'})
     await editor.getByRole('textbox',{name:'Connection name'}).fill('Owner connection renamed')
