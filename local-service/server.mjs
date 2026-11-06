@@ -7,6 +7,7 @@ import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
 import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { parsePlayerPage } from './morkahjaReadOnly.mjs'
+import { performMorkahjaModeration, isModerationActive } from './morkahjaModerationRunner.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -82,7 +83,7 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
@@ -90,7 +91,8 @@ const server=createServer(async(req,res)=>{
     if (!profile) return send(res,404,{error:'NOT_FOUND'})
 
     if (['PUT','DELETE'].includes(req.method) && !action &&
-        profile.kind==='postgres-ssh' && isSshProbeActive()) return send(res,409,{error:'REMOTE_PROBE_BUSY'})
+        ((profile.kind==='postgres-ssh' && isSshProbeActive()) ||
+        (profile.kind==='postgres-ssh-moderation' && isModerationActive()))) return send(res,409,{error:'REMOTE_PROBE_BUSY'})
     if (req.method==='PUT' && !action) {
       const previous=profile.target
       const updated=registry.update(id,await body(req))
@@ -141,6 +143,26 @@ const server=createServer(async(req,res)=>{
         checkedAt:report.checkedAt,lastSuccessAt:report.checkedAt,
       })
       return send(res,200,report)
+    }
+    if (req.method==='POST' && action?.startsWith('moderation-')) {
+      if(!hasCapability(profile,'ssh:moderation')) return send(res,403,{error:'CAPABILITY_DENIED'})
+      let payload
+      try {payload=await body(req)}
+      catch {return send(res,400,{error:'INVALID_MODERATION_BODY'})}
+      const op=action.slice('moderation-'.length)
+      const result=await performMorkahjaModeration(profile,op,payload)
+      if(!result.ok) {
+        const status=result.code==='REMOTE_MODERATION_BUSY'?409:
+          result.code==='INVALID_MODERATION_BODY'?400:
+          ['REMOTE_MODERATION_DISABLED','REMOTE_SCOPE_DENIED'].includes(result.code)?403:422
+        return send(res,status,{error:result.code})
+      }
+      states.set(id,{
+        state:'disconnected',code:'REMOTE_MODERATION_COMPLETED',
+        detail:'Authorized scoped moderation operation completed; SSH tunnel closed.',
+        checkedAt:result.checkedAt,lastSuccessAt:result.checkedAt,
+      })
+      return send(res,200,result)
     }
     if (req.method==='GET' && action==='inspect') {
       if (!hasCapability(profile,'local:inspect')) return send(res,403,{error:'CAPABILITY_DENIED'})
