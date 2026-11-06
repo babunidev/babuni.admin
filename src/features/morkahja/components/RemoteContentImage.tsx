@@ -61,8 +61,8 @@ export function RemoteContentImage({
     const node=element.current
     if(!node)return
     if(typeof IntersectionObserver==='undefined') {
-      setVisible(true)
-      return
+      const frame=requestAnimationFrame(()=>setVisible(true))
+      return ()=>cancelAnimationFrame(frame)
     }
     const observer=new IntersectionObserver(entries=>{
       if(entries.some(entry=>entry.isIntersecting)){
