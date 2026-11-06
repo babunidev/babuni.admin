@@ -2,7 +2,7 @@
 
 ## 2026-11-06 — Returning to Moderation and Content
 
-With the restricted Overview working, the more useful goal is getting my existing player management and game-content editors back onto the live server. Source review exposed that they still follow older connection paths, separate from the new read-only tunnel. AI began by removing a misleading fallback that could display sample player details after a database failure, marking the old page sources explicitly, and showing errors when a content collection fails to load. Actual moderation and publishing permissions remain separate work; nothing was changed on the game server.
+With the restricted Overview working, the more useful goal is getting my existing player management and game-content editors back onto the live server. Source review exposed that they still follow older connection paths, separate from the new read-only tunnel. AI removed the misleading mock fallback, labeled the old sources and added visible content-read errors. The next implementation created a separate moderation SSH profile and connected the existing list, detail, timeout, ban and unban actions to a narrowly scoped local service adapter. Its role and transaction safeguards have synthetic tests, but no privileged live role has been deployed or exercised, and content publishing still needs its own connection. Nothing was changed on the game server.
 
 ## 2026-11-06 — Seeing the new totals in my local Overview
 
