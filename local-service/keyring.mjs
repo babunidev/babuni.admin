@@ -3,7 +3,7 @@ import { timingSafeEqual } from 'node:crypto'
 
 const attributes = id => ['application', 'babuni.admin', 'profile-id', id]
 const isId = id => typeof id === 'string' && /^[0-9a-f-]{36}$/i.test(id)
-export const requiresCredential = profile => profile.kind !== 'local-files'
+export const requiresCredential = profile => !['local-files','ssh-content'].includes(profile.kind)
 
 /**
  * Read only the Secret Service default collection's Locked property through D-Bus.
