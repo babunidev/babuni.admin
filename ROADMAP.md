@@ -5,7 +5,7 @@
 **Creative direction:** Reconnect existing player details, timeout/ban/unban and the five content collections (encounters, solutions, expansions, frames, portraits) to the live Morkahja backend. Improve the existing workflows; no extra statistics or new panels.
 
 - [x] Audit old Moderation and Content routing against the working read-only Overview. The legacy moderation adapter uses a separate Vite/PostgreSQL connection; Content uses local game files or an older remote API. Neither inherits authority from the restricted Overview SSH probe.
-- [x] Remove the legacy PostgreSQL failure fallback to sample players or mock player details; show each page's actual configured source and its unverified privileged-connection status.
+- [x] Remove the legacy PostgreSQL failure fallback to sample players or mock player details; show each page's actual configured source and its unverified privileged-connection status. Content read failures now show an explicit error instead of appearing to be an empty catalog.
 - [ ] Implement independently approved, scoped moderation read/write operations in the local connection service without broadening the Overview probe role. Reuse verified outbound SSH trust, private secrets, short-lived transports and cleanup; retain existing player-detail UI.
 - [ ] Implement scoped live content browsing of the five deployed catalogs and media, with source identification and validation.
 - [ ] Implement backed-up and verified remote writes for the existing content editors and image uploads; avoid changing source-of-truth paths incorrectly.
