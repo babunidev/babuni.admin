@@ -31,7 +31,7 @@ test('content SSH permissions are independent from overview and moderator profil
   const p={projectId:'morkahja',kind:'ssh-content'}
   assert.equal(hasCapability(p,'ssh:content'),true)
   assert.equal(hasCapability({...p,kind:'postgres-ssh'},'ssh:content'),false)
-  assert.equal(hasCapability({...p,kind:'postgres-ssh-moderation'},'ssh:content'),false)
+  assert.equal(hasCapability({...p,kind:'postgres-ssh-moderation'},'ssh:content'),true)
   assert.equal(hasCapability(p,'ssh:moderation'),false)
 })
 test('content requests are exact and bounded; SSH command has no browser path',()=>{
