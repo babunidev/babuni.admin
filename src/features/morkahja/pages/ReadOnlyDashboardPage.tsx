@@ -163,7 +163,7 @@ export function ReadOnlyDashboardPage() {
 
   function chooseProfile(id:string) {
     if (busy) return
-    persistProfile(id,profiles.find(profile=>profile.id===id)?.kind==='postgres-ssh')
+    persistProfile(id,id ? profiles.find(profile=>profile.id===id)?.kind==='postgres-ssh' : profiles.every(profile=>profile.kind==='postgres-ssh'))
     currentPage.current=1
     setOverview(null)
     setPlayerPage(null)
