@@ -1,5 +1,13 @@
 # Babuni Admin — Architecture
 
+## Current Morkahja administrator model — supersedes the separate-profile proposal
+
+**One local operator, one administrator profile.** The internal `postgres-ssh-moderation` connection kind is presented as **Morkahja administrator (Moderation + Content)** and provides `ssh:read`, `ssh:moderation` and `ssh:content` operations. Its single Linux keyring credential authenticates the `babuni_admin` PostgreSQL role. The existing owner-approved pinned SSH identity is reused for short-lived database tunnels and one-shot fixed-content operations. The profile ID is shared by the Overview, Moderation and Content pages.
+
+Overview continues to execute fixed aggregate/view queries in an explicit PostgreSQL READ ONLY transaction. Admin role verification replaces the older raw-table access prohibition for this profile; the separate restricted reader remains compatible during migration. Moderation uses a fixed allowlist and atomic player updates/session revocations. Content uses fixed remote JSON file paths, a revision check, backup and atomic replacement. The operator's login does not expose arbitrary SQL or shell execution to the browser.
+
+`scripts/morkahja-admin-role.sql` prepares the one role's required table and view grants, deliberately without superuser or schema-creation privileges. It is not automatically applied. `BABUNI_MORKAHJA_REMOTE_MODERATION=enabled` is the sole operator gate for this profile; the earlier separate write switch is no longer required. Remote asset/image uploads and live server permissions have not yet been verified. The older separate-connection account descriptions below are retained as development history, not current setup guidance.
+
 ## Separate live Moderation and Content connection adapters — 2026-11-06
 
 **Source implementation, not production activation.** The working Overview remains restricted to `babuni_admin_probe` and its owner-controlled views. It never inherits moderation or file-write rights.
