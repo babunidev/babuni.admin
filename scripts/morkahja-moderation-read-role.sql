@@ -12,7 +12,14 @@ CREATE ROLE babuni_admin_moderation
   LOGIN NOINHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE
   NOREPLICATION NOBYPASSRLS PASSWORD NULL;
 
-GRANT CONNECT ON DATABASE morkahja TO babuni_admin_moderation;
+-- Bind the grant to the *currently connected* database. Confirm this
+-- matches the private Nobara probe configuration before running the script.
+DO $
+BEGIN
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO babuni_admin_moderation',
+    current_database());
+END
+$;
 GRANT USAGE ON SCHEMA public TO babuni_admin_moderation;
 
 GRANT SELECT ON TABLE
