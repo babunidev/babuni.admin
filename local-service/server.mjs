@@ -93,7 +93,7 @@ const server=createServer(async(req,res)=>{
 
     if (['PUT','DELETE'].includes(req.method) && !action &&
         ((profile.kind==='postgres-ssh' && isSshProbeActive()) ||
-        (profile.kind==='postgres-ssh-moderation' && isModerationActive()) ||
+        (profile.kind==='postgres-ssh-moderation' && (isModerationActive() || isContentActive())) ||
         (profile.kind==='ssh-content' && isContentActive()))) return send(res,409,{error:'REMOTE_PROBE_BUSY'})
     if (req.method==='PUT' && !action) {
       const previous=profile.target
