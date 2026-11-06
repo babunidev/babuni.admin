@@ -208,3 +208,77 @@ test('missing player detail returns not-found rather than invalid data or mock p
     {playerId:'missing-player'},{createClient:()=>fixtureClient,writeEnabled:'disabled'})
   assert.deepEqual(result,{ok:true,data:null})
 })
+
+test('player detail returns avatars, achievements, currency, unlocks and encounter history',async()=>{
+  const now=Date.now()
+  const account={id:'test-player',data:{
+    playerName:'Test account',activeAvatarId:'hero',
+    activeSessionId:'private-session-id',
+    createdAt:now-1000000,lastPlayedAt:now-50000,
+    unlockedExpansions:[1001,1003],friendIds:['friend'],
+    currencies:{gems:42},loreGemClaims:{chapter_one:true},
+    dailyReward:{utcDay:'2026-11-06',encountersPlayed:4},
+    moderation:{banned:false},
+  }}
+  const role={
+    right_user:true,right_db:true,nonprivileged:true,
+    no_database_create:true,no_membership:true,no_schema_create:true,
+    can_edit_player:false,can_revoke_sessions:false,no_extra_write:true,
+    ...Object.fromEntries(['players','avatars','sessions','player_achievements',
+      'game_events','progressions','inventories','active_encounters'].map(
+      name=>['can_read_'+name,true])),
+  }
+  const client={
+    async connect(){},
+    async end(){},
+    async query(sql){
+      if(sql.startsWith('SELECT current_user='))return {rows:[role]}
+      if(sql.startsWith('SELECT id,data FROM public.players WHERE'))return {rows:[account]}
+      if(sql.startsWith('SELECT id,data FROM public.avatars WHERE'))return {rows:[
+        {id:'hero',data:{name:'My Hero',race:'Human',role:'Paladin',level:2,
+          experience:10,createdAt:now-800000,lastPlayedAt:now-60000}},
+      ]}
+      if(sql.startsWith('SELECT achievement_id,'))return {rows:[{
+        achievement_id:'first_steps',rank:1,progress:100,
+        unlocked_at:String(now-200000),updated_at:String(now-100000),
+      }]}
+      if(sql.startsWith('SELECT event_id,'))return {rows:[{
+        event_id:'event-1',timestamp:String(now-90000),avatar_id:'hero',
+        type:'encounter_completed',importance:'normal',
+        payload:{encounterTitle:'Old Ruins',outcome:'success'},
+      }]}
+      if(sql.startsWith('SELECT avatar_id,data FROM public.progressions'))return {rows:[
+        {avatar_id:'hero',data:{level:23,experience:543,
+          encountersCompleted:8,encountersFailed:1}},
+      ]}
+      if(sql.startsWith('SELECT avatar_id,data FROM public.inventories'))return {rows:[
+        {avatar_id:'hero',data:{spellbook:[1,2],items:[1],essences:[1,2,3]}},
+      ]}
+      if(sql.startsWith('SELECT avatar_id,data FROM public.active_encounters'))return {rows:[
+        {avatar_id:'hero',data:{encounterTitle:'Current quest'}},
+      ]}
+      if(sql.startsWith('SELECT id,player_id,data FROM public.sessions'))return {rows:[{
+        id:'private-session-id',player_id:'test-player',data:{expiresAt:now+80000,
+          secret:'never-send-to-ui'},
+      }]}
+      return {rows:[]}
+    },
+  }
+  const result=await queryMorkahjaModeration(config,'/socket','fixture','detail',
+    {playerId:'test-player'},{createClient:()=>client,writeEnabled:'disabled'})
+  assert.equal(result.ok,true)
+  const d=result.data
+  assert.equal(d.summary.name,'Test account')
+  assert.equal(d.summary.level,23)
+  assert.equal(d.summary.status,'online')
+  assert.equal(d.avatars.length,1)
+  assert.equal(d.avatars[0].name,'My Hero')
+  assert.equal(d.avatars[0].inventoryCounts.essences,3)
+  assert.equal(d.avatars[0].progression.encountersCompleted,8)
+  assert.deepEqual(d.unlockedExpansions,[1001,1003])
+  assert.equal(d.currencies.gems,42)
+  assert.equal(d.achievements[0].achievementId,'first_steps')
+  assert.equal(d.recentEncounters[0].title,'Old Ruins')
+  assert.equal(d.recentEncounters[0].outcome,'success')
+  assert.doesNotMatch(JSON.stringify(d),/private-session-id|never-send-to-ui/)
+})
