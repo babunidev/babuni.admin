@@ -9,6 +9,36 @@ import type {
 } from '../types/gameContent'
 import { imageFileToWebpBase64 } from '../utils/imageFileToWebpBase64'
 import { apiPost } from '../../../services/http'
+import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+
+export const CONTENT_PROFILE_KEY = 'babuni-admin:morkahja:content-profile'
+const contentRevisions = new Map<string, string>()
+
+export function getContentProfileId(): string | null {
+  try {
+    const value = window.localStorage.getItem(CONTENT_PROFILE_KEY)
+    return value && /^[0-9a-f-]{36}$/i.test(value) ? value : null
+  } catch { return null }
+}
+
+async function remoteRead<T>(kind: string): Promise<T> {
+  const id = getContentProfileId()
+  if (!id) throw new Error('CONTENT_PROFILE_REQUIRED')
+  const response = await localConnectionApi<{ok:true;data:T;revision:string}>(
+    'POST','/' + id + '/content-read',{kind})
+  contentRevisions.set(id + ':' + kind, response.revision)
+  return response.data
+}
+
+async function remoteWrite(kind: string, key: string | number, data: unknown): Promise<void> {
+  const id = getContentProfileId()
+  if (!id) throw new Error('CONTENT_PROFILE_REQUIRED')
+  const expectedRevision = contentRevisions.get(id + ':' + kind)
+  if (!expectedRevision) throw new Error('CONTENT_REVISION_REQUIRED')
+  const response = await localConnectionApi<{ok:true;revision:string}>(
+    'POST','/' + id + '/content-write',{kind,key,data,expectedRevision})
+  contentRevisions.set(id + ':' + kind, response.revision)
+}
 
 const LOCAL_API = '/local-content-api'
 
@@ -58,34 +88,40 @@ async function fetchGameJson<T>(fileName: string): Promise<T> {
 }
 
 export async function fetchEncounters(): Promise<EncounterMap> {
+  if (getContentProfileId()) return remoteRead('encounters')
   if (useLocalContent) return localGet('/encounters')
   return fetchGameJson('encountersdata.json')
 }
 
 export async function fetchSolutions(): Promise<SolutionMap> {
+  if (getContentProfileId()) return remoteRead('solutions')
   if (useLocalContent) return localGet('/solutions')
   return fetchGameJson('solutiondata.json')
 }
 
 export async function fetchExpansions(): Promise<ExpansionDataFile> {
+  if (getContentProfileId()) return remoteRead('expansions')
   if (useLocalContent) return localGet('/expansions')
   return fetchGameJson('expansiondata.json')
 }
 
 export async function fetchFrames(): Promise<FramesDataFile> {
+  if (getContentProfileId()) return remoteRead('frames')
   if (useLocalContent) return localGet('/frames')
   return fetchGameJson('frames.json')
 }
 
 export async function fetchPortraits(): Promise<PortraitsDataFile> {
+  if (getContentProfileId()) return remoteRead('portraits')
   if (useLocalContent) return localGet('/portraits')
-  return fetchGameJson('portraits')
+  return fetchGameJson('portraits.json')
 }
 
 export async function createEncounter(
   key: string,
   data: EncounterMap[string],
 ): Promise<void> {
+  if (getContentProfileId()) return remoteWrite('encounters', key, data)
   if (useLocalContent) {
     await localPost('/encounters', { key, data })
     return
@@ -97,6 +133,7 @@ export async function createSolution(
   key: string,
   data: SolutionMap[string],
 ): Promise<void> {
+  if (getContentProfileId()) return remoteWrite('solutions', key, data)
   if (useLocalContent) {
     await localPost('/solutions', { key, data })
     return
@@ -108,6 +145,7 @@ export async function createExpansion(
   key: string,
   data: ExpansionData,
 ): Promise<void> {
+  if (getContentProfileId()) return remoteWrite('expansions', key, data)
   if (useLocalContent) {
     await localPost('/expansions', { key, data })
     return
@@ -118,6 +156,7 @@ export async function createExpansion(
 export async function createFrame(
   data: NonNullable<FramesDataFile['Frames'][number]>,
 ): Promise<void> {
+  if (getContentProfileId()) return remoteWrite('frames', data.frameID, data)
   if (useLocalContent) {
     await localPost('/frames', data)
     return
@@ -128,6 +167,7 @@ export async function createFrame(
 export async function createPortrait(
   data: NonNullable<PortraitsDataFile['Avatar'][number]>,
 ): Promise<void> {
+  if (getContentProfileId()) return remoteWrite('portraits', data.avatarID, data)
   if (useLocalContent) {
     await localPost('/portraits', data)
     return
@@ -139,6 +179,7 @@ export async function uploadEncounterImage(
   fileName: string,
   file: File,
 ): Promise<void> {
+  if (getContentProfileId()) throw new Error('CONTENT_REMOTE_IMAGE_UPLOAD_NOT_YET_ENABLED')
   if (!useLocalContent) {
     throw new Error('Image upload only available with local content enabled')
   }
@@ -153,6 +194,7 @@ export async function uploadEncounterImageFromTitle(
   encounterId: number,
   file: File,
 ): Promise<string> {
+  if (getContentProfileId()) throw new Error('CONTENT_REMOTE_IMAGE_UPLOAD_NOT_YET_ENABLED')
   if (!useLocalContent) {
     throw new Error('Image upload only available with local content enabled')
   }
@@ -176,6 +218,7 @@ export async function uploadSolutionImage(
   fileName: string,
   file: File,
 ): Promise<void> {
+  if (getContentProfileId()) throw new Error('CONTENT_REMOTE_IMAGE_UPLOAD_NOT_YET_ENABLED')
   if (!useLocalContent) {
     throw new Error('Image upload only available with local content enabled')
   }
