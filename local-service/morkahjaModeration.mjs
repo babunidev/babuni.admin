@@ -328,7 +328,7 @@ export async function queryMorkahjaModeration(config,socketDir,password,action,p
     options:'-c default_transaction_read_only=on',
   })
   const writing=['timeout','ban','unban'].includes(action)
-  if(writing && process.env.BABUNI_MORKAHJA_MODERATION_WRITES!=='enabled')
+  if(writing && (deps.writeEnabled ?? process.env.BABUNI_MORKAHJA_MODERATION_WRITES)!=='enabled')
     return {ok:false,code:'REMOTE_MODERATION_WRITE_DISABLED'}
   let transaction=false
   try {
