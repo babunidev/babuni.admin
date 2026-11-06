@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
 import { ContentDetailPanel } from '../components/ContentDetailPanel'
 import {
   ContentImageGrid,
@@ -43,7 +44,6 @@ import {
   uploadEncounterImageFromTitle,
   uploadSolutionImage,
   getContentProfileId,
-  CONTENT_PROFILE_KEY,
 } from '../services/contentApi'
 import type {
   EncounterData,
@@ -96,7 +96,6 @@ export function ContentPage() {
   const [status, setStatus] = useState<string | null>(null)
   const queryClient = useQueryClient()
   const [contentProfileId, setContentProfileId] = useState(() => getContentProfileId() || '')
-  const [contentProfiles, setContentProfiles] = useState<{id:string;displayName:string}[]>([])
   const [contentProfileStatus, setContentProfileStatus] = useState('Checking Morkahja administrator connection…')
 
   useEffect(() => {
@@ -105,34 +104,16 @@ export function ContentPage() {
       id:string;projectId:string;kind:string;displayName:string
     }[]}>().then(result => {
       if (!mounted) return
-      const options = result.profiles.filter(p =>
-        p.projectId === 'morkahja' && p.kind === 'postgres-ssh-moderation')
-      setContentProfiles(options)
-      const stored = getContentProfileId()
-      if (stored && !options.some(p => p.id === stored)) {
-        try {window.localStorage.removeItem(CONTENT_PROFILE_KEY)} catch { /* Private mode may disable storage. */ }
-        setContentProfileId('')
-      }
-      setContentProfileStatus(options.length
-        ? 'Use the saved Morkahja administrator connection for content. Edits retain catalog revision checks and backups.'
-        : 'No Morkahja administrator connection configured; legacy/local content mode is available.')
+      const active = activateMorkahjaConnection(result.profiles)
+      setContentProfileId(active?.id || '')
+      setContentProfileStatus(active
+        ? 'Using your administrator connection. Catalog revisions and backups protect edits.'
+        : 'Administrator connection unavailable. Configure it in Connection.')
     }).catch(() => {
       if (mounted) setContentProfileStatus('Connection service unavailable; live content access not verified.')
     })
     return () => {mounted = false}
   }, [])
-
-  function selectContentProfile(id: string) {
-    try {
-      if (id) window.localStorage.setItem(CONTENT_PROFILE_KEY, id)
-      else window.localStorage.removeItem(CONTENT_PROFILE_KEY)
-    } catch {
-      setContentProfileStatus('Local profile selection cannot be persisted in this browser.')
-    }
-    setContentProfileId(id)
-    void queryClient.invalidateQueries({queryKey:['content']})
-    navigate('/content')
-  }
 
   const detailKind =
     kindParam && tabs.some((entry) => entry.id === kindParam)
@@ -387,23 +368,9 @@ export function ContentPage() {
         title="Content"
         description="Browse and add encounters, solutions, expansions, frames, and portraits."
       />
-      <div className="mb-3 rounded border border-gold/20 bg-slate/40 p-3">
-        <label htmlFor="content-profile" className="block text-xs text-fog">
-          Morkahja administrator connection
-        </label>
-        <select id="content-profile" value={contentProfileId}
-          onChange={event => selectContentProfile(event.target.value)}
-          className="mt-2 w-full rounded border border-gold/20 bg-ash p-2 text-sm text-parchment">
-          <option value="">Local files / legacy static source</option>
-          {contentProfiles.map(p => <option value={p.id} key={p.id}>{p.displayName}</option>)}
-        </select>
-        <p className="mt-2 text-xs text-fog" role="status">
-          {contentProfileStatus}
-          {contentProfileId ? ' · SSH is opened only for each individual request.'
-            : useLocalContent ? ' · Local files only, not live SSH.'
-              : ' · Static assets and legacy API; live SSH not selected.'}
-        </p>
-      </div>
+      <p className="mb-3 text-xs text-fog" role="status">
+        {contentProfileStatus}
+      </p>
       <p className="mb-4 text-xs text-fog">{dataSourceHint}</p>
       {contentProfileId && <p className="mb-3 text-xs text-fog" role="status">
         {activeContentError ? 'Last remote catalog read failed; no fallback content used.'
