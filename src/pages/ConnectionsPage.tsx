@@ -35,7 +35,6 @@ const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
     {value:'local-files',label:'Local files'},
     {value:'postgres-ssh',label:'PostgreSQL via SSH (restricted Overview)'},
     {value:'postgres-ssh-moderation',label:'Morkahja administrator (Moderation + Content)'},
-    {value:'ssh-content',label:'Legacy separate SSH Content profile'},
   ],
   'babuni-dev':[
     {value:'github',label:'GitHub repository (planned)'},
