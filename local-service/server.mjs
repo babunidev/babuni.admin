@@ -201,9 +201,12 @@ const server=createServer(async(req,res)=>{
       let request
       try{request=await body(req,512)}
       catch{return send(res,400,{error:'INVALID_IMAGE_REQUEST'})}
-      const report=await morkahjaImageCache.readCached(profile,request)
+      let report=await morkahjaImageCache.readCached(profile,request)
       if(!report.ok && report.code==='IMAGE_UNAVAILABLE' &&
-        morkahjaImageCache.status(profile).phase==='idle')morkahjaImageCache.ensureSync(profile)
+        morkahjaImageCache.status(profile).phase==='idle') {
+        morkahjaImageCache.ensureSync(profile)
+        report={ok:false,code:'IMAGE_CACHE_PENDING'}
+      }
       if(!report.ok)return send(res,
         report.code==='INVALID_IMAGE_REQUEST'?400:
         ['REMOTE_MODERATION_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:422,
