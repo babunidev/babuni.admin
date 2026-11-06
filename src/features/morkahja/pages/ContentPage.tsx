@@ -182,6 +182,12 @@ export function ContentPage() {
     enabled: activeTab === 'portraits' || detailKind === 'portraits',
   })
 
+  const activeContentLoaded =
+    activeTab === 'encounters' ? Boolean(encountersQuery.data) :
+    activeTab === 'solutions' ? Boolean(solutionsQuery.data) :
+    activeTab === 'expansions' ? Boolean(expansionsQuery.data) :
+    activeTab === 'frames' ? Boolean(framesQuery.data) : Boolean(portraitsQuery.data)
+
   const activeContentError =
     activeTab === 'encounters' ? encountersQuery.error :
     activeTab === 'solutions' ? solutionsQuery.error :
@@ -399,6 +405,11 @@ export function ContentPage() {
         </p>
       </div>
       <p className="mb-4 text-xs text-fog">{dataSourceHint}</p>
+      {contentProfileId && <p className="mb-3 text-xs text-fog" role="status">
+        {activeContentError ? 'Last remote catalog read failed; no fallback content used.'
+          : activeContentLoaded ? 'Last remote catalog read succeeded; SSH session closed.'
+            : 'Awaiting approved remote catalog read.'}
+      </p>}
       {activeContentError && (
         <p role="alert" className="mb-4 rounded border border-ember/40 bg-ember/10 p-3 text-sm text-red-300">
           Content could not be loaded from the configured source. No fallback data is shown.
