@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { StatCard } from '../components/StatCard'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
-import { MODERATION_PROFILE_KEY } from '../services/adminApi'
+import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
 
 interface ConnectionOption {
   id: string
@@ -46,7 +46,7 @@ const metricValue = (value: number | null | undefined): number | string =>
   typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : 'Unavailable'
 
 const LEGACY_PROFILE_KEY = 'babuni-admin:morkahja:overview-profile'
-const PROFILE_KEY = MODERATION_PROFILE_KEY
+
 const border = 'rounded-lg border border-gold/20 bg-slate/50 p-4'
 const button = 'rounded border border-gold/40 px-3 py-2 text-sm text-gold-bright disabled:opacity-40'
 const checkedTime = (value: string) => new Date(value).toLocaleString()
@@ -55,16 +55,6 @@ const lastPlayed = (value: number | null) =>
 
 // Only a non-secret profile UUID is persisted on the local PC. No password,
 // identity key, player data, or session capability is stored in the browser.
-function savedProfile():string {
-  try { return window.localStorage.getItem(PROFILE_KEY) || window.localStorage.getItem(LEGACY_PROFILE_KEY) || '' } catch { return '' }
-}
-function persistProfile(id:string,legacy=false) {
-  try {
-    const key=legacy ? LEGACY_PROFILE_KEY : PROFILE_KEY
-    if(id) window.localStorage.setItem(key,id)
-    else window.localStorage.removeItem(key)
-  } catch { /* Private browsing may disable storage; manual selection still works. */ }
-}
 const readErrorHints: Record<string,string> = {
   DB_READ_PERMISSION_DENIED: 'The restricted PostgreSQL views are not accessible to this reader.',
   DB_ROLE_RAW_READ_ACCESS: 'The reader has unexpected access to sensitive raw tables.',
@@ -91,7 +81,6 @@ function readableFailure(error:unknown):string {
 }
 
 export function ReadOnlyDashboardPage() {
-  const [profiles, setProfiles] = useState<ConnectionOption[]>([])
   const [profileId, setProfileId] = useState('')
   const [profileReady, setProfileReady] = useState(false)
   const [overview, setOverview] = useState<ReadResponse<Overview> | null>(null)
@@ -105,19 +94,25 @@ export function ReadOnlyDashboardPage() {
     let mounted = true
     void localConnectionApi<{profiles: ConnectionOption[]}>().then(result => {
       if (!mounted) return
-      const owned = result.profiles.filter(profile =>
-        profile.projectId === 'morkahja' && profile.kind === 'postgres-ssh-moderation')
-      // An available administrator profile replaces the old Overview-only
-      // selector. Legacy profiles remain usable until the owner migrates.
-      const eligible = owned.length ? owned : result.profiles.filter(profile =>
-        profile.projectId === 'morkahja' && profile.kind === 'postgres-ssh')
-      setProfiles(eligible)
-      const remembered = savedProfile()
-      const found = eligible.some(profile => profile.id === remembered)
-      if (remembered && !found && !owned.length) persistProfile('',true)
-      // A saved choice restores automatically. Merely creating a profile
-      // must not authorize an unrequested remote read.
-      setProfileId(found ? remembered : '')
+      const active=activateMorkahjaConnection(result.profiles)
+      // Use the one administrator automatically; retain the old Overview
+      // reader only as a migration fallback.
+      let selected=active?.id || ''
+      if(!selected) {
+        const legacy=result.profiles.filter(profile=>
+          profile.projectId==='morkahja' && profile.kind==='postgres-ssh')
+        if(legacy.length===1)selected=legacy[0].id
+        else {
+          try {
+            const remembered=window.localStorage.getItem(LEGACY_PROFILE_KEY)
+            selected=legacy.find(profile=>profile.id===remembered)?.id || ''
+          }catch { /* No legacy choice */ }
+        }
+      }
+      setProfileId(selected)
+      setStatus(selected
+        ? 'Using the configured Morkahja connection.'
+        : 'No configured administrator connection. Open Connection to set one up.')
       setProfileReady(true)
       setStatus(found ? 'Restoring your selected Morkahja Overview…'
         : eligible.length > 0
@@ -160,16 +155,6 @@ export function ReadOnlyDashboardPage() {
     // Only a profile selection or explicit Refresh starts this combined read.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId,profileReady,refreshNumber])
-
-  function chooseProfile(id:string) {
-    if (busy) return
-    persistProfile(id,id ? profiles.find(profile=>profile.id===id)?.kind==='postgres-ssh' : profiles.every(profile=>profile.kind==='postgres-ssh'))
-    currentPage.current=1
-    setOverview(null)
-    setPlayerPage(null)
-    setProfileId(id)
-    if (!id) setStatus('Select an authorized SSH profile below.')
-  }
 
   function refresh() {
     if (!profileId || busy) return
@@ -226,7 +211,7 @@ export function ReadOnlyDashboardPage() {
         </div>
         <p className="text-xs text-fog">Unavailable means the metric is not enabled or a valid aggregate could not be read.</p>
         <p className="text-xs text-fog">Checked: {checkedTime(overview.checkedAt)} · SSH disconnected after snapshot.</p>
-      </> : <p className="text-sm text-fog">Choose your authorized connection in the section below to load the figures.</p>}
+      </> : <p className="text-sm text-fog">Configure your Morkahja administrator connection in Connection to load the figures.</p>}
     </section>
 
     <section className={border} aria-label="Read-only player preview">
@@ -268,24 +253,5 @@ export function ReadOnlyDashboardPage() {
       </> : <p className="mt-4 text-sm text-fog">Player preview loads with the database overview.</p>}
     </section>
 
-    <section className={border} aria-label="Read-only connection settings">
-      <h2 className="text-sm uppercase tracking-widest text-gold-bright">Connection settings</h2>
-      <label htmlFor="readonly-profile" className="mt-3 block text-xs uppercase tracking-widest text-fog">
-        Authorized Morkahja connection
-      </label>
-      <select id="readonly-profile" value={profileId} disabled={busy}
-        className="mt-2 w-full rounded border border-gold/25 bg-ash p-2 text-parchment disabled:opacity-60"
-        onChange={event => chooseProfile(event.target.value)}>
-        <option value="">Choose SSH / PostgreSQL profile</option>
-        {profiles.map(profile => <option key={profile.id} value={profile.id}>
-          {profile.displayName + ' · ' + profile.target}
-        </option>)}
-      </select>
-      <p className="mt-3 text-xs text-fog">
-        Selecting a profile loads both panels and remembers only its local profile ID on this PC.
-        Reloading this page refreshes the authorized snapshot. No credentials or player data are saved
-        to browser storage, and the SSH tunnel closes after every request.
-      </p>
-    </section>
   </div>
 }
