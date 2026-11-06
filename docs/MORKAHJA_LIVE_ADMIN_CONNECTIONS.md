@@ -59,8 +59,16 @@ The helper reads the existing private, working Overview connection metadata and 
 ### B. On Nobara: review deployed schema and the SELECT-only role SQL
 
 ```bash
+SSH_TARGET=$(python3 - <<'PY'
+import json
+from pathlib import Path
+cfg=json.loads((Path.home()/'.config/babuni-admin/morkahja-probe.json').read_text())
+print(cfg['sshUser']+'@'+cfg['host'])
+PY
+)
 scp scripts/morkahja-moderation-schema-preflight.sql \
-  scripts/morkahja-moderation-read-role.sql babuni@babunidev:~/
+  scripts/morkahja-moderation-read-role.sql "$SSH_TARGET:~/"
+ssh "$SSH_TARGET"
 ```
 
 On the game server, set the database name printed by step A; verify it exists before continuing:
