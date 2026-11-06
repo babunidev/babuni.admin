@@ -30,7 +30,7 @@ test('moderation config preparation copies only approved metadata and refuses ov
     const first=command('--create')
     assert.equal(first.status,0,first.stderr)
     const created=JSON.parse(readFileSync(target,'utf8'))
-    assert.equal(created.dbUser,'babuni_admin_moderation')
+    assert.equal(created.dbUser,'babuni_admin')
     assert.equal(created.dbName,'actual_live_db')
     assert.equal(created.enabled,true)
     assert.equal(created.readOnlyDataEnabled,undefined)
