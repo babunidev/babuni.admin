@@ -1,5 +1,5 @@
 import { localAdminApiBase, useLocalPostgres } from '../../../config/constants'
-import { apiBaseUrl, useMockData } from '../../../config/api'
+import { useMockData } from '../../../config/api'
 import type {
   ActivityFeedItem,
   BanPlayerRequest,
@@ -92,27 +92,8 @@ export type PlayersQueryResult = {
 
 export async function fetchPlayersWithMeta(): Promise<PlayersQueryResult> {
   if (useLocalPostgres) {
-    try {
-      const players = await localGet<Player[]>('/players')
-      return { players, isSample: false }
-    } catch (error) {
-      const dbError = error instanceof Error ? error.message : String(error)
-
-      if (!useMockData && apiBaseUrl.length > 0) {
-        try {
-          const players = await apiGet<Player[]>('/players')
-          return { players, isSample: false }
-        } catch {
-          // try mock below
-        }
-      }
-
-      if (import.meta.env.DEV) {
-        return { players: getMockPlayers(), isSample: true, dbError }
-      }
-
-      throw error
-    }
+    // A failed privileged source must never silently become mock or another API.
+    return { players: await localGet<Player[]>('/players'), isSample: false }
   }
 
   if (useMockData) {
@@ -130,15 +111,7 @@ export async function fetchPlayers(): Promise<Player[]> {
 
 export async function fetchPlayerDetail(playerId: string): Promise<PlayerDetail> {
   if (useLocalPostgres) {
-    try {
-      return await localGet<PlayerDetail>(`/players/${encodeURIComponent(playerId)}`)
-    } catch (error) {
-      if (import.meta.env.DEV) {
-        const mock = getMockPlayerDetail(playerId)
-        if (mock) return mock
-      }
-      throw error
-    }
+    return localGet<PlayerDetail>(`/players/${encodeURIComponent(playerId)}`)
   }
 
   if (useMockData) {
