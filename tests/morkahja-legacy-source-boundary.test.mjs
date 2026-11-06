@@ -26,7 +26,7 @@ test('privileged pages disclose old data sources rather than impersonating the a
   assert.match(players,/activateMorkahjaConnection/)
   assert.match(players,/Live player data loaded/)
   assert.match(content,/activateMorkahjaConnection/)
-  assert.match(content,/Static assets and legacy API/)
+  assert.match(content,/Local files \/ legacy static source|useLocalContent/)
 })
 
 test('content page reports source errors rather than silently treating them as empty content',()=>{
