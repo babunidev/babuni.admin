@@ -238,7 +238,7 @@ export function ConnectionsPage() {
     <section className="space-y-4 rounded-lg border border-gold/20 bg-slate/50 p-5" aria-label="Babuni Dev administrator connection">
       <div>
         <h2 className="text-lg font-medium text-parchment">Babuni Dev administrator</h2>
-        <p className="mt-1 text-sm text-fog">Configured for this workbench. Uses your existing approved server SSH identity, so there is no second host setup or administrator account.</p>
+        <p className="mt-1 text-sm text-fog">Configured for this workbench. Uses the same approved VPS, with its existing dedicated website deployment key. No additional connection profile is needed.</p>
       </div>
       <dl className="grid gap-3 text-sm sm:grid-cols-2">
         <div><dt className="text-fog">Server</dt><dd className="break-all text-parchment">{portfolio?.host || 'Administrator server not configured'}</dd></div>
@@ -246,7 +246,7 @@ export function ConnectionsPage() {
         <div><dt className="text-fog">GitHub</dt><dd className="text-parchment">{portfolio?.repository || 'babunidev/babuni.dev'}</dd></div>
         <div><dt className="text-fog">Deployed website</dt><dd className="text-parchment">/var/www/babuni.dev/current</dd></div>
       </dl>
-      <p className="text-xs text-fog">SSH authenticates with the existing pinned host key and your desktop SSH agent. The database password is not an SSH password; GitHub uses your existing GitHub CLI login. No secrets appear in this interface.</p>
+      <p className="text-xs text-fog">Website SSH authenticates as babunideploy with its existing private key and the pinned VPS host key. Unlock that key through your desktop SSH agent when needed. The game database password is separate; GitHub uses the existing GitHub CLI login. No secrets are entered here.</p>
       <div className="flex flex-wrap items-center gap-3">
         <button className={button} type="button" disabled={busy || !portfolio?.configured}
           onClick={()=>{void verifyPortfolio()}}>Verify Babuni Dev connection</button>
@@ -262,7 +262,7 @@ export function ConnectionsPage() {
           <div><dt className="text-fog">Server SSH</dt><dd className={portfolioResult.ssh.ok?'text-parchment':'text-fog'}>{portfolioResult.ssh.code}</dd></div>
         </dl>
       </div>}
-      <p className="text-xs text-fog">Connection verification is read-only. Editing and publishing will be activated separately after the website's release workflow is integrated.</p>
+      <p className="text-xs text-fog">Connection verification reads GitHub and the public website and checks SSH read/staging permissions without changing server files. Editing and publishing remain disabled until the release workflow is integrated.</p>
     </section>
   </div>
 }
