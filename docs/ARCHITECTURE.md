@@ -1,5 +1,14 @@
 # Babuni Admin — Architecture
 
+## Babuni Dev: initial outbound read-only connection checks (2026-11-07)
+
+`local-service/babuniDevConnections.mjs` implements two explicit, bounded probes selected through existing local profiles and the authenticated loopback connection service. The server-side capability registry grants only `github:probe` to a `babuni-dev/github` profile and only `website:probe` to `babuni-dev/remote-publish`. The retained remote-publish adapter name does **not** imply publication permission.
+
+The GitHub probe calls `gh api --hostname github.com repos/babunidev/babuni.dev` without a shell. It uses the local operator's preexisting CLI authorization, restricts the target to the single designated public source repository, bounds stdout and wall time, verifies returned repository identity and branch metadata, and never returns credentials or raw command stderr. A saved keyring credential is not used by this metadata probe. The website probe allows only `www.babuni.dev`, requests only its canonical HTTPS homepage with HEAD and redirects disabled, and requires HTML 200. Neither profile can supply arbitrary endpoints.
+
+Both checks are manual. Successful metadata/HTTP checks cannot establish deployment credentials, actual editing scopes, source revisions, published release identity or safe content updates. The existing browser/session/authentication boundary, other project adapters and Morkahja read-only database gates remain unchanged. Operator live tests and all publication implementation remain pending.
+
+
 ## Batch A restricted metrics: prepared SQL, not a deployed adapter (2026-11-05)
 
 `scripts/morkahja-batch-a-aggregate-views.sql` defines one future owner-rights, security-barrier view `babuni_admin_ro.progression_ownership_totals`. The view summarizes `public.players` and `public.player_achievements` without granting the probe role SELECT on either table. It returns only numeric aggregate counts and aggregate data-quality signals; invalid unlock data forces NULL (unavailable) for the affected metric. The SQL uses transaction-local `SET ROLE morkahjadbadmin` so the view owner remains the approved game-database owner.
