@@ -1,4 +1,12 @@
 # Babuni Admin — Decisions and Alternatives
+## 2026-11-07 — Avoid secondary setup for the same owner and server
+
+**Creative decision:** The administration tool belongs to one operator and should show a stable project-specific Babuni Dev administrator alongside Morkahja, while being ready for more project workspaces. Entering the portfolio workspace must not require manually creating two separate GitHub and website profiles. The older Morkahja server fallback profile can be retired because the owner administrator now serves the game workspace.
+
+**Implementation:** AI replaced the Babuni Dev setup cards with one derived administrator panel. The site check reuses the already approved pinned SSH identity, while source-control access continues to use the desktop GitHub CLI. Each connection check remains explicitly read-only. A dedicated local maintenance action removes only the superseded Morkahja read-only profile and its keyring credential when invoked; the active administrator connection is never changed.
+
+**Open boundary:** Same VPS does not prove that the SSH account has write permissions to babuni.dev's release directories. Deployment identity, staging, verification, rollback and GitHub writes are still separate engineering work. Neither a new server password nor extra host profiles are assumed necessary for the current read-only checks.
+
 
 ## 2026-11-07 — One continuous Babuni Admin codebase and shared connections
 
