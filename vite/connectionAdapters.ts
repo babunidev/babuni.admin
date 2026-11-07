@@ -1,5 +1,5 @@
 export type ProjectId = 'morkahja' | 'babuni-dev'
-export type ConnectionKind = 'local-files' | 'postgres-ssh' | 'github' | 'remote-publish'
+export type ConnectionKind = 'local-files' | 'postgres-ssh' | 'postgres-ssh-moderation' | 'ssh-content' | 'github' | 'remote-publish'
 export type Capability = 'local:test' | 'local:inspect' | 'local:connect' | 'ssh:preflight' | 'ssh:probe' | 'ssh:read' | 'github:probe' | 'website:probe'
 export interface AdapterSpec {
   projectId: ProjectId
@@ -18,6 +18,16 @@ export const adapterSpecs: Record<ConnectionKind, AdapterSpec> = {
   'postgres-ssh': {
     projectId: 'morkahja', kind: 'postgres-ssh', transport: 'planned',
     requiresCredential: true, capabilities: ['ssh:preflight','ssh:probe','ssh:read'],
+  },
+  // Retain profiles created by the separate Morkahja development branch.
+  // These compatibility entries deliberately grant no connection or write capability.
+  'postgres-ssh-moderation': {
+    projectId: 'morkahja', kind: 'postgres-ssh-moderation', transport: 'planned',
+    requiresCredential: true, capabilities: [],
+  },
+  'ssh-content': {
+    projectId: 'morkahja', kind: 'ssh-content', transport: 'planned',
+    requiresCredential: false, capabilities: [],
   },
   github: {
     projectId: 'babuni-dev', kind: 'github', transport: 'read-only',
