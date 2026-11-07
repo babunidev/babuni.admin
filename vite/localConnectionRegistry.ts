@@ -20,6 +20,8 @@ export type ConnectionView = ConnectionProfile & { state: 'not-configured'; deta
 
 const targetPatterns: Record<ConnectionKind, RegExp> = {
   'local-files': /^\/[\w .\-/]{1,250}$/,
+  'ssh-content': /^(?=.{1,120}$)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+  'postgres-ssh-moderation': /^(?=.{1,120}$)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
   'postgres-ssh': /^(?=.{1,120}$)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
   github: /^[a-zA-Z0-9_.-]{1,100}\/[a-zA-Z0-9_.-]{1,100}$/,
   'remote-publish': /^[a-zA-Z0-9.-]{1,120}$/,

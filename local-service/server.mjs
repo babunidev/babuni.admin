@@ -2,11 +2,15 @@ import { createServer } from 'node:http'
 import { timingSafeEqual } from 'node:crypto'
 import { inspectContent } from './inspectContent.mjs'
 import { probeProfile, inspectionState } from './connectionHealth.mjs'
+import { probeBabuniDevConnection, checkBabuniDevAdministrator } from './babuniDevConnections.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
 import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { parsePlayerPage } from './morkahjaReadOnly.mjs'
+import { performMorkahjaModeration, isModerationActive } from './morkahjaModerationRunner.mjs'
+import { performMorkahjaContent, isContentActive, stopAllContentSsh } from './morkahjaContentRunner.mjs'
+import { morkahjaImageCache } from './morkahjaImageCache.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -20,6 +24,8 @@ if (!TOKEN || TOKEN.length < 32 || !Number.isInteger(PORT) || PORT < 1024 || POR
 }
 const registry = new LocalConnectionRegistry(process.env.BABUNI_TEST_PROFILE_FILE)
 const states = new Map()
+let portfolioReport = null
+let portfolioCheckActive = false
 function send(res, code, data) {
   res.writeHead(code, {'Content-Type':'application/json; charset=utf-8',
     'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'})
@@ -31,11 +37,11 @@ function validKey(supplied) {
   const b = Buffer.from(TOKEN)
   return a.length === b.length && timingSafeEqual(a,b)
 }
-async function body(req) {
+async function body(req,maximum=4096) {
   let content = ''
   for await (const part of req) {
     content += part.toString('utf8')
-    if (Buffer.byteLength(content)>4096) throw Object.assign(new Error('TOO_LARGE'),{status:413})
+    if (Buffer.byteLength(content)>maximum) throw Object.assign(new Error('TOO_LARGE'),{status:413})
   }
   try { return JSON.parse(content) } catch { throw Object.assign(new Error('INVALID_JSON'),{status:400}) }
 }
@@ -75,6 +81,50 @@ const server=createServer(async(req,res)=>{
       ok:true,service:'available',mode:'local-only',
       keyring:await keyringHealth(),checkedAt:new Date().toISOString(),
     })
+    // One fixed Babuni Dev administrator derives its host from the approved
+    // Morkahja operator profile; no separate website or GitHub profile to create.
+    if (req.method==='GET' && path==='/portfolio/status') {
+      const admins=registry.list().filter(p=>
+        p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation')
+      return send(res,200,{
+        configured:admins.length===1,
+        host:admins.length===1 ? admins[0].target : null,
+        repository:'babunidev/babuni.dev',website:'www.babuni.dev',
+        report:portfolioReport,
+        legacyProfileCount:registry.list().filter(p=>
+          p.projectId==='morkahja' && p.kind==='postgres-ssh').length,
+      })
+    }
+    if (req.method==='POST' && path==='/portfolio/check') {
+      if(portfolioCheckActive)return send(res,409,{error:'PORTFOLIO_CHECK_BUSY'})
+      const admins=registry.list().filter(p=>
+        p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation')
+      if(admins.length!==1)return send(res,409,{error:'ADMIN_CONNECTION_MISSING'})
+      portfolioCheckActive=true
+      try {
+        const report=await checkBabuniDevAdministrator(admins[0])
+        portfolioReport=report
+        return send(res,200,report)
+      } finally {portfolioCheckActive=false}
+    }
+    // Explicit retirement of the superseded Overview-only profile. No other
+    // workspace accounts, moderation profiles or SSH configurations are touched.
+    if (req.method==='POST' && path==='/maintenance/retire-legacy') {
+      const all=registry.list()
+      if(all.filter(p=>p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation').length!==1) {
+        return send(res,409,{error:'ADMIN_CONNECTION_MISSING'})
+      }
+      if(isSshProbeActive() || isModerationActive() || isContentActive() || portfolioCheckActive)
+        return send(res,409,{error:'REMOTE_PROBE_BUSY'})
+      const legacy=all.filter(p=>p.projectId==='morkahja' && p.kind==='postgres-ssh')
+      for(const profile of legacy) {
+        try {await clearCredential(profile)}
+        catch{return send(res,503,{error:'KEYRING_UNAVAILABLE'})}
+        registry.remove(profile.id)
+        states.delete(profile.id)
+      }
+      return send(res,200,{ok:true,removed:legacy.length})
+    }
     if (req.method==='GET' && path==='/') return send(res,200,{
       profiles:await Promise.all(registry.list().map(listedProfile)),
     })
@@ -82,7 +132,7 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban|content-read|content-write|content-image|content-image-sync|content-image-status))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
@@ -90,7 +140,9 @@ const server=createServer(async(req,res)=>{
     if (!profile) return send(res,404,{error:'NOT_FOUND'})
 
     if (['PUT','DELETE'].includes(req.method) && !action &&
-        profile.kind==='postgres-ssh' && isSshProbeActive()) return send(res,409,{error:'REMOTE_PROBE_BUSY'})
+        ((profile.kind==='postgres-ssh' && isSshProbeActive()) ||
+        (profile.kind==='postgres-ssh-moderation' && (isModerationActive() || isContentActive())) ||
+        (profile.kind==='ssh-content' && isContentActive()))) return send(res,409,{error:'REMOTE_PROBE_BUSY'})
     if (req.method==='PUT' && !action) {
       const previous=profile.target
       const updated=registry.update(id,await body(req))
@@ -109,7 +161,10 @@ const server=createServer(async(req,res)=>{
     if (req.method==='POST' && action==='test') {
       const previous=states.get(id) || {}
       const result=hasCapability(profile,'ssh:preflight')
-        ? await preflightSshHost(profile) : await probeProfile(profile,previous)
+        ? await preflightSshHost(profile)
+        : hasCapability(profile,'github:probe') || hasCapability(profile,'website:probe')
+          ? {...await probeBabuniDevConnection(profile,previous), credential:await credentialStatus(profile)}
+          : await probeProfile(profile,previous)
       const status=previous.state==='connected' && result.state==='available'
         ? {...result,state:'connected',code:'LOCAL_READ_ONLY_CONNECTED'} : result
       states.set(id,status)
@@ -140,6 +195,72 @@ const server=createServer(async(req,res)=>{
         detail:'Approved read-only snapshot retrieved; SSH tunnel closed.',
         checkedAt:report.checkedAt,lastSuccessAt:report.checkedAt,
       })
+      return send(res,200,report)
+    }
+    if (req.method==='POST' && action?.startsWith('moderation-')) {
+      if(!hasCapability(profile,'ssh:moderation')) return send(res,403,{error:'CAPABILITY_DENIED'})
+      let payload
+      try {payload=await body(req)}
+      catch {return send(res,400,{error:'INVALID_MODERATION_BODY'})}
+      const op=action.slice('moderation-'.length)
+      const result=await performMorkahjaModeration(profile,op,payload)
+      if(!result.ok) {
+        const status=result.code==='REMOTE_MODERATION_BUSY'?409:
+          result.code==='INVALID_MODERATION_BODY'?400:
+          ['REMOTE_MODERATION_DISABLED','REMOTE_MODERATION_WRITE_DISABLED','REMOTE_SCOPE_DENIED'].includes(result.code)?403:422
+        return send(res,status,{error:result.code})
+      }
+      states.set(id,{
+        state:'disconnected',code:'REMOTE_MODERATION_COMPLETED',
+        detail:'Authorized scoped moderation operation completed; SSH tunnel closed.',
+        checkedAt:result.checkedAt,lastSuccessAt:result.checkedAt,
+      })
+      return send(res,200,result)
+    }
+    if (req.method==='POST' && ['content-read','content-write'].includes(action)) {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      let payload
+      try {payload=await body(req,128*1024)}
+      catch {return send(res,400,{error:'CONTENT_INVALID_REQUEST'})}
+      const request={...payload,action:action==='content-read'?'read':'write'}
+      const report=await performMorkahjaContent(profile,request)
+      if(!report.ok) {
+        const status=report.code==='REMOTE_CONTENT_BUSY'?409:
+          ['REMOTE_CONTENT_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:
+          ['CONTENT_INVALID_REQUEST','CONTENT_TOO_LARGE'].includes(report.code)?400:
+          report.code==='CONTENT_CONFLICT'?409:422
+        return send(res,status,{error:report.code})
+      }
+      states.set(id,{
+        state:'disconnected',code:'REMOTE_CONTENT_COMPLETED',
+        detail:'Scoped content operation completed; temporary SSH session closed.',
+        checkedAt:report.checkedAt,lastSuccessAt:report.checkedAt,
+      })
+      return send(res,200,report)
+    }
+    if(req.method==='POST' && action==='content-image-sync') {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      return send(res,200,{ok:true,...morkahjaImageCache.ensureSync(profile)})
+    }
+    if(req.method==='GET' && action==='content-image-status') {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      return send(res,200,{ok:true,...morkahjaImageCache.status(profile)})
+    }
+    if (req.method==='POST' && action==='content-image') {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      let request
+      try{request=await body(req,512)}
+      catch{return send(res,400,{error:'INVALID_IMAGE_REQUEST'})}
+      let report=await morkahjaImageCache.readCached(profile,request)
+      if(!report.ok && report.code==='IMAGE_UNAVAILABLE' &&
+        morkahjaImageCache.status(profile).phase==='idle') {
+        morkahjaImageCache.ensureSync(profile)
+        report={ok:false,code:'IMAGE_CACHE_PENDING'}
+      }
+      if(!report.ok)return send(res,
+        report.code==='INVALID_IMAGE_REQUEST'?400:
+        ['REMOTE_MODERATION_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:422,
+        {error:report.code})
       return send(res,200,report)
     }
     if (req.method==='GET' && action==='inspect') {
@@ -173,6 +294,6 @@ const server=createServer(async(req,res)=>{
 })
 server.on('error',error=>{console.error('Local service could not bind to loopback:',error.code||error.message);process.exitCode=1})
 server.listen(PORT,'127.0.0.1',()=>console.log('Local profile service ready on loopback (remote probe disabled by default).'))
-const close=()=>{void stopAllSshTunnels().finally(()=>server.close(()=>process.exit(0)))}
+const close=()=>{void Promise.allSettled([stopAllSshTunnels(),stopAllContentSsh(),morkahjaImageCache.stop()]).finally(()=>server.close(()=>process.exit(0)))}
 process.on('SIGTERM',close)
 process.on('SIGINT',close)

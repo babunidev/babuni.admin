@@ -1,6 +1,7 @@
 import pg from 'pg'
 import { readProgression } from './progressionMetrics.mjs'
 import { inspectReadOnlyDatabase } from './sshPostgresProbe.mjs'
+import { verifyModerationRole } from './morkahjaModeration.mjs'
 
 export const PLAYER_PAGE_SIZE = 20
 export const READ_ONLY_FIELDS = ['displayName', 'avatarCount', 'lastPlayedAt']
@@ -70,15 +71,18 @@ function asTimestamp(value) {
     ms<=253402300799999 ? ms : null
 }
 
-export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1) {
+export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1,mode='restricted') {
   if (!['overview','players','dashboard'].includes(kind)) throw new Error('INVALID_READ_OPERATION')
   if (kind!=='overview' && (!Number.isInteger(page) || page<1 || page>1000)) {
     throw new Error('INVALID_PAGE')
   }
-  let role
-  try { role=await inspectReadOnlyDatabase(config,endpoint,password) }
-  catch(error) {return {ok:false,code:classifyReadOnlyError(error)}}
-  if (!role.ok) return {ok:false,code:role.code}
+  if(mode!=='admin' && mode!=='restricted')return {ok:false,code:'INVALID_READ_OPERATION'}
+  if(mode==='restricted') {
+    let role
+    try { role=await inspectReadOnlyDatabase(config,endpoint,password) }
+    catch(error) {return {ok:false,code:classifyReadOnlyError(error)}}
+    if(!role.ok)return {ok:false,code:role.code}
+  }
   const client=new pg.Client({
     host:typeof endpoint==='string'?endpoint:'127.0.0.1',
     port:typeof endpoint==='string'?5432:endpoint,
@@ -93,12 +97,18 @@ export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1
     await client.connect()
     await client.query('BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY')
     inTransaction=true
-    const boundary=(await client.query(BOUNDARY_SQL)).rows[0]
-    if(!boundary?.views_allowed) {
-      return {ok:false,code:'DB_READ_PERMISSION_DENIED'}
-    }
-    if(boundary.raw_table_access) {
-      return {ok:false,code:'DB_ROLE_RAW_READ_ACCESS'}
+    if(mode==='admin') {
+      // The same administrator credential may use the existing view-only
+      // Overview queries; still never run SQL writes from this endpoint.
+      await verifyModerationRole(client,config,true)
+    } else {
+      const boundary=(await client.query(BOUNDARY_SQL)).rows[0]
+      if(!boundary?.views_allowed) {
+        return {ok:false,code:'DB_READ_PERMISSION_DENIED'}
+      }
+      if(boundary.raw_table_access) {
+        return {ok:false,code:'DB_ROLE_RAW_READ_ACCESS'}
+      }
     }
     let overview
     if(kind==='overview' || kind==='dashboard') {

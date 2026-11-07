@@ -1,7 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
+import { useMorkahjaImageCacheStatus } from '../../../shared/services/morkahjaImageCacheStatus'
 import { ContentDetailPanel } from '../components/ContentDetailPanel'
+import { RemoteContentImage } from '../components/RemoteContentImage'
 import {
   ContentImageGrid,
   type ContentGridItem,
@@ -41,6 +45,7 @@ import {
   fetchSolutions,
   uploadEncounterImageFromTitle,
   uploadSolutionImage,
+  getContentProfileId,
 } from '../services/contentApi'
 import type {
   EncounterData,
@@ -92,6 +97,31 @@ export function ContentPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | null>(null)
   const queryClient = useQueryClient()
+  const imageCache=useMorkahjaImageCacheStatus()
+  const [contentProfileId, setContentProfileId] = useState(() => getContentProfileId() || '')
+  const [contentProfileStatus, setContentProfileStatus] = useState('Checking Morkahja administrator connection…')
+  const [connectionReady,setConnectionReady] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    void localConnectionApi<{profiles:{
+      id:string;projectId:string;kind:string;displayName:string
+    }[]}>().then(result => {
+      if (!mounted) return
+      const active = activateMorkahjaConnection(result.profiles)
+      setContentProfileId(active?.id || '')
+      setConnectionReady(true)
+      setContentProfileStatus(active
+        ? 'Using your administrator connection. Catalog revisions and backups protect edits.'
+        : 'Administrator connection unavailable. Configure it in Connection.')
+    }).catch(() => {
+      if (mounted) {
+        setContentProfileStatus('Connection service unavailable; live content access not verified.')
+        setConnectionReady(true)
+      }
+    })
+    return () => {mounted = false}
+  }, [])
 
   const detailKind =
     kindParam && tabs.some((entry) => entry.id === kindParam)
@@ -106,40 +136,52 @@ export function ContentPage() {
   }
 
   const encountersQuery = useQuery({
-    queryKey: ['content', 'encounters'],
+    queryKey: ['content', 'encounters', contentProfileId],
     queryFn: fetchEncounters,
-    enabled:
+    enabled: connectionReady && (
       activeTab === 'encounters' ||
       activeTab === 'solutions' ||
       detailKind === 'encounters' ||
-      detailKind === 'solutions',
+      detailKind === 'solutions'),
   })
   const solutionsQuery = useQuery({
-    queryKey: ['content', 'solutions'],
+    queryKey: ['content', 'solutions', contentProfileId],
     queryFn: fetchSolutions,
-    enabled:
+    enabled: connectionReady && (
       activeTab === 'solutions' ||
       activeTab === 'encounters' ||
-      detailKind === 'solutions',
+      detailKind === 'solutions'),
   })
   const expansionsQuery = useQuery({
-    queryKey: ['content', 'expansions'],
+    queryKey: ['content', 'expansions', contentProfileId],
     queryFn: fetchExpansions,
-    enabled:
+    enabled: connectionReady && (
       activeTab === 'expansions' ||
       activeTab === 'encounters' ||
-      detailKind === 'expansions',
+      detailKind === 'expansions'),
   })
   const framesQuery = useQuery({
-    queryKey: ['content', 'frames'],
+    queryKey: ['content', 'frames', contentProfileId],
     queryFn: fetchFrames,
-    enabled: activeTab === 'frames' || detailKind === 'frames',
+    enabled: connectionReady && (activeTab === 'frames' || detailKind === 'frames'),
   })
   const portraitsQuery = useQuery({
-    queryKey: ['content', 'portraits'],
+    queryKey: ['content', 'portraits', contentProfileId],
     queryFn: fetchPortraits,
-    enabled: activeTab === 'portraits' || detailKind === 'portraits',
+    enabled: connectionReady && (activeTab === 'portraits' || detailKind === 'portraits'),
   })
+
+  const activeContentLoaded =
+    activeTab === 'encounters' ? Boolean(encountersQuery.data) :
+    activeTab === 'solutions' ? Boolean(solutionsQuery.data) :
+    activeTab === 'expansions' ? Boolean(expansionsQuery.data) :
+    activeTab === 'frames' ? Boolean(framesQuery.data) : Boolean(portraitsQuery.data)
+
+  const activeContentError =
+    activeTab === 'encounters' ? encountersQuery.error :
+    activeTab === 'solutions' ? solutionsQuery.error :
+    activeTab === 'expansions' ? expansionsQuery.error :
+    activeTab === 'frames' ? framesQuery.error : portraitsQuery.error
 
   const encounterRows = useMemo(() => {
     const map = encountersQuery.data ?? {}
@@ -172,6 +214,8 @@ export function ContentPage() {
       .map(([key, row]) => ({
         id: key,
         imageSrc: solutionImageUrl(row.mSolutionIconName),
+        remoteKind: 'solution',
+        remoteName: row.mSolutionIconName,
         title: row.mSolutionName,
       }))
   }, [solutionsQuery.data, search])
@@ -221,7 +265,10 @@ export function ContentPage() {
       header: 'Image',
       render: (row) => {
         const src = encounterImageUrl(row.mEncounterImageName)
-        return src ? (
+        return contentProfileId ? (
+          <RemoteContentImage profileId={contentProfileId} kind="encounter"
+            name={row.mEncounterImageName} className="h-10 w-16 rounded object-cover"/>
+        ) : src ? (
           <img src={src} alt="" className="h-10 w-16 rounded object-cover" />
         ) : (
           <span className="text-xs text-fog">{row.mEncounterImageName}</span>
@@ -292,10 +339,10 @@ export function ContentPage() {
       closeEncounterEditor()
       setStatus(
         wasEdit
-          ? useLocalContent
+          ? contentProfileId ? 'Encounter updated in deployed game catalog via SSH.' : useLocalContent
             ? 'Encounter updated in encountersdata.json.'
             : 'Encounter updated on VPS.'
-          : useLocalContent
+          : contentProfileId ? 'Encounter saved to deployed game catalog via SSH.' : useLocalContent
             ? 'Encounter saved to encountersdata.json on disk.'
             : 'Encounter saved on VPS.',
       )
@@ -311,7 +358,7 @@ export function ContentPage() {
     },
     onSuccess: () => {
       setStatus(
-        useLocalContent
+        contentProfileId ? 'Solution saved to deployed game catalog via SSH.' : useLocalContent
           ? 'Solution saved to solutiondata.json on disk.'
           : 'Solution saved on VPS.',
       )
@@ -320,7 +367,9 @@ export function ContentPage() {
     onError: (err: Error) => setStatus(err.message),
   })
 
-  const dataSourceHint = useLocalContent
+  const dataSourceHint = contentProfileId
+    ? 'Administrator catalog and images via SSH · /var/www/morkahja'
+    : useLocalContent
     ? `Local files: MorkahjaWebApp/client/public/game + /UI (saves go to disk)`
     : gameDataBaseUrl
       ? `Loading from ${gameDataBaseUrl}`
@@ -332,7 +381,30 @@ export function ContentPage() {
         title="Content"
         description="Browse and add encounters, solutions, expansions, frames, and portraits."
       />
+      <p className="mb-3 text-xs text-fog" role="status">
+        {contentProfileStatus}
+      </p>
       <p className="mb-4 text-xs text-fog">{dataSourceHint}</p>
+      {contentProfileId && <p className="mb-3 text-xs text-fog" role="status">
+        {activeContentError ? 'Last remote catalog read failed; no fallback content used.'
+          : activeContentLoaded ? 'Last remote catalog read succeeded; SSH session closed.'
+            : 'Awaiting approved remote catalog read.'}
+      </p>}
+      {contentProfileId && <p className="mb-3 text-xs text-fog" role="status">
+        {imageCache.phase==='syncing'
+          ? `Images: syncing the whole workspace · ${imageCache.verified} checked, ${imageCache.downloaded} updated · existing local files remain available.`
+          : imageCache.phase==='ready'
+            ? `Images: ${imageCache.cached} stored on this computer · updated files are refreshed automatically.`
+            : imageCache.phase==='failed'
+              ? `Image sync unavailable (${imageCache.error || 'unknown error'}); locally cached images remain available.`
+              : 'Images: preparing persistent local cache.'}
+      </p>}
+      {activeContentError && (
+        <p role="alert" className="mb-4 rounded border border-ember/40 bg-ember/10 p-3 text-sm text-red-300">
+          Content could not be loaded from the configured source. No fallback data is shown.
+          {' · '}{activeContentError instanceof Error ? activeContentError.message : 'CONTENT_READ_FAILED'}
+        </p>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {tabs.map((item) => (
@@ -416,7 +488,7 @@ export function ContentPage() {
               onClose={closeEncounterEditor}
               isSaving={saveEncounter.isPending}
               onUploadImage={
-                useLocalContent
+                useLocalContent && !contentProfileId
                   ? (file) =>
                       uploadEncounterImageFromTitle(
                         encounterDraft.mEncounterTitle.trim() ||
@@ -433,6 +505,7 @@ export function ContentPage() {
             selectedEncounterDetail &&
             !encounterEditorOpen && (
             <EncounterDetailPanel
+              profileId={contentProfileId}
               detail={selectedEncounterDetail}
               onClose={closeDetail}
               onEdit={() => startEncounterEdit(itemKey)}
@@ -455,6 +528,7 @@ export function ContentPage() {
             Click an icon to view full description and linked encounters.
           </p>
           <ContentImageGrid
+            profileId={contentProfileId}
             items={solutionGridItems}
             selectedId={detailKind === 'solutions' ? itemKey : undefined}
             onSelect={(key) => openItem('solutions', key)}
@@ -462,6 +536,7 @@ export function ContentPage() {
           />
           {detailKind === 'solutions' && selectedSolution && (
             <SolutionDetailPanel
+              profileId={contentProfileId}
               keyId={selectedSolution.key}
               solution={selectedSolution.solution}
               encounters={encountersQuery.data ?? {}}
@@ -522,7 +597,7 @@ export function ContentPage() {
                   }
                 />
               </Field>
-              {useLocalContent && (
+              {useLocalContent && !contentProfileId && (
                 <ImageUploadField
                   label="Upload solution icon (.webp)"
                   fileName={solutionDraft.mSolutionIconName}
@@ -572,6 +647,7 @@ export function ContentPage() {
 
       {activeTab === 'expansions' && (
         <ExpansionPanel
+          profileId={contentProfileId}
           data={expansionsQuery.data?.expansions ?? {}}
           search={search}
           selectedKey={detailKind === 'expansions' ? itemKey : undefined}
@@ -584,6 +660,7 @@ export function ContentPage() {
 
       {activeTab === 'frames' && (
         <FramesPanel
+          profileId={contentProfileId}
           data={framesQuery.data?.Frames ?? []}
           search={search}
           selectedKey={detailKind === 'frames' ? itemKey : undefined}
@@ -596,6 +673,7 @@ export function ContentPage() {
 
       {activeTab === 'portraits' && (
         <PortraitsPanel
+          profileId={contentProfileId}
           data={portraitsQuery.data?.Avatar ?? []}
           search={search}
           selectedKey={detailKind === 'portraits' ? itemKey : undefined}
@@ -616,6 +694,7 @@ export function ContentPage() {
 }
 
 function ExpansionPanel({
+  profileId,
   data,
   search,
   selectedKey,
@@ -624,6 +703,7 @@ function ExpansionPanel({
   detailKey,
   onStatus,
 }: {
+  profileId?: string
   data: Record<string, ExpansionData>
   search: string
   selectedKey?: string
@@ -645,6 +725,8 @@ function ExpansionPanel({
   const gridItems: ContentGridItem[] = entries.map(([key, row]) => ({
     id: key,
     imageSrc: expansionImageUrl(row.mExtensioCollectionImage),
+    remoteKind: 'expansion',
+    remoteName: row.mExtensioCollectionImage,
     title: row.mExtensioName,
   }))
 
@@ -675,6 +757,7 @@ function ExpansionPanel({
         Click an image to view expansion text, costs, and assets.
       </p>
       <ContentImageGrid
+        profileId={profileId}
         items={gridItems}
         selectedId={selectedKey}
         onSelect={onSelect}
@@ -686,6 +769,7 @@ function ExpansionPanel({
           title={selected.mExtensioName}
           subtitle={`Key ${detailKey} · ID ${selected.mExtensioID}`}
           imageSrc={expansionImageUrl(selected.mExtensioHeaderImage)}
+          remoteImage={profileId ? {profileId,kind:'expansion',name:selected.mExtensioHeaderImage} : undefined}
           textSection={{
             title: 'Description',
             body: selected.mExtensioText,
@@ -754,6 +838,7 @@ function ExpansionPanel({
 }
 
 function FramesPanel({
+  profileId,
   data,
   search,
   selectedKey,
@@ -762,6 +847,7 @@ function FramesPanel({
   detailKey,
   onStatus,
 }: {
+  profileId?: string
   data: Array<FrameData | null>
   search: string
   selectedKey?: string
@@ -785,6 +871,8 @@ function FramesPanel({
     .map((row) => ({
       id: String(row.frameID),
       imageSrc: frameImageUrl(row.frameID),
+      remoteKind: 'frame',
+      remoteName: `frame_${row.frameID}`,
       title: `Frame ${row.frameID}`,
     }))
 
@@ -812,6 +900,7 @@ function FramesPanel({
         Click a frame to view gem cost and race/role restrictions.
       </p>
       <ContentImageGrid
+        profileId={profileId}
         items={gridItems}
         selectedId={selectedKey}
         onSelect={onSelect}
@@ -822,6 +911,7 @@ function FramesPanel({
           title={`Frame ${selected.frameID}`}
           subtitle={`frames.json entry`}
           imageSrc={frameImageUrl(selected.frameID)}
+          remoteImage={profileId ? {profileId,kind:'frame',name:`frame_${selected.frameID}`} : undefined}
           imageClassName="mx-auto max-h-64 w-64 rounded-lg border border-gold/15 object-contain"
           fields={[
             { label: 'Frame ID', value: String(selected.frameID) },
@@ -874,6 +964,7 @@ function FramesPanel({
 }
 
 function PortraitsPanel({
+  profileId,
   data,
   search,
   selectedKey,
@@ -882,6 +973,7 @@ function PortraitsPanel({
   detailKey,
   onStatus,
 }: {
+  profileId?: string
   data: Array<PortraitData | null>
   search: string
   selectedKey?: string
@@ -906,6 +998,8 @@ function PortraitsPanel({
     .map((row) => ({
       id: String(row.avatarID),
       imageSrc: portraitImageUrl(row.avatarID),
+      remoteKind: 'portrait',
+      remoteName: `avatar_${row.avatarID}`,
       title: row.avatarName,
     }))
 
@@ -935,6 +1029,7 @@ function PortraitsPanel({
         Click a portrait to view avatar stats and creation defaults.
       </p>
       <ContentImageGrid
+        profileId={profileId}
         items={gridItems}
         selectedId={selectedKey}
         onSelect={onSelect}
@@ -945,6 +1040,7 @@ function PortraitsPanel({
           title={selected.avatarName}
           subtitle={`Avatar ID ${selected.avatarID}`}
           imageSrc={portraitImageUrl(selected.avatarID)}
+          remoteImage={profileId ? {profileId,kind:'portrait',name:`avatar_${selected.avatarID}`} : undefined}
           imageClassName="mx-auto max-h-72 w-72 rounded-lg border border-gold/15 object-contain"
           fields={[
             { label: 'Avatar ID', value: String(selected.avatarID) },

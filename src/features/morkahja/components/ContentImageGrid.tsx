@@ -1,11 +1,15 @@
+import {RemoteContentImage,type RemoteImageKind} from './RemoteContentImage'
 export interface ContentGridItem {
   id: string
   imageSrc: string
+  remoteKind?: RemoteImageKind
+  remoteName?: string
   title?: string
 }
 
 interface ContentImageGridProps {
   items: ContentGridItem[]
+  profileId?: string
   selectedId?: string
   onSelect: (id: string) => void
   emptyMessage?: string
@@ -14,6 +18,7 @@ interface ContentImageGridProps {
 
 export function ContentImageGrid({
   items,
+  profileId,
   selectedId,
   onSelect,
   emptyMessage = 'No items to display.',
@@ -48,7 +53,11 @@ export function ContentImageGrid({
                 : 'border-gold/15 hover:border-gold/35 hover:bg-ash/40'
             }`}
           >
-            {item.imageSrc ? (
+            {profileId && item.remoteKind && item.remoteName ? (
+              <RemoteContentImage profileId={profileId} kind={item.remoteKind}
+                name={item.remoteName} alt={item.title || ''}
+                className="h-full w-full object-cover" />
+            ) : item.imageSrc ? (
               <img
                 src={item.imageSrc}
                 alt={item.title ?? ''}
