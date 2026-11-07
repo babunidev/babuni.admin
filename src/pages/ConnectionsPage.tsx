@@ -1,250 +1,289 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { PageHeader } from '../shared/components/PageHeader'
 import { localConnectionApi as api } from '../shared/services/localConnectionClient'
+import { activateMorkahjaConnection } from '../shared/services/morkahjaConnection'
 
-type ProjectId = 'morkahja' | 'babuni-dev'
-type Kind = 'local-files' | 'postgres-ssh' | 'github' | 'remote-publish'
-type ProfileState = 'not-configured' | 'available' | 'connected' | 'disconnected' | 'degraded' | 'error'
-type CredentialState = 'not-required' | 'stored' | 'missing' | 'locked' | 'unavailable'
-interface ContentReport {
-  files: {name:string;status:string;entries?:number;bytes?:number;reason?:string}[]
-}
 interface Profile {
-  id:string
-  projectId:ProjectId
-  displayName:string
-  kind:Kind
-  target:string
-  state:ProfileState
-  code?:string
-  detail:string
-  capabilities?:string[]
-  credential?:CredentialState
-  checkedAt?:string
-  lastSuccessAt?:string
+  id: string
+  projectId: string
+  kind: string
+  displayName: string
+  target: string
+  state: string
+  code?: string
+  detail: string
+  credential?: 'not-required'|'stored'|'missing'|'locked'|'unavailable'
+  capabilities?: string[]
+  checkedAt?: string
+  lastSuccessAt?: string
 }
 interface Health {
-  ok:boolean
-  service:string
-  mode:string
-  keyring:'available'|'locked'|'unavailable'
-  checkedAt:string
+  service: string
+  keyring: 'available'|'locked'|'unavailable'
+  checkedAt: string
 }
-const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
-  morkahja:[
-    {value:'local-files',label:'Local files'},
-    {value:'postgres-ssh',label:'PostgreSQL via SSH (operator-enabled health check)'},
-  ],
-  'babuni-dev':[
-    {value:'github',label:'GitHub repository (planned)'},
-    {value:'remote-publish',label:'Remote publishing (planned)'},
-  ],
+interface PortfolioCheck {
+  ok: boolean
+  code: string
+  checkedAt: string
+  host: string
+  github: {ok:boolean;code:string}
+  website: {ok:boolean;code:string}
+  ssh: {ok:boolean;code:string}
+  publishingEnabled: false
+}
+interface PortfolioStatus {
+  configured: boolean
+  host: string | null
+  repository: string
+  website: string
+  legacyProfileCount: number
+  report: PortfolioCheck | null
 }
 
-function stateLabel(profile:Profile) {
-  if (profile.state==='connected') return 'Connected — local read-only session'
-  if (profile.state==='available') return 'Available — local check only'
-  if (profile.state==='disconnected') return profile.code==='REMOTE_DB_HEALTHY_READ_ONLY'?'Remote health checked — tunnel closed':'Disconnected'
-  if (profile.state==='degraded') return 'Degraded — some content is unavailable'
-  if (profile.state==='error') return 'Error — local check failed'
-  return 'Not connected — profile only'
+const button='rounded border border-gold/30 px-3 py-2 text-sm text-gold-bright disabled:opacity-50'
+const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
+function checked(value?: string) {
+  return value ? new Date(value).toLocaleString() : 'Not yet checked'
 }
-function checkedTime(value?:string) {
-  return value?new Date(value).toLocaleString():'Not checked in this session'
+function portfolioCheckLabel(code: string) {
+  const known: Record<string,string> = {
+    GITHUB_READ_VERIFIED: 'GitHub read access verified',
+    WEBSITE_HTTPS_AVAILABLE: 'Website responding normally',
+    PORTFOLIO_SSH_STAGING_VERIFIED: 'SSH and release staging access verified',
+    SSH_HOST_NOT_PINNED: 'Server host key needs approval',
+    SSH_TRUST_STORE_MISSING: 'Approved SSH host key unavailable',
+    SSH_HOST_KEY_INVALID: 'Approved SSH host key is invalid',
+    PORTFOLIO_DEPLOY_KEY_UNAVAILABLE: 'Website deployment key unavailable',
+    PORTFOLIO_STAGING_UNWRITABLE: 'Website releases folder is not writable',
+    PORTFOLIO_ROOT_UNREADABLE: 'Published website files are not readable',
+    PORTFOLIO_SSH_FAILED: 'SSH connection failed',
+    PORTFOLIO_SSH_TIMEOUT: 'SSH connection timed out',
+    GITHUB_AUTH_OR_ACCESS_FAILED: 'GitHub login or repository access failed',
+    GITHUB_CLI_UNAVAILABLE: 'GitHub CLI is unavailable',
+    WEBSITE_UNREACHABLE: 'Live website unavailable',
+    WEBSITE_UNEXPECTED_RESPONSE: 'Live website returned an unexpected response',
+  }
+  return known[code] || code.replaceAll('_',' ').toLowerCase()
 }
-function credentialLabel(value?:CredentialState) {
-  if (value==='stored') return 'Stored in Linux keyring'
-  if (value==='missing') return 'Not stored'
-  if (value==='locked') return 'Keyring locked — unlock required'
-  if (value==='unavailable') return 'Keyring unavailable'
-  return 'Not required'
+
+function credentialLabel(value?:Profile['credential']) {
+  if(value==='stored')return 'Password stored in Linux keyring'
+  if(value==='locked')return 'Linux keyring locked'
+  if(value==='missing')return 'Database password missing from Linux keyring'
+  return 'Credential unavailable or not checked'
 }
 
 export function ConnectionsPage() {
   const [profiles,setProfiles]=useState<Profile[]>([])
-  const [status,setStatus]=useState('Loading local connection profiles…')
   const [health,setHealth]=useState<Health|null>(null)
-  const [projectId,setProjectId]=useState<ProjectId>('morkahja')
-  const [kind,setKind]=useState<Kind>('local-files')
-  const [displayName,setDisplayName]=useState('')
-  const [target,setTarget]=useState('')
+  const [status,setStatus]=useState('Loading connection…')
   const [busy,setBusy]=useState(false)
-  const [reports,setReports]=useState<Record<string,ContentReport>>({})
-  const [editingId,setEditingId]=useState<string|null>(null)
-  const [editName,setEditName]=useState('')
-  const [editTarget,setEditTarget]=useState('')
+  const [editing,setEditing]=useState(false)
+  const [name,setName]=useState('Morkahja administrator')
+  const [target,setTarget]=useState('')
+  const [probeStatus,setProbeStatus]=useState('')
+  const [loaded,setLoaded]=useState(false)
+  const [portfolio,setPortfolio]=useState<PortfolioStatus|null>(null)
+  const [portfolioResult,setPortfolioResult]=useState<PortfolioCheck|null>(null)
 
   async function reload() {
     try {
-      const [data,service]=await Promise.all([
+      const [result,service,site]=await Promise.all([
         api<{profiles:Profile[]}>(),api<Health>('GET','/health'),
+        api<PortfolioStatus>('GET','/portfolio/status'),
       ])
-      setProfiles(data.profiles||[])
+      setProfiles(result.profiles)
       setHealth(service)
-      setStatus('Profiles are stored on this PC. SSH health and approved read-only access are separate from editing.')
+      setPortfolio(site)
+      setPortfolioResult(site.report)
+      activateMorkahjaConnection(result.profiles)
+      setLoaded(true)
+      setStatus('Administrator connection details are managed here.')
     } catch(error) {
-      setProfiles([])
-      setHealth(null)
+      setLoaded(true)
       setStatus(error instanceof Error?error.message:'LOCAL_SERVICE_UNAVAILABLE')
     }
   }
   useEffect(()=>{
-    void Promise.all([api<{profiles:Profile[]}>(),api<Health>('GET','/health')])
-      .then(([data,service])=>{
-        setProfiles(data.profiles||[])
-        setHealth(service)
-        setStatus('Profiles are stored on this PC. SSH health and approved read-only access are separate from editing.')
-      })
-      .catch(()=>{setHealth(null);setStatus('LOCAL_SERVICE_UNAVAILABLE')})
+    let mounted=true
+    void Promise.all([
+      api<{profiles:Profile[]}>(),api<Health>('GET','/health'),
+      api<PortfolioStatus>('GET','/portfolio/status'),
+    ]).then(([result,service,site])=>{
+      if(!mounted)return
+      setProfiles(result.profiles)
+      setHealth(service)
+      setPortfolio(site)
+      setPortfolioResult(site.report)
+      activateMorkahjaConnection(result.profiles)
+      setLoaded(true)
+      setStatus('Administrator connection details are managed here.')
+    }).catch(error=>{
+      if(!mounted)return
+      setLoaded(true)
+      setStatus(error instanceof Error?error.message:'LOCAL_SERVICE_UNAVAILABLE')
+    })
+    return ()=>{mounted=false}
   },[])
 
-  async function operation(action:()=>Promise<unknown>) {
+  const adminProfiles=profiles.filter(p=>
+    p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation')
+  const active=adminProfiles.length===1 ? adminProfiles[0] : adminProfiles.find(p=>{
+    try{return p.id===window.localStorage.getItem('babuni-admin:morkahja:moderation-profile')}
+    catch{return false}
+  })
+  const legacyCount=portfolio?.legacyProfileCount||0
+  async function operation(action:()=>Promise<void>) {
     setBusy(true)
-    try { await action();await reload() }
-    catch(error) {
-      await reload()
-      setStatus(error instanceof Error?error.message:'LOCAL_SERVICE_FAILURE')
-    } finally {setBusy(false)}
-  }
-  async function add(event:FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    await operation(async()=>{
-      await api('POST','/',{projectId,kind,displayName,target})
-      setDisplayName('')
-      setTarget('')
-    })
-  }
-  async function saveEdit(event:FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (!editingId) return
-    const id=editingId
-    await operation(async()=>{
-      await api('PUT','/'+id,{displayName:editName,target:editTarget})
-      setReports(old=>{const next={...old};delete next[id];return next})
-      setEditingId(null)
-    })
+    try {await action();await reload()}
+    catch(error){setStatus(error instanceof Error?error.message:'CONNECTION_OPERATION_FAILED')}
+    finally{setBusy(false)}
   }
   function beginEdit(profile:Profile) {
-    setEditingId(profile.id)
-    setEditName(profile.displayName)
-    setEditTarget(profile.target)
+    setName(profile.displayName)
+    setTarget(profile.target)
+    setEditing(true)
   }
-  async function inspect(id:string) {
+  async function create(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault()
     await operation(async()=>{
-      const report=await api<ContentReport>('GET','/'+id+'/inspect')
-      setReports(old=>({...old,[id]:report}))
+      await api('POST','/',{
+        projectId:'morkahja',kind:'postgres-ssh-moderation',
+        displayName:name,target,
+      })
+      setEditing(false)
     })
   }
-  async function remove(id:string) {
+  async function save(event:FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if(!active)return
     await operation(async()=>{
-      await api('DELETE','/'+id)
-      setReports(old=>{const next={...old};delete next[id];return next})
-      if(editingId===id)setEditingId(null)
+      await api('PUT','/'+active.id,{displayName:name,target})
+      setEditing(false)
+    })
+  }
+  async function checkHost(profile:Profile) {
+    await operation(async()=>{
+      const result=await api<{status:{code:string}}>('POST','/'+profile.id+'/test')
+      setProbeStatus(result.status.code)
+    })
+  }
+  async function verifyPortfolio() {
+    await operation(async()=>{
+      const report=await api<PortfolioCheck>('POST','/portfolio/check')
+      setPortfolioResult(report)
+    })
+  }
+  async function retireLegacyProfile() {
+    await operation(async()=>{
+      const result=await api<{ok:boolean;removed:number}>('POST','/maintenance/retire-legacy')
+      if(result.ok) setProbeStatus(result.removed+' unused connection profile retired')
+    })
+  }
+  async function checkDatabase(profile:Profile) {
+    await operation(async()=>{
+      const result=await api<{ok:boolean;data:{players:number;avatars:number}}>(
+        'POST','/'+profile.id+'/read-overview')
+      setProbeStatus(result.ok
+        ? 'Database accessible · '+result.data.players+' players · '+result.data.avatars+' avatars'
+        : 'Database access failed')
     })
   }
 
-  const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
   return <div className="max-w-4xl space-y-6">
-    <PageHeader title="Connections" description="Private connections. Remote SSH/PostgreSQL health checks require a separate operator-only configuration and are disabled by default; no live editing."/>
-    <p role="status" className="text-sm text-fog">{status}</p>
+    <PageHeader title="Connection"
+      description="Your server connection, credentials and connection checks. Overview, Moderation and Content use this connection automatically." />
+    <p className="text-sm text-fog" role="status">{status}</p>
     <p className="text-xs text-fog">
-      Local service: {health?.service==='available'?'Available (loopback only)':'Not verified'}
-      {' · '}OS keyring: {health?.keyring==='available'?'Responding (not a credential round-trip)':health?.keyring==='locked'?'Locked (credential access denied)':'Unavailable or not checked'}
-      {' · '}Last service check: {checkedTime(health?.checkedAt)}
+      Local service: {health?.service==='available'?'Running on this PC':'Unavailable'}
+      {' · '}Keyring: {health?.keyring || 'not checked'}
+      {' · '}Checked: {checked(health?.checkedAt)}
     </p>
-    <section className="rounded-lg border border-gold/20 bg-slate/50 p-5">
-      <h2 className="mb-4 text-sm font-medium uppercase tracking-widest text-gold-bright">Add connection profile</h2>
-      <form onSubmit={e=>{void add(e)}} className="grid gap-4 sm:grid-cols-2">
-        <label className="text-sm text-fog">Project
-          <select className={field} value={projectId} onChange={e=>{
-            const next=e.target.value as ProjectId
-            setProjectId(next);setKind(kinds[next][0].value)
-          }}><option value="morkahja">Morkahja</option><option value="babuni-dev">Babuni Dev</option></select>
+
+    {active ? <section className="space-y-4 rounded-lg border border-gold/20 bg-slate/50 p-5" aria-label="Morkahja administrator connection">
+      <div>
+        <h2 className="text-lg font-medium text-parchment">{active.displayName}</h2>
+        <p className="mt-1 text-xs text-fog">The configured connection for Morkahja.</p>
+      </div>
+      <dl className="grid gap-4 text-sm sm:grid-cols-2">
+        <div><dt className="text-fog">Server</dt><dd className="break-all text-parchment">{active.target}</dd></div>
+        <div><dt className="text-fog">Database</dt><dd className="text-parchment">morkahja · babuni_admin</dd></div>
+        <div><dt className="text-fog">Credential</dt><dd className="text-parchment">{credentialLabel(active.credential)}</dd></div>
+        <div><dt className="text-fog">Last successful request</dt><dd className="text-parchment">{checked(active.lastSuccessAt)}</dd></div>
+        <div className="sm:col-span-2"><dt className="text-fog">Access</dt><dd className="text-parchment">Overview, player Moderation, and content catalogs</dd></div>
+      </dl>
+      <p className="text-xs text-fog">Connection status: {active.code || 'NOT_CHECKED'}. {active.detail}</p>
+      {probeStatus && <p data-testid="connection-check-result" className="text-sm text-gold-bright" role="status">{probeStatus}</p>}
+      <div className="flex flex-wrap gap-2">
+        <button className={button} disabled={busy} onClick={()=>{void checkHost(active)}}>Check SSH host</button>
+        <button className={button} disabled={busy} onClick={()=>{void checkDatabase(active)}}>Test database read</button>
+        <button className={button} disabled={busy} onClick={()=>beginEdit(active)}>Edit server details</button>
+      </div>
+      {editing && <form aria-label="Edit administrator connection" onSubmit={e=>{void save(e)}} className="grid gap-3 border-t border-gold/15 pt-4 sm:grid-cols-2">
+        <label className="text-sm text-fog">Connection name
+          <input className={field} required maxLength={80} value={name} onChange={e=>setName(e.target.value)}/>
         </label>
-        <label className="text-sm text-fog">Connection type
-          <select className={field} value={kind} onChange={e=>setKind(e.target.value as Kind)}>
-            {kinds[projectId].map(k=><option key={k.value} value={k.value}>{k.label}</option>)}
-          </select>
+        <label className="text-sm text-fog">Server host
+          <input className={field} required maxLength={250} value={target} onChange={e=>setTarget(e.target.value)}/>
         </label>
-        <label className="text-sm text-fog">Profile name
-          <input className={field} required maxLength={80} value={displayName}
-            onChange={e=>setDisplayName(e.target.value)} placeholder="My Morkahja files"/>
-        </label>
-        <label className="text-sm text-fog">Target (no credentials)
-          <input className={field} required maxLength={250} value={target} onChange={e=>setTarget(e.target.value)}
-            placeholder={kind==='local-files'?'/home/babuni/Projects/Morkahja/client/public':kind==='github'?'babunidev/babuni.admin':'host.example.com'}/>
-        </label>
-        <div className="sm:col-span-2 flex items-center justify-between gap-4">
-          <span className="text-xs text-fog">No passwords, SSH keys or tokens in this form. Remote credentials are managed separately in the Linux keyring.</span>
-          <button type="submit" disabled={busy} className="rounded border border-gold/40 bg-gold/15 px-4 py-2 text-sm text-gold-bright disabled:opacity-50">Save profile</button>
+        <div className="flex gap-2 sm:col-span-2">
+          <button className={button} type="submit" disabled={busy}>Save changes</button>
+          <button className={button} type="button" onClick={()=>setEditing(false)}>Cancel</button>
         </div>
+      </form>}
+      <p className="text-xs text-fog">SSH identity and PostgreSQL connection settings stay in your private configuration. Your database password stays in the Linux keyring. This page never displays either secret.</p>
+    </section> : loaded ? <section className="space-y-4 rounded-lg border border-gold/20 bg-slate/50 p-5">
+      <h2 className="text-lg font-medium text-parchment">Set up Morkahja connection</h2>
+      <p className="text-sm text-fog">One administrator profile supplies Morkahja's Overview, Moderation and Content. Existing SSH and database settings must also be configured privately.</p>
+      <form onSubmit={e=>{void create(e)}} className="grid gap-3 sm:grid-cols-2">
+        <label className="text-sm text-fog">Connection name
+          <input className={field} required maxLength={80} value={name} onChange={e=>setName(e.target.value)}/>
+        </label>
+        <label className="text-sm text-fog">Server host
+          <input className={field} required maxLength={250} value={target} onChange={e=>setTarget(e.target.value)} placeholder="server.example.com"/>
+        </label>
+        <button className={button} disabled={busy} type="submit">Save connection</button>
       </form>
-    </section>
-    <section className="space-y-3">
-      <h2 className="text-sm font-medium uppercase tracking-widest text-gold-bright">Saved profiles ({profiles.length})</h2>
-      {profiles.length===0 && <p className="text-sm text-fog">No profiles configured.</p>}
-      {profiles.map(p=><article key={p.id} className="rounded-lg border border-gold/15 bg-slate/50 p-4">
-        <div className="flex flex-wrap items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h3 className="text-parchment">{p.displayName}</h3>
-            <p className="mt-1 break-all text-xs text-fog">{p.projectId} · {p.kind} · {p.target}</p>
-            <p className="mt-2 text-xs text-fog">{stateLabel(p)}. {p.detail}</p>
-            <p className="mt-1 text-xs text-fog">Result: {p.code||'NOT_CHECKED'} · Checked: {checkedTime(p.checkedAt)}</p>
-            {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last successful check: {checkedTime(p.lastSuccessAt)}</p>}
-            {p.kind!=='local-files' && <p className="mt-1 text-xs text-fog">
-              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · No persistent connection or write permission
-            </p>}
-            <p className="mt-1 text-xs text-fog">Allowed operations: {p.capabilities?.join(', ')||'None (adapter planned)'}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button type="button" disabled={busy} onClick={()=>beginEdit(p)}
-              className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Edit</button>
-            {p.capabilities?.includes('local:inspect') &&
-              <button type="button" disabled={busy} onClick={()=>{void inspect(p.id)}}>Inspect</button>}
-            <button type="button" disabled={busy} onClick={()=>{
-              void operation(()=>api('POST','/'+p.id+'/test'))
-            }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">{p.capabilities?.includes('ssh:preflight')?'Check pinned key (offline)':'Test'}</button>
-            {p.capabilities?.includes('ssh:probe') &&
-              <button type="button" disabled={busy} onClick={()=>{
-                void operation(()=>api('POST','/'+p.id+'/probe'))
-              }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Probe SSH + DB (opt-in)</button>}
-            {p.capabilities?.includes('local:connect') &&
-              (p.state==='connected'
-                ? <button type="button" disabled={busy} onClick={()=>{
-                  void operation(()=>api('POST','/'+p.id+'/disconnect'))
-                }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">Disconnect</button>
-                : <button type="button" disabled={busy} onClick={()=>{
-                  void operation(()=>api('POST','/'+p.id+(p.state==='disconnected'?'/reconnect':'/connect')))
-                }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">{p.state==='disconnected'?'Reconnect':'Connect'}</button>)}
-            <button type="button" disabled={busy} onClick={()=>{void remove(p.id)}}
-              className="rounded border border-gold/20 px-3 py-1 text-xs text-fog disabled:opacity-50">Remove</button>
-          </div>
-        </div>
-        {editingId===p.id && <form onSubmit={e=>{void saveEdit(e)}}
-          className="mt-4 grid gap-3 border-t border-gold/10 pt-3 sm:grid-cols-2"
-          aria-label={'Edit '+p.displayName}>
-          <label className="text-xs text-fog">Profile name
-            <input className={field} required maxLength={80} value={editName} onChange={e=>setEditName(e.target.value)}/>
-          </label>
-          <label className="text-xs text-fog">Target (no credentials)
-            <input className={field} required maxLength={250} value={editTarget} onChange={e=>setEditTarget(e.target.value)}/>
-          </label>
-          <div className="sm:col-span-2 flex gap-2">
-            <button type="submit" disabled={busy} className="rounded border border-gold/40 px-3 py-1 text-xs text-gold-bright">Save changes</button>
-            <button type="button" disabled={busy} onClick={()=>setEditingId(null)}
-              className="rounded border border-gold/20 px-3 py-1 text-xs text-fog">Cancel</button>
-          </div>
-          <p className="text-xs text-fog sm:col-span-2">Project and adapter cannot be changed. Editing the target clears the previous connection check.</p>
-        </form>}
-        {reports[p.id] && <section aria-label="Read-only content report" className="mt-3 border-t border-gold/10 pt-3">
-          <h4 className="text-xs text-gold-bright">Game content — read-only</h4>
-          <ul className="mt-2 space-y-1 text-xs text-fog">
-            {reports[p.id].files.map(file=><li key={file.name}>{file.name}: {file.status==='available'
-              ? String(file.entries)+' records, '+String(file.bytes)+' bytes'
-              : 'Unavailable ('+file.reason+')'}</li>)}
-          </ul>
-        </section>}
-      </article>)}
+    </section> : null}
+
+    {adminProfiles.length>1 && <p role="alert" className="text-sm text-fog">
+      Multiple administrator profiles exist. Keep the active one and remove redundant profiles during cleanup; automatic selection is paused until one is chosen.
+    </p>}
+    {legacyCount>0 && <section className="rounded-lg border border-gold/15 bg-slate/50 p-4">
+      <p className="text-sm text-fog">An older Morkahja server profile is no longer needed. The administrator connection above remains active.</p>
+      <button type="button" disabled={busy} className={button}
+        onClick={()=>{void retireLegacyProfile()}}>Remove unused Morkahja server profile</button>
+    </section>}
+
+    <section className="space-y-4 rounded-lg border border-gold/20 bg-slate/50 p-5" aria-label="Babuni Dev administrator connection">
+      <div>
+        <h2 className="text-lg font-medium text-parchment">Babuni Dev administrator</h2>
+        <p className="mt-1 text-sm text-fog">Configured for this workbench. Uses the same approved VPS, with its existing dedicated website deployment key. No additional connection profile is needed.</p>
+      </div>
+      <dl className="grid gap-3 text-sm sm:grid-cols-2">
+        <div><dt className="text-fog">Server</dt><dd className="break-all text-parchment">{portfolio?.host || 'Administrator server not configured'}</dd></div>
+        <div><dt className="text-fog">Website</dt><dd className="text-parchment">{portfolio?.website || 'www.babuni.dev'}</dd></div>
+        <div><dt className="text-fog">GitHub</dt><dd className="text-parchment">{portfolio?.repository || 'babunidev/babuni.dev'}</dd></div>
+        <div><dt className="text-fog">Deployed website</dt><dd className="text-parchment">/var/www/babuni.dev/current</dd></div>
+      </dl>
+      <p className="text-xs text-fog">Website SSH authenticates as babunideploy with its existing private key and the pinned VPS host key. Unlock that key through your desktop SSH agent when needed. The game database password is separate; GitHub uses the existing GitHub CLI login. No secrets are entered here.</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <button className={button} type="button" disabled={busy || !portfolio?.configured}
+          onClick={()=>{void verifyPortfolio()}}>Verify Babuni Dev connection</button>
+        <span className="text-xs text-fog">{portfolioResult?.checkedAt
+          ? 'Last check: '+checked(portfolioResult.checkedAt)
+          : portfolio?.configured ? 'Ready to verify' : 'Morkahja administrator connection required'}</span>
+      </div>
+      {portfolioResult && <div className="space-y-2 border-t border-gold/15 pt-3 text-sm">
+        <p role="status" className="text-parchment">Connection: {portfolioResult.ok ? 'Verified' : 'Verification incomplete'}</p>
+        <dl className="grid gap-2 text-xs sm:grid-cols-3">
+          <div><dt className="text-fog">GitHub</dt><dd className={portfolioResult.github.ok?'text-parchment':'text-fog'}>{portfolioCheckLabel(portfolioResult.github.code)}</dd></div>
+          <div><dt className="text-fog">Website HTTPS</dt><dd className={portfolioResult.website.ok?'text-parchment':'text-fog'}>{portfolioCheckLabel(portfolioResult.website.code)}</dd></div>
+          <div><dt className="text-fog">Server SSH</dt><dd className={portfolioResult.ssh.ok?'text-parchment':'text-fog'}>{portfolioCheckLabel(portfolioResult.ssh.code)}</dd></div>
+        </dl>
+      </div>}
+      <p className="text-xs text-fog">Connection verification reads GitHub and the public website and checks SSH read/staging permissions without changing server files. Editing and publishing remain disabled until the release workflow is integrated.</p>
     </section>
   </div>
 }

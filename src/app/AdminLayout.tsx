@@ -1,5 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { Sidebar } from './Sidebar'
+import { MorkahjaImageCacheController } from './MorkahjaImageCacheController'
 import { TopBar as MorkahjaTopBar } from '../features/morkahja/components/MorkahjaTopBar'
 import { BabuniDevTopBar } from './BabuniDevTopBar'
 import { workspaceForPath } from './navigation'
@@ -13,6 +14,7 @@ export function AdminLayout() {
 
   return (
     <div className="app-grain flex h-full min-h-0 bg-void">
+      {!isBabuniDev && <MorkahjaImageCacheController />}
       {sidebarOpen && (
         <button
           type="button"

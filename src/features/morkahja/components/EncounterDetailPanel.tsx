@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import {RemoteContentImage} from './RemoteContentImage'
 import {
   encounterImageUrl,
   solutionImageUrl,
@@ -14,6 +15,7 @@ import {
 
 interface EncounterDetailPanelProps {
   detail: EncounterDetail
+  profileId?: string
   onClose: () => void
   onEdit?: () => void
 }
@@ -56,16 +58,19 @@ function StatGrid({ items }: { items: { label: string; value: string }[] }) {
 function SolutionCard({
   solution,
   badge,
+  profileId,
 }: {
   solution: SolutionData
   badge: string
+  profileId?: string
 }) {
   const iconSrc = solutionImageUrl(solution.mSolutionIconName)
 
   return (
     <div className="rounded-md border border-gold/15 bg-void/30 p-3">
       <div className="flex gap-3">
-        {iconSrc ? (
+        {profileId ? <RemoteContentImage profileId={profileId} kind="solution" name={solution.mSolutionIconName}
+          className="h-12 w-12 shrink-0 rounded object-cover" /> : iconSrc ? (
           <img
             src={iconSrc}
             alt=""
@@ -99,7 +104,7 @@ function SolutionCard({
   )
 }
 
-function SlotBlock({ slot }: { slot: EncounterSolutionSlotDetail }) {
+function SlotBlock({ slot, profileId }: { slot: EncounterSolutionSlotDetail; profileId?: string }) {
   const hasRequirement =
     slot.primarySolutionId > 0 || slot.secondarySolutionType > 0
 
@@ -125,7 +130,7 @@ function SlotBlock({ slot }: { slot: EncounterSolutionSlotDetail }) {
             </span>
           </p>
           {slot.primarySolution ? (
-            <SolutionCard solution={slot.primarySolution} badge="Primary" />
+            <SolutionCard solution={slot.primarySolution} badge="Primary" profileId={profileId} />
           ) : (
             <p className="rounded border border-ember/30 bg-ember/10 px-3 py-2 text-xs text-red-300/90">
               Solution {slot.primarySolutionId} not found in solutiondata.json
@@ -143,6 +148,7 @@ function SlotBlock({ slot }: { slot: EncounterSolutionSlotDetail }) {
           </p>
           {slot.secondaryTypeExample ? (
             <SolutionCard
+              profileId={profileId}
               solution={slot.secondaryTypeExample}
               badge="Type example"
             />
@@ -159,6 +165,7 @@ function SlotBlock({ slot }: { slot: EncounterSolutionSlotDetail }) {
 
 export function EncounterDetailPanel({
   detail,
+  profileId,
   onClose,
   onEdit,
 }: EncounterDetailPanelProps) {
@@ -221,7 +228,9 @@ export function EncounterDetailPanel({
 
         <div className="scrollbar-thin flex-1 overflow-y-auto px-5 py-5">
           <div className="space-y-6">
-            {imageSrc && (
+            {profileId ? <RemoteContentImage profileId={profileId} kind="encounter"
+              name={encounter.mEncounterImageName}
+              className="max-h-48 w-full rounded-lg border border-gold/15 object-cover" /> : imageSrc && (
               <img
                 src={imageSrc}
                 alt=""
@@ -299,7 +308,7 @@ export function EncounterDetailPanel({
               ) : (
                 <div className="space-y-5">
                   {detail.slots.map((slot) => (
-                    <SlotBlock key={slot.slot} slot={slot} />
+                    <SlotBlock key={slot.slot} slot={slot} profileId={profileId} />
                   ))}
                 </div>
               )}

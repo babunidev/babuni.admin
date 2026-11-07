@@ -1,5 +1,43 @@
 # Testing Babuni Admin
 
+## Persistent image cache — 2026-11-06
+
+New `tests/morkahja-image-cache.test.mjs` exercises first workspace preload from a simulated one-session SSH stream; readback from cache after a fresh process; an unchanged-asset scan that transfers no bytes; changed-file replacement; preservation of cached artwork during an offline check; and path traversal/unknown-folder rejection. Existing tests retain the session-protected endpoint and the fixed WebP allowlist. GitHub Actions build, lint, unit, browser and PostgreSQL fixtures provide source-level validation, not live performance evidence.
+
+**Still to verify on Nobara:** first workspace-wide sync for all five categories, locally cached display on revisits and after restart, and replacement of changed images without retransfer of unchanged files. This change does not implement image uploads.
+
+
+## Remote game images — 2026-11-06
+
+The image route rejects non-WebP, traversal, unknown folder kinds and unexpected fields before making an SSH request. Tests check same-profile configuration reuse, strict host-key arguments, bounded file reads and a session-protected, capability-checked POST route. The browser uses lazy images with limited concurrency. Live verification still required: confirm one encounter image, a solution icon, an expansion image, a frame and a portrait from the real `/var/www/morkahja` deployment; check missing-file placeholders. No remote image uploads are supported.
+
+
+## Single Connection UI checks — 2026-11-06
+
+- Verify browser Connection page shows the unique administrator host and keyring state, supports host preflight and a one-shot database read check, and edits the existing profile without altering credentials.
+- Verify Overview, Moderation and Content render no connection selector and reuse one profile ID; error states must not invent/mock live data.
+- Verify Overview's fixed SQL runs in a read-only transaction, with no background polling.
+- Verify Connection displays no raw key material, passwords, database records or session tokens.
+- Actual Moderation list was manually verified on Nobara: 62 accounts, one estimated active session. Live account writes and remote content mutation have **not** been verified.
+
+## 2026-11-06 — Single Morkahja administrator profile
+
+New integration behavior to verify: one saved `postgres-ssh-moderation` profile may invoke restricted-view Overview reads, fixed player list/detail and timeout/ban/unban operations, and fixed five-catalog Content SSH operations. The administrator role must have the exact expected player write privileges and view reads. Existing transaction rollback, backup and SSH cleanup fixtures remain required. The previous extra moderation write environment opt-in was removed by creative direction.
+
+Operator-only acceptance is documented in `docs/MORKAHJA_LIVE_ADMIN_CONNECTIONS.md`. No new server role/password/permissions have been installed, and no live moderation or content mutation has been observed. The existing local Nobara SSH askpass test failure is independent of these changes.
+
+## 2026-11-06 — Scoped live administration adapters (development branch)
+
+The new `tests/morkahja-moderation.test.mjs` checks separation between Overview and moderation capabilities, strict action/payload validation, atomic update-before-session-revocation, and rollback when session deletion fails. It also checks that an unapproved role cannot begin a write and that the SSH runner neither opens a tunnel without approval nor leaves a failed tunnel open.
+
+`tests/morkahja-content-ssh.test.mjs` executes the production Python worker logic against disposable local JSON, checking an actual read, one backed-up atomic write, revised SHA-256, a stale-revision rejection and an invalid key. It tests that the Content capability is absent from Overview and moderator profiles and that disabled content config never launches SSH.
+
+Further synthetic read fixtures check the account list's current progression levels, session-based status, avatar counts, and the detail panel's achievements, unlocks, currencies, avatar progression and encounter events. They also verify that private session tokens do not reach the UI, missing accounts do not become mock records, and writes are refused unless independently enabled.
+
+The `morkahja-moderation-config-setup.test.mjs` fixture verifies metadata-only configuration preparation, exclusion of reader-only approvals, safe permissions, and refusal to overwrite an existing profile. The schema preflight SQL reads only information-schema column metadata. Source-level and CI outcomes must not be represented as a live account query.
+
+These tests do not create production roles or write to live Morkahja. The local private moderation/content configurations, approved database role grants, server-file write ownership, current contents of every deployed catalog, image paths and live UI behavior are pending operator verification. Never set either remote-write opt-in merely because Overview works; never treat fixture success as deployment approval.
+
 ## 2026-11-05 — Batch A deployed; local Overview integration
 
 The operator verified the catalog belonging to the running backend: IDs `1001,1002,1003,1004`, with `1002` inactive, and `CATALOG_MATCH`. After explicit approval, the operator applied the reviewed SQL from commit `8d42562`; PostgreSQL reported `COMMIT`.

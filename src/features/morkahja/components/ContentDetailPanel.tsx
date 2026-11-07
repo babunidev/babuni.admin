@@ -1,3 +1,4 @@
+import {RemoteContentImage,type RemoteImageKind} from './RemoteContentImage'
 import type { ReactNode } from 'react'
 
 export interface ContentDetailField {
@@ -9,6 +10,7 @@ interface ContentDetailPanelProps {
   title: string
   subtitle?: string
   imageSrc?: string
+  remoteImage?: {profileId:string;kind:RemoteImageKind;name:string}
   imageClassName?: string
   children?: ReactNode
   fields?: ContentDetailField[]
@@ -38,6 +40,7 @@ export function ContentDetailPanel({
   title,
   subtitle,
   imageSrc,
+  remoteImage,
   imageClassName = 'max-h-56 w-full rounded-lg border border-gold/15 object-contain',
   children,
   fields = [],
@@ -79,9 +82,10 @@ export function ContentDetailPanel({
 
         <div className="scrollbar-thin flex-1 overflow-y-auto px-5 py-5">
           <div className="space-y-6">
-            {imageSrc && (
+            {remoteImage ? <RemoteContentImage {...remoteImage}
+              className={imageClassName} /> : imageSrc ? (
               <img src={imageSrc} alt="" className={imageClassName} />
-            )}
+            ) : null}
             {textSection && (
               <DetailSection title={textSection.title}>
                 <p className="whitespace-pre-wrap text-sm leading-relaxed text-parchment/95">

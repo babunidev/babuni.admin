@@ -1,4 +1,50 @@
 # Babuni Admin — Decisions and Alternatives
+## 2026-11-07 — Avoid secondary setup for the same owner and server
+
+**Creative decision:** The administration tool belongs to one operator and should show a stable project-specific Babuni Dev administrator alongside Morkahja, while being ready for more project workspaces. Entering the portfolio workspace must not require manually creating two separate GitHub and website profiles. The older Morkahja server fallback profile can be retired because the owner administrator now serves the game workspace.
+
+**Implementation:** AI replaced the Babuni Dev setup cards with one derived administrator panel. The site check reuses the already approved pinned SSH identity, while source-control access continues to use the desktop GitHub CLI. Each connection check remains explicitly read-only. A dedicated local maintenance action removes only the superseded Morkahja read-only profile and its keyring credential when invoked; the active administrator connection is never changed.
+
+**Open boundary:** Same VPS does not prove that the SSH account has write permissions to babuni.dev's release directories. Deployment identity, staging, verification, rollback and GitHub writes are still separate engineering work. Neither a new server password nor extra host profiles are assumed necessary for the current read-only checks.
+
+
+## 2026-11-07 — One continuous Babuni Admin codebase and shared connections
+
+**Creative decision:** Continue developing the existing administration console with two project workspaces, Morkahja and Babuni Dev, while keeping one operator and room for further projects. Pausing game-specific publishing must not roll the application back to an older design or disable established Morkahja tools. Do not create additional feature branches by default when merely changing the active workspace.
+
+**Correction:** The first AI implementation of the Babuni Dev checks was placed on a new branch based on older `main`. Switching the running application to that branch restored a previous Connections UI and hid work already completed for Morkahja, even though the newer code remained available on its original branch. That was an unsuitable development workflow.
+
+**Implementation:** AI integrated the narrowly scoped GitHub and website read-only checks into the existing Morkahja development branch and its one **Connection** page, preserving the advanced application components and capabilities. Real local verification and the eventual content-editor/publishing contracts remain open. The second branch is superseded for active development.
+
+
+## 2026-11-06 — Store Morkahja images on the operator's computer
+
+**Creative direction:** Loading artwork again when changing tabs makes the Content workspace unusable. All five image categories should be present locally after an initial workspace sync and reused through navigation and restarts. Changed or added files must be refreshed without re-downloading unchanged files.
+
+**Decision:** Use the existing pinned administrator SSH connection for one incremental, read-only scan of fixed WebP directories, with a profile/host-scoped cache in the standard user cache directory. Recheck while the workspace remains open; continue showing cached artwork if the server is offline. The frontend reads those local files, backed by a larger bounded memory layer. Do not require a public domain, a separate SSH connection, extra database rights or a general-purpose filesystem explorer.
+
+**Alternative rejected:** A small per-tab browser-memory cache, because it evicts images during normal navigation and never persists across app restarts. Per-image SSH reads remain insufficient for initial workspace-wide preloading.
+
+**Verification:** Source implemented and synthetic test suite added. Live first-fill duration, volume and update detection remain operator acceptance items.
+
+
+## 2026-11-06 — One Connection page and automatic administration routing
+
+**Creative decision:** Connection management belongs in one page named **Connection**, not a collection of dropdowns inside the workspaces. With only one operator, the configured server connection must be reused automatically by Overview, Moderation and Content. Multiple independent profiles and repeated selection are unnecessary for the current workflow.
+
+**Implementation:** A shared browser-side resolver uses the unique local Morkahja administrator profile, retaining the already stored keyring password and SSH configuration. The navigation says **Connection**. The page shows the server, database login, credential availability, SSH host check, a deliberately triggered database read check, last successful operation and editable server metadata. Previous profiles are retained for migration in collapsed details rather than deleted. Per-page profile selectors are removed. The top bar no longer represents the old mock status as live when the administrator profile exists. The server's actual PostgreSQL and SSH permissions are unchanged. Babuni Dev publishing still requires implementation and is explicitly not represented as connected.
+
+## 2026-11-06 — One administrator instead of separate read-only and writer accounts
+
+**Decision from the creative:** Babuni Admin is operated by one person. One login/profile should cover Overview, Moderation, and Content. Separate read-only, moderator and content users were explicitly rejected as unnecessary complexity. The earlier split was an AI-proposed safety design, not an approved requirement.
+
+**Implementation:** The `postgres-ssh-moderation` internal adapter remains as a compatibility name but serves as the single Morkahja administrator profile. It shares one profile UUID and database credential with Overview/Content, reuses the approved SSH identity, and permits only fixed moderation and catalog operations. No general SQL command endpoint or unbounded remote filesystem access was introduced. Transactions, backups, host-key pinning and error handling remain protections against accidental errors without additional passwords. The `babuni_admin` PostgreSQL role is prepared but not deployed; server-side tests and remote images remain outstanding.
+
+## 2026-11-06 — Prioritize existing live administration over more dashboard features
+
+**Creative direction:** Restore live Moderation (player details, timeout, ban and unban) and all existing Content browsing/editing (encounters, solutions, expansions, frames and portraits), without feature expansion.
+
+**Architecture decision:** The successful read-only Overview tunnel must remain separate from privileged write operations. The existing Vite/PostgreSQL moderation path and local-file/legacy API content path require explicit connection migration and operator-scoped authorization; their behavior cannot be inferred from the Overview's green status. While this migration is incomplete, read failures must not show fabricated mock accounts or imply a live connection. Privileged production changes require independently verified credentials, resource scope and rollback; development status alone is not authorization to change arbitrary player accounts. The new moderator profile is therefore a distinct connection kind with its own SSH-validated private file, OS-keyring credential, explicit opt-in and a checked minimum database role. Player lists and details can be approved with SELECT-only grants; writes require a separate environment opt-in and specific UPDATE/DELETE grants. This avoids making ban authority a prerequisite for inspecting a player. It is not enabled by configuring the Overview, and server-side grants plus live tests remain pending. Content publishing similarly receives a separate `ssh-content` profile, an operator-owned file and its own opt-in; only five fixed deployed JSON filenames are accessible. One-record updates require the exact catalog revision from the preceding read, a backup, and atomic replacement. Image publishing is deferred until its deployed paths and safety model can be verified independently.
 
 ## 2026-11-05 — Approve Batch A deployment and local display
 

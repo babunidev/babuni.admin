@@ -133,8 +133,8 @@ test('independent local service requires session key and tests local folder with
     })})
     const remoteId=(await remote.json()).profile.id
     const checkRemote=(await (await request(remoteId+'/test',{method:'POST'})).json()).status
-    assert.equal(checkRemote.state,'not-configured')
-    assert.equal(checkRemote.code,'ADAPTER_NOT_IMPLEMENTED')
+    assert.equal(checkRemote.state,'error')
+    assert.equal(checkRemote.code,'PORTFOLIO_TARGET_DENIED')
     assert.equal((await request(remoteId+'/connect',{method:'POST'})).status,409)
     assert.equal((await request(remoteId+'/inspect')).status,403)
     assert.ok(['missing','unavailable'].includes(checkRemote.credential))

@@ -1,5 +1,26 @@
 # Babuni Admin — instructions for future human and AI developers
 
+## One app, multiple workspaces, one continuous development line (creative decision, 2026-11-07)
+
+Babuni Admin is one local administration application for one human operator. Morkahja and Babuni Dev are two current workspaces of that same application, with further project workspaces added when needed. Changing focus between workspaces must **not** switch to an older application version, drop existing features, create a separate application, or treat each workspace as an independent Git branch. Continue from the most advanced current codebase and integrate changes there. Do not create a new branch for a workspace change unless the creative explicitly asks or a genuinely necessary isolation reason is explained. Preserve existing Morkahja administrator, moderation, content and image cache operations when adding portfolio management.
+
+The shared **Connection** page manages project-specific connection targets without creating multiple administrators. Babuni Dev can have its own scoped GitHub and website targets; these are not separate admin accounts and must not inherit Morkahja database or file permissions. For now, game-side live content publishing is deferred pending a game architecture update, while portfolio content editing and publishing become the active development priority. Preserve existing verified functionality and never mistake a read-only connection check for an operational publisher.
+
+
+## Single Connection interface (creative decision, 2026-11-06)
+
+Babuni Admin is a private workbench for one operator. Maintain one clearly named **Connection** page with all relevant server/credential health details; workspace pages must reuse the owner administrator connection without asking the user to choose profiles repeatedly. Never reintroduce per-page connection dropdowns or unnecessary multi-account provisioning. Preserve working credentials and legacy profiles during migration; remove obsolete infrastructure only after proven replacement. Keep fixed operations, transactions, SSH host pinning, backups and clear failures. Do not claim website publishing or live writes are connected until verified. The read-only remote image reader has a persistent local disk cache; real-server cache synchronization is still awaiting operator acceptance.
+
+## One Morkahja operator profile (creative decision, 2026-11-06)
+
+Babuni Admin is a single-operator tool. Do not reintroduce separate read-only moderator accounts, different Content logins, or multiple password prompts for the same server. The `postgres-ssh-moderation` internal profile is the current administrator identity shared across Overview, Moderation and Content. Preserve the existing restricted Overview as a migration fallback only. All actions must remain fixed and validated, with SSH trust, transaction rollback, content backups, and clear errors. Database role setup remains operator-controlled; do not claim production activation from CI or source work alone. Remote image reads are implemented and were observed loading live on Nobara; persistent disk preloading and change checks are implemented but not yet live-verified. Image uploads and remote asset writes remain unfinished.
+
+## Privileged Morkahja connection separation (2026-11-06)
+
+The `postgres-ssh-moderation` profile is separate from the restricted `postgres-ssh` Overview. Its private config, OS-keyring credential, enabled environment gate, database privileges and per-operation role check must be independently authorized. Never grant `babuni_admin_probe` raw game tables or write privileges to make moderation work. The moderator adapter permits only fixed player list/detail and timeout/ban/unban operations. Account listing and detail require independently approved SELECT-only rights; a separate `BABUNI_MORKAHJA_MODERATION_WRITES=enabled` gate and narrowly scoped UPDATE/DELETE privileges are required for mutations. The operator-reviewed read-role SQL is never auto-applied. Preserve row locks, rollback, session revocation, statement limits and SSH cleanup.
+
+The `ssh-content` profile is a separate, opt-in, no-forwarding SSH content transport. Its Python worker may access only the five fixed deployed game JSON catalog files; preserve readback SHA-256 revision requirements, exclusive backups, atomic replacement, schema validation and failure-safe behavior. Scoped remote WebP image reads exist through the administrator profile, with a local disk cache and fixed folder allowlist; do not add arbitrary server file browsing or public hosting. Do not confuse developer files or static artwork with the deployed server catalog. Never claim user-triggered remote writes succeeded without an observed server response and readback. Both adapters remain disabled by default and require live operator verification before use on actual accounts or published assets.
+
 **Human creative and project authority:** Babuni. The current repository is `babunidev/babuni.admin`, publicly named **Babuni Admin**. `arcanitebrothers` is the historical package/repository name. Browser-tab identity and shared sidebar branding use **Babuni Admin**; **Morkahja** is the game workspace, not the whole admin application.
 
 ## Start with the actual architecture

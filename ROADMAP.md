@@ -1,4 +1,95 @@
 # Babuni Admin — Development Roadmap
+## 2026-11-07 — Portfolio SSH does not depend on Morkahja moderation
+
+- [x] Fix Babuni Dev connection check blocked by `REMOTE_MODERATION_DISABLED` despite GitHub and HTTPS success on the operator's desktop.
+- [x] Reuse the approved VPS host key and website-specific `babunideploy` key without enabling unrelated Morkahja database/moderation features.
+- [ ] Verify dedicated deployment-key authentication, readable live release, and release-directory permissions on Nobara.
+
+## 2026-11-07 — One configured portfolio administrator
+
+- [x] Replace two manual Babuni Dev setup cards with one project-specific administrator panel based on the existing owner connection to the shared VPS.
+- [x] Preserve automatic Morkahja Overview, Moderation, Content, and image cache behavior in the same app.
+- [x] Implement fixed-scope GitHub/HTTPS/SSH read-only checks, reusing the approved VPS host fingerprint and the already configured dedicated `babunideploy` identity/key without exposing a password or creating another UI profile.
+- [x] Add an explicitly triggered, narrowly scoped retirement action for the superseded `postgres-ssh` Morkahja server profile; keep the primary administrator and any credential untouched.
+- [ ] Verify the three checks and retire the old profile on the Nobara desktop. CI cannot establish live SSH permissions or actual local key unlock.
+- [ ] Implement Babuni Dev document editing, reviewed GitHub updates, secure website deployment and rollback; verify actual site filesystem rights before enabling writes.
+- [ ] Keep Morkahja live encounter publishing paused until the game developer delivers the agreed runtime-content architecture.
+
+
+## 2026-11-07 — Continue on one admin tool, prioritize Babuni Dev connection
+
+- [x] Preserve the advanced Morkahja workspace, its single administrator profile, moderation, content tools and local image cache while redirecting development toward Babuni Dev.
+- [x] Integrate the two read-only Babuni Dev checks into the existing **Connection** page, not a separate version of the console: approved `babunidev/babuni.dev` GitHub CLI metadata and fixed `www.babuni.dev` HTTPS homepage.
+- [x] Retain strict project-specific capabilities; do not change or disable the Morkahja administrator adapter.
+- [ ] Verify GitHub CLI login and public website checks from the operator's Nobara desktop using the unified application.
+- [ ] Implement Babuni Dev source document browsing/editing with revision checks and original GitHub repository as authoritative source.
+- [ ] Implement coherent website staging, publication and rollback through scoped deployment access; no static partial edits without verified dependent outputs.
+- [ ] Resume game-side encounter publishing only after the Morkahja developer provides a compatible live-content architecture.
+
+
+## Workspace-wide persistent images — 2026-11-06
+
+- [x] Save downloaded WebP artwork to a persistent local cache scoped by administrator profile and host.
+- [x] Fetch all five supported asset directories in one incremental SSH session; transfer only new or changed filenames.
+- [x] Begin syncing when opening the Morkahja workspace, rather than when opening each Content tab.
+- [x] Serve previously downloaded files locally even when the server is unavailable.
+- [x] Refresh visible thumbnails when the sync reports changed files and expose simple cache progress.
+- [x] Test first sync, unchanged sync, changed-image replacement, process restart and offline cache use with synthetic fixtures.
+- [ ] Verify the first bulk sync, tab navigation, warm restart, and replacement behavior on the real Nobara/Ubuntu environment.
+- [ ] Implement verified image upload and deployment separately from this read-only cache.
+
+
+## Morkahja remote image delivery — 2026-11-06
+
+- [x] Implement an authenticated image read through the existing administrator SSH configuration, no domain/DNS setup.
+- [x] Restrict requests to five mapped game asset directories and bounded WebP basenames.
+- [x] Wire lazy images to encounters, solutions, expansions, frames, portraits and detail views.
+- [ ] Verify actual image display on Nobara using the live server; fix any naming/path discrepancies found.
+- [ ] Implement remote image upload, revision checks, backup and atomic replacement separately.
+
+
+## Connection consolidation — 2026-11-06
+
+- [x] One **Connection** page and navigation entry for the owner-managed server configuration.
+- [x] Automatic sharing of the existing Morkahja administrator profile in Overview, Moderation and Content; no repeated dropdowns.
+- [x] View stored credential availability, SSH host check, one-shot database read check, server address and last successful connection in Connection.
+- [x] Preserve older profiles without automatically deleting credentials or changing PostgreSQL roles.
+- [x] Verify actual Moderation account list on the operator's desktop: 62 players displayed using the administrator account.
+- [ ] Verify automatic Overview and Content live loads on Nobara after updating.
+- [ ] Verify a disposable test content edit and its backup and game-side reload.
+- [ ] Wire babuni.dev website administration and deployment to the same operator's server setup; this is not yet implemented.
+- [ ] Complete remote image management.
+- [ ] Remove unused legacy APIs and profile kinds after live workflows are confirmed.
+
+## 2026-11-06 — One owner-managed administrator connection (revised direction)
+
+**Creative decision:** Reject separate read-only, Moderation and Content user accounts. Babuni Admin is a single-operator tool; one administrator profile must run Overview, player management and the five content catalogs with one stored database password and the already approved SSH identity. This replaces the earlier multi-profile proposal below without erasing its development history.
+
+- [x] Share the `postgres-ssh-moderation` administrator profile and browser selection across Overview, Moderation and Content.
+- [x] Replace the proposed extra read-only moderator login with `scripts/morkahja-admin-role.sql`, granting only the existing tool's needed player and Overview view operations; no PostgreSQL superuser or arbitrary SQL API.
+- [x] Remove the separate moderation write opt-in; the administrator credential itself permits fixed timeout, ban and unban transactions.
+- [x] Reuse administrator SSH identity for fixed deployed content JSON operations, with revision checks and backups.
+- [ ] Operator-run the admin role setup, store its password once in the Linux keyring, activate the one profile and verify real Overview, Moderation and Content on Nobara.
+- [ ] Finish remote image uploads and actual game-visible editing; verify backup/rollback and connection cleanup.
+- [ ] Pass full CI for this revision and merge only after live acceptance.
+
+## 2026-11-06 — Restore existing live Moderation and Content workflows
+
+**Creative direction:** Reconnect existing player details, timeout/ban/unban and the five content collections (encounters, solutions, expansions, frames, portraits) to the live Morkahja backend. Improve the existing workflows; no extra statistics or new panels.
+
+- [x] Audit old Moderation and Content routing against the working read-only Overview. The legacy moderation adapter uses a separate Vite/PostgreSQL connection; Content uses local game files or an older remote API. Neither inherits authority from the restricted Overview SSH probe.
+- [x] Remove the legacy PostgreSQL failure fallback to sample players or mock player details; show each page's actual configured source and its unverified privileged-connection status. Content read failures now show an explicit error instead of appearing to be an empty catalog.
+- [x] Implement a separate source-level `postgres-ssh-moderation` profile and fixed player list, detail, timeout, ban and unban requests through the private local service. The moderator has a separate config/credential; the reader remains unchanged. Synthetic operation and rollback fixtures are added. **Not yet activated or tested against the live server.**
+- [x] Separate read-only player listing/details from mutation authority: the moderator profile can now use a distinct SELECT-only role, with a second environment gate for all writes. Prepare operator-review SQL `scripts/morkahja-moderation-read-role.sql` (not applied).
+- [x] Correct player/detail source isolation, missing-player/error states, sample-data labeling, current progression levels and session-based presence wording; add synthetic account/detail coverage.
+- [x] Prepare a metadata-only deployed-schema preflight (`scripts/morkahja-moderation-schema-preflight.sql`) and a local config helper (`scripts/prepare-morkahja-moderation-config.py`) that reuses verified Overview metadata without copying secrets, with regression tests.
+- [ ] Operator-run the schema preflight, approve and provision the SELECT-only role, configure the independent keyring credential and verify the real list/side panel on Nobara. No production credentials or roles were created in this branch.
+- [ ] Later, separately review narrow UPDATE/DELETE grants and enable `BABUNI_MORKAHJA_MODERATION_WRITES=enabled` for timeout/ban/unban.
+- [x] Implement a separately gated `ssh-content` profile and source-level read/write transport for the five JSON catalogs in the deployed `/var/www/morkahja/game` tree; content editor tabs can select the profile. Remote images and live visual verification remain pending.
+- [x] Implement revision-checked, serialized, backed-up atomic JSON writes for encounters, solutions, expansions, frames and portraits through a fixed-path one-shot SSH worker. **Not enabled or executed on the live server.**
+- [ ] Implement secured live image reads and uploads for encounter/solution imagery, frame artwork and portraits; existing local upload paths must not be mistaken for remote publication.
+- [ ] Verify failure recovery, transaction rollback, tunnel cleanup and source/permission gating in isolated fixtures and on designated development data.
+- [ ] Complete CI, controlled live acceptance tests and merge through a reviewed pull request.
 
 ## 2026-11-05 — Reconcile operator-verified desktop and Overview behavior
 
@@ -186,7 +277,7 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Verify real locked default-collection behavior on Nobara: `npm run keyring:inspect` returned `locked` for the collection, keyring health and nonexistent test-profile credential (operator-reported, 2026-11-04).
 - [x] Verify unlock recovery: after unlocking KDE Wallet, inspection returned `unlocked`, `available` and `missing` again (operator-reported, 2026-11-04). This verifies status recovery, not a post-unlock credential store/retrieve test.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
-- [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
+- [ ] Extend verified Babuni Dev GitHub metadata access into source-document read/write access, then implement a controlled publishing transport; read-only checks now exist.
 - [x] Audit current connection and legacy static middleware boundaries; add project-scope/denied-operation tests and prevent local asset symlink escapes. [Review](docs/PHASE2_SECURITY_REVIEW_2026-11-04.md).
 - [ ] Complete operator authentication/authorization, project-scoped live operations, action attribution, recoverable writes and remaining security release gates. Browser origin/session guards alone are insufficient.
 - [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.

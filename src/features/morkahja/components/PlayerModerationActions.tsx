@@ -24,7 +24,7 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
 
   const invalidate = () => {
     void queryClient.invalidateQueries({ queryKey: ['players'] })
-    void queryClient.invalidateQueries({ queryKey: ['playerDetail', player.id] })
+    void queryClient.invalidateQueries({ queryKey: ['playerDetail'] })
     void queryClient.invalidateQueries({ queryKey: ['onlinePlayers'] })
     void queryClient.invalidateQueries({ queryKey: ['dashboardStats'] })
     void queryClient.invalidateQueries({ queryKey: ['activityFeed'] })
@@ -75,7 +75,7 @@ export function PlayerModerationActions({ player }: PlayerModerationActionsProps
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {player.status === 'online' && player.isOnline && (
+      {player.status !== 'banned' && (
         <>
           <button
             type="button"

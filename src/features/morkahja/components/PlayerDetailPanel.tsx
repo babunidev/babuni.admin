@@ -1,6 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { fetchPlayerDetail } from '../services/adminApi'
+import { fetchPlayerDetail, getModerationProfileId } from '../services/adminApi'
+import { useLocalPostgres } from '../../../config/constants'
+import { getApiDisplayLabel } from '../../../config/api'
 import type { PlayerDetail, PlayerDetailAvatar } from '../types/playerDetail'
 import { formatAchievementId } from '../utils/achievementLabels'
 import { formatDateTime, formatRelative } from '../../../shared/utils/format'
@@ -265,8 +267,9 @@ function PlayerDetailContent({ detail }: { detail: PlayerDetail }) {
 }
 
 export function PlayerDetailPanel({ playerId, onClose }: PlayerDetailPanelProps) {
-  const { data, error, isLoading, isError } = useQuery({
-    queryKey: ['playerDetail', playerId],
+  const source = getModerationProfileId() ?? (useLocalPostgres ? 'legacy-postgres' : getApiDisplayLabel())
+  const { data, error, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ['playerDetail', source, playerId],
     queryFn: () => fetchPlayerDetail(playerId),
     enabled: playerId.length > 0,
   })
@@ -305,7 +308,7 @@ export function PlayerDetailPanel({ playerId, onClose }: PlayerDetailPanelProps)
               </>
             ) : (
               <h2 id="player-detail-title" className="text-lg text-parchment">
-                Player not found
+                {isError ? 'Player details unavailable' : 'Player not found'}
               </h2>
             )}
           </div>
@@ -329,9 +332,17 @@ export function PlayerDetailPanel({ playerId, onClose }: PlayerDetailPanelProps)
             <p className="text-sm text-fog">Loading player data…</p>
           )}
           {isError && (
-            <p className="text-sm text-red-300/90">
-              {error instanceof Error ? error.message : 'Failed to load player'}
-            </p>
+            <div role="alert" className="rounded border border-ember/40 bg-ember/10 p-3">
+              <p className="text-sm text-red-300/90">
+                {error instanceof Error ? error.message : 'Failed to load player'}
+              </p>
+              <p className="mt-1 text-xs text-fog">No fallback player details were used.</p>
+              <button type="button" disabled={isFetching}
+                onClick={() => {void refetch()}}
+                className="mt-3 rounded border border-gold/25 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">
+                {isFetching ? 'Retrying…' : 'Retry player details'}
+              </button>
+            </div>
           )}
           {data && <PlayerDetailContent detail={data} />}
           {isError && (

@@ -1,4 +1,78 @@
 # Babuni Admin — Changelog
+## 2026-11-07 — Fix portfolio SSH check blocked by Morkahja switch
+
+- Corrected the Babuni Dev administrator check after a real Nobara screenshot showed GitHub and HTTPS passing but server SSH returning `REMOTE_MODERATION_DISABLED`.
+- Babuni Dev now validates the approved VPS SSH host pin directly, then uses the pre-existing `babunideploy` key on standard SSH port 22. It no longer requires Morkahja moderation to be enabled and does not alter the game's moderation authorization.
+- Improved the UI to explain connection results in readable language, while retaining detailed codes in the local service response.
+- Added isolated regression coverage; the real website SSH check still requires operator verification.
+
+## 2026-11-07 — Consolidate Babuni Dev into one administrator connection
+
+- Replaced the two per-target Babuni Dev setup cards with one preconfigured Babuni Dev administrator view on the existing **Connection** screen.
+- Added a manual read-only check of the canonical website's deployed directory using the existing approved VPS host pin and pre-existing `babunideploy` SSH key with a fixed remote Python inspector. The probe also checks whether the deployment release directory is writable, without writing anything. No arbitrary remote filesystem access or upload is exposed.
+- Kept GitHub CLI and public HTTPS checks as separate observable statuses; successful checks never claim write or publishing permission.
+- Added a one-time, capability-restricted retirement path for the superseded Morkahja Overview profile, removing its saved keyring entry only on the user's explicit action.
+- Added targeted tests for the integrated portfolio check. No production file, service, GitHub document or SSH credential was changed.
+
+
+## 2026-11-07 — Babuni Dev checks in the existing administrator console
+
+- Added two manual Babuni Dev connection cards to the previously established single **Connection** screen, leaving Morkahja's own connection and workspace UI in place.
+- Added fixed outbound read-only probes through the existing local service: authenticated GitHub CLI repository metadata and canonical HTTPS website response.
+- Preserved Morkahja connection kinds, SSH/content/moderation capabilities and all existing game-side routes.
+- Added narrow scope/denial regression coverage and adjusted existing service capability checks. Website publishing, new admin accounts, production file writes and actual desktop verification are not included.
+
+
+## 2026-11-06 — Persistent workspace artwork cache
+
+- Replaced the 48-item, memory-only gallery cache with profile-scoped local disk storage in `~/.cache/babuni-admin/morkahja-images` (or `$XDG_CACHE_HOME/babuni-admin/morkahja-images`).
+- A single outbound, host-pinned SSH session checks the five approved WebP asset directories and streams new or changed files to the cache. Unchanged files are not transferred; removed filenames are pruned after a complete sync.
+- Every Morkahja workspace entry starts a cache check; changes are checked again every ten minutes while that workspace is open. Existing local art remains available when the SSH server cannot be reached.
+- Content previews now read files from the local service instead of opening SSH per image. A separate bounded browser memory layer makes repeated tab switches immediate, with visible sync progress and automatic refresh of changed images.
+- Added cache integrity/bounds, offline and persistence fixtures. Initial real-server bulk sync and performance require operator verification.
+
+
+## 2026-11-06 — Read live Morkahja images through existing administrator SSH
+
+- Added an authenticated, bounded `content-image` request to the local service. It uses the same configured and pinned SSH identity as Content catalogs, not a new public domain or another password.
+- Whitelisted only WebP filenames in five fixed deployed game image folders; no arbitrary browser paths, writes or shell arguments. Remote files are checked for size, type and symlinks before returning bounded image bytes.
+- Integrated lazy image loading into encounters, solutions, expansions, frames, portraits and content detail views with two concurrent transfers and a bounded in-memory image cache.
+- Added tests covering request validation, worker invocation, fixed paths and the session-protected endpoint. Live asset delivery is pending Nobara acceptance.
+
+
+## 2026-11-06 — Fix unified Content config import
+
+- Corrected missing `readMorkahjaModerationConfig` import in `local-service/morkahjaContentConfig.mjs`. Before this fix, a real Content request using the administrator profile threw a reference error that the runner reported as `REMOTE_CONTENT_FAILED`; Overview and Moderation were unaffected.
+- Added a regression assertion for the import. This is a source fix; live remote Content access needs a new operator test.
+
+
+## 2026-11-06 — One Connection interface
+
+- Renamed the global navigation entry and page from Connections to **Connection**.
+- Reused the configured owner administrator identity automatically in Morkahja Overview, Moderation and Content; removed their separate profile dropdowns.
+- Displayed live-server metadata, keyring credential status, last activity, SSH host checking, database read checking and server metadata editing in Connection.
+- Kept older profiles in collapsed migration details without deleting credentials or server configuration.
+- Prevented the legacy mock API indicator from appearing as a live connection status when an administrator profile is configured.
+- Stopped Content queries from loading the local/static source before connection lookup resolves.
+- Live Moderation player listing was verified by the creative (62 accounts). Other live writes and website publishing remain unverified.
+
+## 2026-11-06 — Unify Morkahja administration under one operator identity
+
+- Consolidated Overview, Moderation and Content onto one selectable administrator profile and one stored database credential, sharing the existing pinned SSH identity.
+- Replaced the proposed additional read-only moderator login with a reviewable `babuni_admin` role for the tool's existing player reads, moderation changes and Overview views.
+- Removed the extra ban/timeout write-enable environment switch. Fixed SQL operations, moderation transactions, session revocation, source errors and content-file backup/revision checks remain.
+- The original Overview reader remains supported as a migration fallback. Remote images and live write verification remain unfinished. No server role, account or file change was performed by the AI.
+
+## 2026-11-06 — Make legacy moderation/content connections explicit
+
+- Removed silent sample-player and mock-player-detail fallbacks after direct PostgreSQL read failures; errors now remain errors.
+- Displayed the configured source and live-authorization limitation on existing Moderation and Content pages; content fetch failures now show an explicit error instead of an apparently empty catalog.
+- Added regression checks for legacy source fallback and source disclosure.
+- Added a separately opted-in SSH/PostgreSQL moderation connection profile, fixed list/detail and atomic timeout/ban/unban service operations, a profile selector, and failure/cleanup tests. No existing restricted Overview privilege is widened.
+- Separated SELECT-only player inspection from separately gated moderation writes; prepared unapplied SQL for a dedicated read-role. Fixed player list progression levels, source-qualified player details cache, error versus missing-player handling and sample/online-estimate labeling; added full detail and privacy fixtures.
+- Added deployed-schema metadata preflight and a Nobara helper for creating a separate private moderation config from the already verified Overview metadata without copying database secrets; documented the operator-run role setup and live test commands.
+- Added a separately gated SSH content profile, fixed remote JSON catalog reads, per-profile revision checks and atomic backed-up catalog writes for the five existing Content editors. Image upload through this profile remains unavailable.
+- No production moderation/content credentials, remote filesystem permissions, database migration or game-data mutation were applied in this change; activation and live verification are pending.
 
 ## 2026-11-05 — Connect Batch A aggregates to the local Overview
 

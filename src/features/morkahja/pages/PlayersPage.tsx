@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate, useParams } from 'react-router-dom'
 import { PlayerDetailPanel } from '../components/PlayerDetailPanel'
@@ -8,9 +8,13 @@ import { PlayerModerationActions } from '../components/PlayerModerationActions'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { Table, type Column } from '../../../shared/components/Table'
 import { PLAYERS_POLL_MS, useLocalPostgres } from '../../../config/constants'
+import { getApiDisplayLabel } from '../../../config/api'
+import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
 import {
   fetchPlayersWithMeta,
   formatPlayersLoadError,
+  getModerationProfileId,
 } from '../services/adminApi'
 import type { Player } from '../../../types'
 import { formatDateTime, formatRelative } from '../../../shared/utils/format'
@@ -78,12 +82,36 @@ const columns: Column<Player>[] = [
 export function PlayersPage() {
   const { playerId } = useParams<{ playerId?: string }>()
   const navigate = useNavigate()
+  const [profileId, setProfileId] = useState(() => getModerationProfileId() || '')
+  const [profilesLoaded, setProfilesLoaded] = useState(false)
+  const [profileStatus, setProfileStatus] = useState('Checking Morkahja administrator connection…')
+
+  useEffect(() => {
+    let mounted = true
+    void localConnectionApi<{profiles:{
+      id:string;projectId:string;kind:string;displayName:string
+    }[]}>().then(result => {
+      if (!mounted) return
+      const active = activateMorkahjaConnection(result.profiles)
+      setProfileId(active?.id || '')
+      setProfileStatus(active
+        ? 'Using your Morkahja administrator connection. SSH closes after each request.'
+        : 'Administrator connection unavailable. Configure it in Connection.')
+      setProfilesLoaded(true)
+    }).catch(() => {
+      if (!mounted) return
+      setProfileStatus('Local connection service unavailable; privileged SSH moderation not verified.')
+      setProfilesLoaded(true)
+    })
+    return () => {mounted = false}
+  }, [])
 
   const { data, error, isError, isLoading, isFetching } = useQuery({
-    queryKey: ['players'],
+    queryKey: ['players', profileId || 'legacy'],
     queryFn: fetchPlayersWithMeta,
+    enabled: profilesLoaded,
     refetchInterval: (query) =>
-      query.state.data?.dbError ? false : PLAYERS_POLL_MS,
+      profileId || query.state.data?.dbError ? false : PLAYERS_POLL_MS,
     retry: 1,
   })
 
@@ -94,18 +122,27 @@ export function PlayersPage() {
 
   const onlineCount = countOnlinePlayers(players)
   const dbError = data?.dbError
-  const showingSampleData = Boolean(data?.isSample && dbError)
+  const showingSampleData = Boolean(data?.isSample)
 
   return (
     <div>
       <PageHeader
         title="Moderation"
-        description={
-          useLocalPostgres
-            ? 'All accounts from PostgreSQL — online players listed first.'
-            : 'All players from the server — online listed first.'
-        }
+        description={profileId
+          ? 'Live accounts from your Morkahja administrator connection.'
+          : useLocalPostgres
+            ? 'Legacy PostgreSQL account list — online estimates first.'
+            : 'Players from the selected legacy or demo source.'}
+
       />
+      <p className="mb-3 text-xs text-fog" role="status">
+        {profileStatus}
+        {profileId
+          ? isError ? ' · Database read failed; no mock fallback.'
+            : data ? ' · Live player data loaded.'
+              : ' · Loading player data.'
+          : ' · Current source: ' + getApiDisplayLabel()}
+      </p>
       {(dbError || isError) && (
         <ConnectionBanner
           {...formatPlayersLoadError(
@@ -115,8 +152,8 @@ export function PlayersPage() {
       )}
       {showingSampleData && (
         <ConnectionBanner
-          title="Showing sample players only"
-          message="Connect PostgreSQL (SSH tunnel below) to load real accounts. Moderation actions on sample rows do not affect your database."
+          title="Sample players — not live Morkahja accounts"
+          message="These records are local demonstration data. No live database read or moderation action is implied."
         />
       )}
       <p className="mb-4 text-xs text-fog">
@@ -124,10 +161,11 @@ export function PlayersPage() {
           ? 'Loading players…'
           : isFetching && !isLoading
             ? 'Refreshing…'
-            : `${onlineCount} online · ${players.length} total${data?.isSample ? ' (sample)' : ''}`}
+            : isError ? 'Player list unavailable — no fallback data' :
+              `${onlineCount} accounts with valid sessions (estimate) · ${players.length} total${data?.isSample ? ' (sample)' : ''}`}
       </p>
       <p className="mb-2 text-xs text-fog/80">
-        Click a row to view avatars, achievements, unlocks, and encounter history.
+        Session-based online status is an estimate, not a verified presence heartbeat. Click a row for avatars, achievements, unlocks and encounter history.
       </p>
       <Table
         columns={columns}

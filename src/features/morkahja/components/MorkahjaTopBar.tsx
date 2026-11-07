@@ -5,10 +5,20 @@ import { useLocalPostgres } from '../../../config/constants'
 import { fetchServerStatus, pingPlayersApi } from './../services/adminApi'
 import { useUiStore } from '../../../app/uiStore'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
+import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
 
 export function TopBar() {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar)
   const [clock, setClock] = useState(() => new Date())
+  const [adminConfigured,setAdminConfigured] = useState(false)
+  useEffect(()=>{
+    let mounted=true
+    void localConnectionApi<{profiles:{id:string;projectId:string;kind:string;displayName:string}[]}>()
+      .then(result=>{if(mounted)setAdminConfigured(Boolean(activateMorkahjaConnection(result.profiles)))})
+      .catch(()=>{})
+    return ()=>{mounted=false}
+  },[])
 
   const playersSourceLive = useLocalPostgres || !useMockData
 
@@ -38,7 +48,7 @@ export function TopBar() {
     timeZoneName: 'short',
   }).format(clock)
 
-  const linkLabel = useMockData
+  const linkLabel = adminConfigured ? 'Admin configured' : useMockData
     ? 'Mock'
     : useLocalPostgres
       ? apiReachable === true
@@ -52,7 +62,7 @@ export function TopBar() {
           ? 'Offline'
           : '…'
 
-  const linkTone = useMockData
+  const linkTone = adminConfigured ? 'reviewing' : useMockData
     ? 'muted'
     : apiReachable
       ? 'online'
@@ -79,15 +89,15 @@ export function TopBar() {
       <div className="flex flex-wrap items-center justify-end gap-3 text-xs sm:gap-4">
         <span
           className="hidden max-w-[14rem] truncate text-fog lg:inline"
-          title={getApiDisplayLabel()}
+          title={adminConfigured ? 'Morkahja administrator (configured)' : getApiDisplayLabel()}
         >
-          {getApiDisplayLabel()}
+          {adminConfigured ? 'Morkahja administrator' : getApiDisplayLabel()}
         </span>
         <StatusBadge value={linkTone} label={linkLabel} />
-        {server && <StatusBadge value={server.state} />}
-        <span className="hidden text-fog md:inline">
+        {!adminConfigured && server && <StatusBadge value={server.state} />}
+        {!adminConfigured && <span className="hidden text-fog md:inline">
           v{server?.version ?? '—'} · {server?.region ?? '—'}
-        </span>
+        </span>}
         <span className="tabular-nums text-parchment/80">{timeLabel}</span>
       </div>
     </header>

@@ -1,4 +1,46 @@
 # Babuni Admin — Development Journal
+## 2026-11-07 — Separating the website connection from game moderation
+
+The first live check of my portfolio administrator found GitHub and the public website available, but SSH was blocked by a setting meant to authorize Morkahja moderation. That dependency did not belong in the website connection. AI adjusted the new probe to verify the existing trusted VPS host directly and use the dedicated website deployment key, leaving the game's moderation gate intact. The interface also explains connection states in ordinary language; whether the SSH check succeeds on my computer still needs to be observed.
+
+## 2026-11-07 — One connection that already knows my server
+
+Seeing separate GitHub and website setup buttons made the portfolio connection feel like another account-management exercise, even though my admin workbench already knows the VPS and the operator who uses it. At my direction, AI replaced those cards with a single Babuni Dev administrator panel, deriving the server host from my existing approved administrator connection while using the dedicated website deployment key for a fixed SSH staging-access check and checking GitHub independently through the desktop login. The older Morkahja Overview-only profile can now be retired explicitly, leaving the one administrator connection in place. The server check only reads the deployed website directory; real publication and the local SSH acceptance check are not yet completed.
+
+
+## 2026-11-07 — Keeping the workbench whole
+
+Switching from work on Morkahja to my portfolio was supposed to change the development focus, not replace the tool we had already built. Instead, the first Babuni Dev connection experiment was placed on a separate branch based on older code; running it brought back the outdated Connections interface and hid the newer game administration features. After I pointed that out, AI returned to the advanced codebase and added the read-only GitHub and website checks there, keeping the existing single administrator connection and Morkahja workspace. Both workspaces now belong to the same source version; live portfolio publication and local acceptance are still ahead.
+
+
+## 2026-11-06 — Keeping the pictures nearby
+
+The image reader finally displayed real artwork, but switching between Content tabs still forced fresh downloads from my server, sometimes taking long enough to interrupt ordinary editing. A small memory cache turned out to be the wrong approach: only a handful of thumbnails survived navigation, and none survived a restart. At my direction, AI implemented a persistent local image cache that fills for the whole Morkahja workspace and checks for changed files instead of downloading them again. Automated tests cover persistence and incremental updates; the first real-server cache sync remains to be verified.
+
+
+## 2026-11-06 — Connecting the missing pictures
+
+Content records finally loaded from my server, but their images were absent. Local checks confirmed that the files exist under `/var/www/morkahja` and can be read using the already configured SSH account; the earlier proposed public hostname did not resolve. Rather than introducing another connection, AI added a small image reader to the existing administrator SSH workflow and updated the image views to request only visible pictures. The change is committed and covered by automated tests, but real-server image display still needs checking before I call it finished.
+
+
+## 2026-11-06 — Content connection error
+
+After the Overview loaded real statistics through the single administrator profile, the Content page instead returned `REMOTE_CONTENT_FAILED`. Inspection revealed an AI implementation mistake: the unified Content configuration called a helper without importing it. AI corrected the import and added a regression check. The actual remote catalog has not been verified yet.
+
+
+## 2026-11-06 — Simplifying the way I connect
+
+The real Moderation table finally loaded 62 accounts from my Morkahja database. That confirmed the administrator path works, but I still had to choose the same connection on every page. For a tool used by one person, that was needless repetition. After I asked for a single **Connection** tab, AI changed the interface so Overview, Moderation and Content automatically use the administrator configuration. The older read-only profile stays available as an archived migration detail, while the connection page now contains the relevant settings and diagnostic checks. Live content edits and Babuni Dev publishing still need separate verification.
+
+## 2026-11-06 — Returning to one administrator connection
+
+The first connection migration split my administration tool into separate accounts for reading, moderating and editing content. That was more complex than the project needed: this is my own workbench, and one authenticated administrator should reach all existing features. After I rejected the multi-user setup, AI revised the implementation so Overview, Moderation and Content share one administrator profile, pinned SSH identity and stored database password. Fixed operations, rollback and content backups remain; the old read-only Overview path survives only for migration. No new credentials were installed or live data changed, and remote image handling still needs work.
+
+## 2026-11-06 — Returning to Moderation and Content
+
+With the restricted Overview working, the more useful goal is getting my existing player management and game-content editors back onto the live server. Source review exposed that they still follow older connection paths, separate from the new read-only tunnel. AI removed the misleading mock fallback, labeled the old sources and added visible content-read errors. The next implementation created a separate moderation SSH profile and connected the existing list, detail, timeout, ban and unban actions to a narrowly scoped local service adapter. Its role and transaction safeguards have synthetic tests, but no privileged live role has been deployed or exercised. AI also prepared a separate SSH content path for my five existing catalog editors, keeping a version check and backup before remote JSON replacement. Images remain outside that initial transport, and nothing was changed on the game server.
+
+The next read-side pass focused on what the player list and side panel actually reveal. AI corrected the list to use current avatar progression, separated each connection's cached details, distinguished connection errors from missing players, and added fixture coverage for achievements, currency, unlocks and encounter history. Player inspection can now be authorized with a distinct SELECT-only role; write permissions remain a later, separate decision. The proposed role setup is committed as a reviewable SQL file, not applied. To make testing practical, AI added a metadata-only deployed-schema check, a private configuration helper that copies the working Overview settings without credentials, and executable Nobara/server instructions. Actual live account inspection still depends on the separate operator-managed database login.
 
 ## 2026-11-06 — Seeing the new totals in my local Overview
 
