@@ -1,5 +1,13 @@
 # Babuni Admin — Changelog
 
+## 2026-11-07 — Babuni Dev checks in the existing administrator console
+
+- Added two manual Babuni Dev connection cards to the previously established single **Connection** screen, leaving Morkahja's own connection and workspace UI in place.
+- Added fixed outbound read-only probes through the existing local service: authenticated GitHub CLI repository metadata and canonical HTTPS website response.
+- Preserved Morkahja connection kinds, SSH/content/moderation capabilities and all existing game-side routes.
+- Added narrow scope/denial regression coverage and adjusted existing service capability checks. Website publishing, new admin accounts, production file writes and actual desktop verification are not included.
+
+
 ## 2026-11-06 — Persistent workspace artwork cache
 
 - Replaced the 48-item, memory-only gallery cache with profile-scoped local disk storage in `~/.cache/babuni-admin/morkahja-images` (or `$XDG_CACHE_HOME/babuni-admin/morkahja-images`).
