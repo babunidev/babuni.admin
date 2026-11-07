@@ -21,7 +21,7 @@ export const adapterSpecs: Record<ConnectionKind, AdapterSpec> = {
   },
   github: {
     projectId: 'babuni-dev', kind: 'github', transport: 'read-only',
-    requiresCredential: false, capabilities: ['github:probe'],
+    requiresCredential: true, capabilities: ['github:probe'],
   },
   'remote-publish': {
     projectId: 'babuni-dev', kind: 'remote-publish', transport: 'read-only',
