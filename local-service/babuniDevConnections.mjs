@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process'
+import { readMorkahjaModerationConfig } from './morkahjaModerationConfig.mjs'
+import { buildContentSshArgs } from './morkahjaContentRunner.mjs'
 
 // Fixed, server-owned Phase 2 scope. A profile name or target never extends access.
 export const PORTFOLIO_GITHUB_REPO = 'babunidev/babuni.dev'
@@ -119,4 +121,115 @@ export async function probeBabuniDevConnection(profile, previous = {}, dependenc
     }
   }
   return result('error', 'PORTFOLIO_SCOPE_DENIED', 'Unsupported Babuni Dev connection type.', previous)
+}
+
+
+// The portfolio lives on the same VPS, but authentication is still checked
+// through the existing operator-approved SSH identity and pinned host key.
+// The endpoint accepts NO browser-provided host, directory, user or command.
+const WEBSITE_ROOT = '/var/www/babuni.dev/current'
+const WEBSITE_ROOT_INSPECTOR = [
+  'import json, os',
+  'root = "/var/www/babuni.dev/current"',
+  'usable = os.path.isdir(root) and os.access(root, os.R_OK | os.X_OK)',
+  'index = os.path.join(root, "index.html")',
+  'index_readable = os.path.isfile(index) and os.access(index, os.R_OK)',
+  'print(json.dumps({"usable": bool(usable), "indexReadable": bool(index_readable)}))',
+].join('\n') + '\n'
+
+function portfolioSshEnvironment(env = process.env) {
+  const permitted = {}
+  for (const name of ['PATH', 'HOME', 'USER', 'LOGNAME', 'LANG', 'SSH_AUTH_SOCK', 'XDG_RUNTIME_DIR']) {
+    if (typeof env[name] === 'string') permitted[name] = env[name]
+  }
+  permitted.SSH_ASKPASS_REQUIRE = 'never'
+  permitted.SSH_ASKPASS = '/bin/false'
+  return permitted
+}
+
+/** Short-lived, fixed-command SSH check. No upload, shell interpolation or password prompt. */
+export async function checkPortfolioSshRoot(config, deps = {}) {
+  return await new Promise(resolve => {
+    const start = deps.spawnCommand || spawn
+    const child = start('ssh', buildContentSshArgs(config), {
+      shell: false, stdio: ['pipe', 'pipe', 'ignore'],
+      env: portfolioSshEnvironment(),
+    })
+    let stdout = ''
+    let done = false
+    let limitExceeded = false
+    let timedOut = false
+    const finish = value => {
+      if (done) return
+      done = true
+      clearTimeout(timer)
+      resolve(value)
+    }
+    const timer = setTimeout(() => {
+      timedOut = true
+      child.kill('SIGKILL')
+      finish({ ok: false, code: 'PORTFOLIO_SSH_TIMEOUT' })
+    }, 12000)
+    child.stdout?.on('data', chunk => {
+      if (done || limitExceeded) return
+      if (Buffer.byteLength(stdout) + chunk.length > 2048) {
+        limitExceeded = true
+        child.kill('SIGKILL')
+        finish({ ok: false, code: 'PORTFOLIO_SSH_INVALID_RESPONSE' })
+      } else stdout += chunk.toString('utf8')
+    })
+    child.on('error', () => finish({ ok: false, code: 'PORTFOLIO_SSH_UNAVAILABLE' }))
+    child.on('close', (code, signal) => {
+      if (done) return
+      if (timedOut) return finish({ ok: false, code: 'PORTFOLIO_SSH_TIMEOUT' })
+      if (code !== 0 || signal) return finish({ ok: false, code: 'PORTFOLIO_SSH_FAILED' })
+      let parsed
+      try { parsed = JSON.parse(stdout) }
+      catch { return finish({ ok: false, code: 'PORTFOLIO_SSH_INVALID_RESPONSE' }) }
+      if (typeof parsed?.usable !== 'boolean' || typeof parsed?.indexReadable !== 'boolean') {
+        return finish({ ok: false, code: 'PORTFOLIO_SSH_INVALID_RESPONSE' })
+      }
+      return finish(parsed.usable && parsed.indexReadable
+        ? { ok: true, code: 'PORTFOLIO_SSH_READ_VERIFIED' }
+        : { ok: false, code: 'PORTFOLIO_ROOT_UNREADABLE' })
+    })
+    child.stdin?.on('error', () => {})
+    try { child.stdin?.end(WEBSITE_ROOT_INSPECTOR) }
+    catch { child.kill('SIGKILL'); finish({ ok: false, code: 'PORTFOLIO_SSH_FAILED' }) }
+  })
+}
+
+/** One Babuni Dev administrator backed by the existing host identity.
+ *  GitHub and public HTTPS remain separate permissions; they do not confer SSH writes.
+ */
+export async function checkBabuniDevAdministrator(adminProfile, deps = {}) {
+  const checkedAt = new Date().toISOString()
+  if (!adminProfile || adminProfile.projectId !== 'morkahja' ||
+      adminProfile.kind !== 'postgres-ssh-moderation') {
+    return { ok: false, code: 'ADMIN_CONNECTION_MISSING', checkedAt }
+  }
+  const github = await probeBabuniDevConnection({
+    projectId: 'babuni-dev', kind: 'github', target: PORTFOLIO_GITHUB_REPO,
+  }, {}, deps)
+  const website = await probeBabuniDevConnection({
+    projectId: 'babuni-dev', kind: 'remote-publish', target: PORTFOLIO_LIVE_HOST,
+  }, {}, deps)
+  let ssh
+  try {
+    const authorized = await (deps.readConfig || readMorkahjaModerationConfig)(adminProfile)
+    if (!authorized.ok) ssh = { ok: false, code: authorized.code }
+    else ssh = await (deps.sshLookup || checkPortfolioSshRoot)(authorized.config)
+  } catch {
+    ssh = { ok: false, code: 'PORTFOLIO_SSH_FAILED' }
+  }
+  const allGood = github.state === 'available' && website.state === 'available' && ssh.ok
+  return {
+    ok: allGood, code: allGood ? 'PORTFOLIO_READ_CONNECTION_READY' : 'PORTFOLIO_CONNECTION_PARTIAL',
+    checkedAt, host: adminProfile.target,
+    github: { ok: github.state === 'available', code: github.code },
+    website: { ok: website.state === 'available', code: website.code },
+    ssh: { ok: ssh.ok === true, code: ssh.code },
+    // This result does not indicate a configured publishing service.
+    publishingEnabled: false,
+  }
 }
