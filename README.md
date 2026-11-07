@@ -20,6 +20,8 @@ Babuni Admin is planned as one private workbench for maintaining multiple projec
 The current frontend uses React 19, TypeScript, Vite 8, React Router, TanStack Query, Zustand and Tailwind CSS 4. Morkahja-specific code now lives in `src/features/morkahja/`, shared controls in `src/shared/`, and the application shell in `src/app/`. The transitional re-export files have been removed and direct imports verified in CI. The Babuni Dev workspace has a navigable overview but no editor or publishing capability. There is **no deployed unified backend or working Babuni Dev content manager yet**.
 
 ## Babuni Dev — initial connection checks (read-only)
+**Branch compatibility:** Profiles created on the separate Morkahja development branch, such as `postgres-ssh-moderation` and `ssh-content`, are recognized and preserved when starting this branch. They are displayed as inactive compatibility profiles with no remote capabilities here. Their saved IDs and keyring associations are not removed or migrated. Returning to the Morkahja branch retains its original permissions and behavior.
+
 
 In **Connections**, select **Babuni Dev** and create these two profiles:
 
