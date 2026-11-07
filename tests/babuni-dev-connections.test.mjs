@@ -88,8 +88,11 @@ test('one portfolio administrator inherits approved host identity but no write c
     githubLookup:async()=>({full_name:PORTFOLIO_GITHUB_REPO,default_branch:'main'}),
     websiteLookup:async()=>({status:200,contentType:'text/html'}),
     readConfig:async()=>({ok:true,config:{host:profile.target,sshUser:'operator'}}),
+    keyStatus:async()=>true,
     sshLookup:async config=>{sshCalls++;assert.equal(config.host,profile.target)
-      return {ok:true,code:'PORTFOLIO_SSH_READ_VERIFIED'}},
+      assert.equal(config.sshUser,'babunideploy')
+      assert.match(config.sshIdentityFile,/id_ed25519_babuni_deploy$/)
+      return {ok:true,code:'PORTFOLIO_SSH_STAGING_VERIFIED'}},
   }
   const status=await checkBabuniDevAdministrator(profile,options)
   assert.equal(status.ok,true)
@@ -98,7 +101,7 @@ test('one portfolio administrator inherits approved host identity but no write c
   assert.equal(status.host,profile.target)
   assert.equal(status.github.code,'GITHUB_READ_VERIFIED')
   assert.equal(status.website.code,'WEBSITE_HTTPS_AVAILABLE')
-  assert.equal(status.ssh.code,'PORTFOLIO_SSH_READ_VERIFIED')
+  assert.equal(status.ssh.code,'PORTFOLIO_SSH_STAGING_VERIFIED')
   assert.equal(sshCalls,1)
   const denied=await checkBabuniDevAdministrator({...profile,kind:'postgres-ssh'},options)
   assert.equal(denied.code,'ADMIN_CONNECTION_MISSING')
