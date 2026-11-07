@@ -1,5 +1,12 @@
 # Babuni Admin — instructions for future human and AI developers
 
+## One app, multiple workspaces, one continuous development line (creative decision, 2026-11-07)
+
+Babuni Admin is one local administration application for one human operator. Morkahja and Babuni Dev are two current workspaces of that same application, with further project workspaces added when needed. Changing focus between workspaces must **not** switch to an older application version, drop existing features, create a separate application, or treat each workspace as an independent Git branch. Continue from the most advanced current codebase and integrate changes there. Do not create a new branch for a workspace change unless the creative explicitly asks or a genuinely necessary isolation reason is explained. Preserve existing Morkahja administrator, moderation, content and image cache operations when adding portfolio management.
+
+The shared **Connection** page manages project-specific connection targets without creating multiple administrators. Babuni Dev can have its own scoped GitHub and website targets; these are not separate admin accounts and must not inherit Morkahja database or file permissions. For now, game-side live content publishing is deferred pending a game architecture update, while portfolio content editing and publishing become the active development priority. Preserve existing verified functionality and never mistake a read-only connection check for an operational publisher.
+
+
 ## Single Connection interface (creative decision, 2026-11-06)
 
 Babuni Admin is a private workbench for one operator. Maintain one clearly named **Connection** page with all relevant server/credential health details; workspace pages must reuse the owner administrator connection without asking the user to choose profiles repeatedly. Never reintroduce per-page connection dropdowns or unnecessary multi-account provisioning. Preserve working credentials and legacy profiles during migration; remove obsolete infrastructure only after proven replacement. Keep fixed operations, transactions, SSH host pinning, backups and clear failures. Do not claim website publishing or live writes are connected until verified. The read-only remote image reader has a persistent local disk cache; real-server cache synchronization is still awaiting operator acceptance.
