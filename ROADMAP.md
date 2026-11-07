@@ -1,4 +1,14 @@
 # Babuni Admin — Development Roadmap
+## 2026-11-07 — One configured portfolio administrator
+
+- [x] Replace two manual Babuni Dev setup cards with one project-specific administrator panel based on the existing owner connection to the shared VPS.
+- [x] Preserve automatic Morkahja Overview, Moderation, Content, and image cache behavior in the same app.
+- [x] Implement fixed-scope GitHub/HTTPS/SSH read-only checks, reusing the approved SSH identity and host fingerprint without exposing a password or creating another SSH profile.
+- [x] Add an explicitly triggered, narrowly scoped retirement action for the superseded `postgres-ssh` Morkahja server profile; keep the primary administrator and any credential untouched.
+- [ ] Verify the three checks and retire the old profile on the Nobara desktop. CI cannot establish live SSH permissions or actual local key unlock.
+- [ ] Implement Babuni Dev document editing, reviewed GitHub updates, secure website deployment and rollback; verify actual site filesystem rights before enabling writes.
+- [ ] Keep Morkahja live encounter publishing paused until the game developer delivers the agreed runtime-content architecture.
+
 
 ## 2026-11-07 — Continue on one admin tool, prioritize Babuni Dev connection
 
