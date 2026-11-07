@@ -1,6 +1,13 @@
 # Babuni Admin — Development Roadmap
 
 ## 2026-11-05 — Reconcile operator-verified desktop and Overview behavior
+## 2026-11-07 — Keep saved connections usable across development branches
+
+- [x] Diagnose the operator-reported startup failure after switching from the Morkahja write-connection development branch: `postgres-ssh-moderation` exists in saved profiles but was not registered in the Babuni Dev branch.
+- [x] Add inactive compatibility entries for `postgres-ssh-moderation` and `ssh-content`, preserving profile metadata, IDs and keyring bindings without granting either capability.
+- [x] Add regression coverage for loading the saved profile shapes and preserving them when adding a Babuni Dev connection.
+- [ ] Confirm the updated branch starts with the operator's existing saved profiles on Nobara; CI does not prove that local startup has succeeded.
+
 
 - [x] Record operator-reported post-login `SSH_LOGIN_IDENTITY_READY` and matching ED25519 agent fingerprint; do not treat terminal output as independent observation of the logout sequence.
 - [x] Reconcile the already verified player list pagination (20/20/20/2) and gameplay-responsive active-session/event counters with previously stale roadmap tasks.
