@@ -1,4 +1,8 @@
 # Babuni Admin — Architecture
+## Cross-branch connection profile compatibility (2026-11-07)
+
+The saved `connections.json` registry is shared across local checkouts/branches. The separate Morkahja write-connection branch introduced `postgres-ssh-moderation` and `ssh-content`. This Babuni Dev branch recognizes their existing profile shapes and host target rules but registers each with an empty capability list and a `planned` transport. No moderation, content editing, SSH probe or implicit reconnection is enabled by profile recognition alone. Existing IDs and keyring associations are preserved during ordinary registry persistence. Changes to the live Morkahja adapter implementation remain outside this branch.
+
 
 ## Babuni Dev: initial outbound read-only connection checks (2026-11-07)
 
