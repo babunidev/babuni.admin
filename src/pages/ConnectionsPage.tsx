@@ -22,6 +22,24 @@ interface Health {
   keyring: 'available'|'locked'|'unavailable'
   checkedAt: string
 }
+interface PortfolioCheck {
+  ok: boolean
+  code: string
+  checkedAt: string
+  host: string
+  github: {ok:boolean;code:string}
+  website: {ok:boolean;code:string}
+  ssh: {ok:boolean;code:string}
+  publishingEnabled: false
+}
+interface PortfolioStatus {
+  configured: boolean
+  host: string | null
+  repository: string
+  website: string
+  legacyProfileCount: number
+  report: PortfolioCheck | null
+}
 
 const button='rounded border border-gold/30 px-3 py-2 text-sm text-gold-bright disabled:opacity-50'
 const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchment'
@@ -45,14 +63,19 @@ export function ConnectionsPage() {
   const [target,setTarget]=useState('')
   const [probeStatus,setProbeStatus]=useState('')
   const [loaded,setLoaded]=useState(false)
+  const [portfolio,setPortfolio]=useState<PortfolioStatus|null>(null)
+  const [portfolioResult,setPortfolioResult]=useState<PortfolioCheck|null>(null)
 
   async function reload() {
     try {
-      const [result,service]=await Promise.all([
+      const [result,service,site]=await Promise.all([
         api<{profiles:Profile[]}>(),api<Health>('GET','/health'),
+        api<PortfolioStatus>('GET','/portfolio/status'),
       ])
       setProfiles(result.profiles)
       setHealth(service)
+      setPortfolio(site)
+      setPortfolioResult(site.report)
       activateMorkahjaConnection(result.profiles)
       setLoaded(true)
       setStatus('Administrator connection details are managed here.')
@@ -65,10 +88,13 @@ export function ConnectionsPage() {
     let mounted=true
     void Promise.all([
       api<{profiles:Profile[]}>(),api<Health>('GET','/health'),
-    ]).then(([result,service])=>{
+      api<PortfolioStatus>('GET','/portfolio/status'),
+    ]).then(([result,service,site])=>{
       if(!mounted)return
       setProfiles(result.profiles)
       setHealth(service)
+      setPortfolio(site)
+      setPortfolioResult(site.report)
       activateMorkahjaConnection(result.profiles)
       setLoaded(true)
       setStatus('Administrator connection details are managed here.')
@@ -86,9 +112,7 @@ export function ConnectionsPage() {
     try{return p.id===window.localStorage.getItem('babuni-admin:morkahja:moderation-profile')}
     catch{return false}
   })
-  const legacy=profiles.filter(p=>p.projectId==='morkahja' && p.id!==active?.id)
-  const github=profiles.find(p=>p.projectId==='babuni-dev' && p.kind==='github' && p.target==='babunidev/babuni.dev')
-  const website=profiles.find(p=>p.projectId==='babuni-dev' && p.kind==='remote-publish' && p.target==='www.babuni.dev')
+  const legacyCount=portfolio?.legacyProfileCount||0
   async function operation(action:()=>Promise<void>) {
     setBusy(true)
     try {await action();await reload()}
@@ -124,18 +148,16 @@ export function ConnectionsPage() {
       setProbeStatus(result.status.code)
     })
   }
-  async function addPortfolioConnection(kind:'github'|'remote-publish') {
+  async function verifyPortfolio() {
     await operation(async()=>{
-      await api('POST','/',{
-        projectId:'babuni-dev',kind,
-        displayName:kind==='github'?'Babuni Dev GitHub':'Babuni Dev website',
-        target:kind==='github'?'babunidev/babuni.dev':'www.babuni.dev',
-      })
+      const report=await api<PortfolioCheck>('POST','/portfolio/check')
+      setPortfolioResult(report)
     })
   }
-  async function checkPortfolioConnection(profile:Profile) {
+  async function retireLegacyProfile() {
     await operation(async()=>{
-      await api('POST','/'+profile.id+'/test')
+      const result=await api<{ok:boolean;removed:number}>('POST','/maintenance/retire-legacy')
+      if(result.ok) setProbeStatus(result.removed+' unused connection profile retired')
     })
   }
   async function checkDatabase(profile:Profile) {
@@ -207,40 +229,40 @@ export function ConnectionsPage() {
     {adminProfiles.length>1 && <p role="alert" className="text-sm text-fog">
       Multiple administrator profiles exist. Keep the active one and remove redundant profiles during cleanup; automatic selection is paused until one is chosen.
     </p>}
-    {legacy.length>0 && <details className="rounded-lg border border-gold/15 bg-slate/50 p-4">
-      <summary className="cursor-pointer text-sm text-fog">Previous and unused profiles ({legacy.length})</summary>
-      <p className="mt-2 text-xs text-fog">Retained for migration. They are not used when your administrator connection is available. No credentials are deleted automatically.</p>
-      {legacy.map(profile=><div key={profile.id} className="mt-3 border-t border-gold/10 pt-3 text-sm">
-        <p className="text-parchment">{profile.displayName}</p>
-        <p className="text-xs text-fog">{profile.kind} · {profile.target}</p>
-      </div>)}
-    </details>}
-    <section className="space-y-4 rounded-lg border border-gold/20 bg-slate/50 p-5" aria-label="Babuni Dev connections">
+    {legacyCount>0 && <section className="rounded-lg border border-gold/15 bg-slate/50 p-4">
+      <p className="text-sm text-fog">An older Morkahja server profile is no longer needed. The administrator connection above remains active.</p>
+      <button type="button" disabled={busy} className={button}
+        onClick={()=>{void retireLegacyProfile()}}>Remove unused Morkahja server profile</button>
+    </section>}
+
+    <section className="space-y-4 rounded-lg border border-gold/20 bg-slate/50 p-5" aria-label="Babuni Dev administrator connection">
       <div>
-        <h2 className="text-lg font-medium text-parchment">Babuni Dev</h2>
-        <p className="mt-1 text-xs text-fog">Website and source-repository connections in the same Babuni Admin tool. Morkahja's administrator connection above is unchanged.</p>
+        <h2 className="text-lg font-medium text-parchment">Babuni Dev administrator</h2>
+        <p className="mt-1 text-sm text-fog">Configured for this workbench. Uses your existing approved server SSH identity, so there is no second host setup or administrator account.</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        {([
-          {kind:'github' as const,profile:github,title:'GitHub source',target:'babunidev/babuni.dev',action:'Check GitHub (read-only)'},
-          {kind:'remote-publish' as const,profile:website,title:'Live website',target:'www.babuni.dev',action:'Check live HTTPS'},
-        ]).map(item=><div key={item.kind} className="space-y-3 rounded border border-gold/15 bg-ash/30 p-4">
-          <h3 className="text-sm font-medium text-parchment">{item.title}</h3>
-          <p className="break-all text-xs text-fog">{item.target}</p>
-          {item.profile ? <>
-            <p className="text-xs text-fog">Status: {item.profile.code || 'NOT_CHECKED'}</p>
-            <p className="text-xs text-fog">{item.profile.detail}</p>
-            {item.profile.lastSuccessAt && <p className="text-xs text-fog">Last successful check: {checked(item.profile.lastSuccessAt)}</p>}
-            <button className={button} disabled={busy} type="button"
-              onClick={()=>{void checkPortfolioConnection(item.profile!)}}>{item.action}</button>
-          </> : <>
-            <p className="text-xs text-fog">Connection not configured.</p>
-            <button className={button} disabled={busy} type="button"
-              onClick={()=>{void addPortfolioConnection(item.kind)}}>Set up {item.title}</button>
-          </>}
-        </div>)}
+      <dl className="grid gap-3 text-sm sm:grid-cols-2">
+        <div><dt className="text-fog">Server</dt><dd className="break-all text-parchment">{portfolio?.host || 'Administrator server not configured'}</dd></div>
+        <div><dt className="text-fog">Website</dt><dd className="text-parchment">{portfolio?.website || 'www.babuni.dev'}</dd></div>
+        <div><dt className="text-fog">GitHub</dt><dd className="text-parchment">{portfolio?.repository || 'babunidev/babuni.dev'}</dd></div>
+        <div><dt className="text-fog">Deployed website</dt><dd className="text-parchment">/var/www/babuni.dev/current</dd></div>
+      </dl>
+      <p className="text-xs text-fog">SSH authenticates with the existing pinned host key and your desktop SSH agent. The database password is not an SSH password; GitHub uses your existing GitHub CLI login. No secrets appear in this interface.</p>
+      <div className="flex flex-wrap items-center gap-3">
+        <button className={button} type="button" disabled={busy || !portfolio?.configured}
+          onClick={()=>{void verifyPortfolio()}}>Verify Babuni Dev connection</button>
+        <span className="text-xs text-fog">{portfolioResult?.checkedAt
+          ? 'Last check: '+checked(portfolioResult.checkedAt)
+          : portfolio?.configured ? 'Ready to verify' : 'Morkahja administrator connection required'}</span>
       </div>
-      <p className="text-xs text-fog">GitHub uses the existing desktop GitHub CLI login. The website check verifies public HTTPS only. Neither check edits files, connects through SSH or publishes changes; those operations are the next Babuni Dev milestones.</p>
+      {portfolioResult && <div className="space-y-2 border-t border-gold/15 pt-3 text-sm">
+        <p role="status" className="text-parchment">Connection: {portfolioResult.code}</p>
+        <dl className="grid gap-2 text-xs sm:grid-cols-3">
+          <div><dt className="text-fog">GitHub</dt><dd className={portfolioResult.github.ok?'text-parchment':'text-fog'}>{portfolioResult.github.code}</dd></div>
+          <div><dt className="text-fog">Website HTTPS</dt><dd className={portfolioResult.website.ok?'text-parchment':'text-fog'}>{portfolioResult.website.code}</dd></div>
+          <div><dt className="text-fog">Server SSH</dt><dd className={portfolioResult.ssh.ok?'text-parchment':'text-fog'}>{portfolioResult.ssh.code}</dd></div>
+        </dl>
+      </div>}
+      <p className="text-xs text-fog">Connection verification is read-only. Editing and publishing will be activated separately after the website's release workflow is integrated.</p>
     </section>
   </div>
 }
