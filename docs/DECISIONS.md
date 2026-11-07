@@ -1,5 +1,14 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-07 — One continuous Babuni Admin codebase and shared connections
+
+**Creative decision:** Continue developing the existing administration console with two project workspaces, Morkahja and Babuni Dev, while keeping one operator and room for further projects. Pausing game-specific publishing must not roll the application back to an older design or disable established Morkahja tools. Do not create additional feature branches by default when merely changing the active workspace.
+
+**Correction:** The first AI implementation of the Babuni Dev checks was placed on a new branch based on older `main`. Switching the running application to that branch restored a previous Connections UI and hid work already completed for Morkahja, even though the newer code remained available on its original branch. That was an unsuitable development workflow.
+
+**Implementation:** AI integrated the narrowly scoped GitHub and website read-only checks into the existing Morkahja development branch and its one **Connection** page, preserving the advanced application components and capabilities. Real local verification and the eventual content-editor/publishing contracts remain open. The second branch is superseded for active development.
+
+
 ## 2026-11-06 — Store Morkahja images on the operator's computer
 
 **Creative direction:** Loading artwork again when changing tabs makes the Content workspace unusable. All five image categories should be present locally after an initial workspace sync and reused through navigation and restarts. Changed or added files must be refreshed without re-downloading unchanged files.
