@@ -1,4 +1,10 @@
 # Babuni Admin — Development Roadmap
+## 2026-11-07 — Portfolio SSH does not depend on Morkahja moderation
+
+- [x] Fix Babuni Dev connection check blocked by `REMOTE_MODERATION_DISABLED` despite GitHub and HTTPS success on the operator's desktop.
+- [x] Reuse the approved VPS host key and website-specific `babunideploy` key without enabling unrelated Morkahja database/moderation features.
+- [ ] Verify dedicated deployment-key authentication, readable live release, and release-directory permissions on Nobara.
+
 ## 2026-11-07 — One configured portfolio administrator
 
 - [x] Replace two manual Babuni Dev setup cards with one project-specific administrator panel based on the existing owner connection to the shared VPS.
