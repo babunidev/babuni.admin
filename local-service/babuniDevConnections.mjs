@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { readMorkahjaModerationConfig } from './morkahjaModerationConfig.mjs'
+import { preflightSshHost, validSshHostname } from './sshHostPreflight.mjs'
 import { buildContentSshArgs } from './morkahjaContentRunner.mjs'
 import { lstat } from 'node:fs/promises'
 import { homedir } from 'node:os'
@@ -225,25 +225,34 @@ export async function checkBabuniDevAdministrator(adminProfile, deps = {}) {
   }, {}, deps)
   let ssh
   try {
-    const authorized = await (deps.readConfig || readMorkahjaModerationConfig)(adminProfile)
-    if (!authorized.ok) ssh = { ok: false, code: authorized.code }
-    else {
-      // The existing VPS host and pin are shared; the website uses its
-      // pre-existing least-privileged deployment account and private key.
-      const keyPath = join(homedir(), '.ssh', DEPLOY_KEY_NAME)
-      const keyStatus = deps.keyStatus || (async () => {
-        const stat = await lstat(keyPath)
-        return stat.isFile() && !stat.isSymbolicLink() &&
-          (typeof process.getuid !== 'function' || stat.uid === process.getuid()) &&
-          (stat.mode & 0o077) === 0
-      })
-      if (!await keyStatus(keyPath)) ssh = { ok: false, code: 'PORTFOLIO_DEPLOY_KEY_UNAVAILABLE' }
-      else ssh = await (deps.sshLookup || checkPortfolioSshRoot)({
-        ...authorized.config, sshUser: DEPLOY_USER, sshIdentityFile: keyPath,
-      })
+    // Babuni Dev reuses the *host* and approved pinned SSH trust store,
+    // not Morkahja's database or moderation authorization switch.
+    // The existing website deployment account uses standard SSH port 22.
+    if (!validSshHostname(adminProfile.target)) {
+      ssh = { ok: false, code: 'SSH_HOST_INVALID' }
+    } else {
+      const trust = await (deps.sshPreflight || preflightSshHost)(adminProfile)
+      if (trust.code !== 'SSH_HOST_KEY_PINNED_OFFLINE') {
+        ssh = { ok: false, code: trust.code }
+      } else {
+        const keyPath = join(homedir(), '.ssh', DEPLOY_KEY_NAME)
+        const keyStatus = deps.keyStatus || (async () => {
+          const stat = await lstat(keyPath)
+          return stat.isFile() && !stat.isSymbolicLink() &&
+            (typeof process.getuid !== 'function' || stat.uid === process.getuid()) &&
+            (stat.mode & 0o077) === 0
+        })
+        if (!await keyStatus(keyPath)) ssh = { ok: false, code: 'PORTFOLIO_DEPLOY_KEY_UNAVAILABLE' }
+        else ssh = await (deps.sshLookup || checkPortfolioSshRoot)({
+          host: adminProfile.target,
+          sshPort: 22,
+          sshUser: DEPLOY_USER,
+          sshIdentityFile: keyPath,
+        })
+      }
     }
   } catch {
-    ssh = { ok: false, code: 'PORTFOLIO_DEPLOY_KEY_UNAVAILABLE' }
+    ssh = { ok: false, code: 'PORTFOLIO_SSH_CHECK_FAILED' }
   }
   const allGood = github.state === 'available' && website.state === 'available' && ssh.ok
   return {
