@@ -1,5 +1,16 @@
 # Babuni Admin — Development Roadmap
 
+## 2026-11-07 — Continue on one admin tool, prioritize Babuni Dev connection
+
+- [x] Preserve the advanced Morkahja workspace, its single administrator profile, moderation, content tools and local image cache while redirecting development toward Babuni Dev.
+- [x] Integrate the two read-only Babuni Dev checks into the existing **Connection** page, not a separate version of the console: approved `babunidev/babuni.dev` GitHub CLI metadata and fixed `www.babuni.dev` HTTPS homepage.
+- [x] Retain strict project-specific capabilities; do not change or disable the Morkahja administrator adapter.
+- [ ] Verify GitHub CLI login and public website checks from the operator's Nobara desktop using the unified application.
+- [ ] Implement Babuni Dev source document browsing/editing with revision checks and original GitHub repository as authoritative source.
+- [ ] Implement coherent website staging, publication and rollback through scoped deployment access; no static partial edits without verified dependent outputs.
+- [ ] Resume game-side encounter publishing only after the Morkahja developer provides a compatible live-content architecture.
+
+
 ## Workspace-wide persistent images — 2026-11-06
 
 - [x] Save downloaded WebP artwork to a persistent local cache scoped by administrator profile and host.
@@ -250,7 +261,7 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Verify real locked default-collection behavior on Nobara: `npm run keyring:inspect` returned `locked` for the collection, keyring health and nonexistent test-profile credential (operator-reported, 2026-11-04).
 - [x] Verify unlock recovery: after unlocking KDE Wallet, inspection returned `unlocked`, `available` and `missing` again (operator-reported, 2026-11-04). This verifies status recovery, not a post-unlock credential store/retrieve test.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
-- [ ] Connect Babuni Dev to approved GitHub repositories and later a controlled publishing transport.
+- [ ] Extend verified Babuni Dev GitHub metadata access into source-document read/write access, then implement a controlled publishing transport; read-only checks now exist.
 - [x] Audit current connection and legacy static middleware boundaries; add project-scope/denied-operation tests and prevent local asset symlink escapes. [Review](docs/PHASE2_SECURITY_REVIEW_2026-11-04.md).
 - [ ] Complete operator authentication/authorization, project-scoped live operations, action attribution, recoverable writes and remaining security release gates. Browser origin/session guards alone are insufficient.
 - [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.
