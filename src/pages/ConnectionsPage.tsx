@@ -46,6 +46,27 @@ const field='w-full rounded border border-gold/25 bg-ash px-3 py-2 text-parchmen
 function checked(value?: string) {
   return value ? new Date(value).toLocaleString() : 'Not yet checked'
 }
+function portfolioCheckLabel(code: string) {
+  const known: Record<string,string> = {
+    GITHUB_READ_VERIFIED: 'GitHub read access verified',
+    WEBSITE_HTTPS_AVAILABLE: 'Website responding normally',
+    PORTFOLIO_SSH_STAGING_VERIFIED: 'SSH and release staging access verified',
+    SSH_HOST_NOT_PINNED: 'Server host key needs approval',
+    SSH_TRUST_STORE_MISSING: 'Approved SSH host key unavailable',
+    SSH_HOST_KEY_INVALID: 'Approved SSH host key is invalid',
+    PORTFOLIO_DEPLOY_KEY_UNAVAILABLE: 'Website deployment key unavailable',
+    PORTFOLIO_STAGING_UNWRITABLE: 'Website releases folder is not writable',
+    PORTFOLIO_ROOT_UNREADABLE: 'Published website files are not readable',
+    PORTFOLIO_SSH_FAILED: 'SSH connection failed',
+    PORTFOLIO_SSH_TIMEOUT: 'SSH connection timed out',
+    GITHUB_AUTH_OR_ACCESS_FAILED: 'GitHub login or repository access failed',
+    GITHUB_CLI_UNAVAILABLE: 'GitHub CLI is unavailable',
+    WEBSITE_UNREACHABLE: 'Live website unavailable',
+    WEBSITE_UNEXPECTED_RESPONSE: 'Live website returned an unexpected response',
+  }
+  return known[code] || code.replaceAll('_',' ').toLowerCase()
+}
+
 function credentialLabel(value?:Profile['credential']) {
   if(value==='stored')return 'Password stored in Linux keyring'
   if(value==='locked')return 'Linux keyring locked'
@@ -255,11 +276,11 @@ export function ConnectionsPage() {
           : portfolio?.configured ? 'Ready to verify' : 'Morkahja administrator connection required'}</span>
       </div>
       {portfolioResult && <div className="space-y-2 border-t border-gold/15 pt-3 text-sm">
-        <p role="status" className="text-parchment">Connection: {portfolioResult.code}</p>
+        <p role="status" className="text-parchment">Connection: {portfolioResult.ok ? 'Verified' : 'Verification incomplete'}</p>
         <dl className="grid gap-2 text-xs sm:grid-cols-3">
-          <div><dt className="text-fog">GitHub</dt><dd className={portfolioResult.github.ok?'text-parchment':'text-fog'}>{portfolioResult.github.code}</dd></div>
-          <div><dt className="text-fog">Website HTTPS</dt><dd className={portfolioResult.website.ok?'text-parchment':'text-fog'}>{portfolioResult.website.code}</dd></div>
-          <div><dt className="text-fog">Server SSH</dt><dd className={portfolioResult.ssh.ok?'text-parchment':'text-fog'}>{portfolioResult.ssh.code}</dd></div>
+          <div><dt className="text-fog">GitHub</dt><dd className={portfolioResult.github.ok?'text-parchment':'text-fog'}>{portfolioCheckLabel(portfolioResult.github.code)}</dd></div>
+          <div><dt className="text-fog">Website HTTPS</dt><dd className={portfolioResult.website.ok?'text-parchment':'text-fog'}>{portfolioCheckLabel(portfolioResult.website.code)}</dd></div>
+          <div><dt className="text-fog">Server SSH</dt><dd className={portfolioResult.ssh.ok?'text-parchment':'text-fog'}>{portfolioCheckLabel(portfolioResult.ssh.code)}</dd></div>
         </dl>
       </div>}
       <p className="text-xs text-fog">Connection verification reads GitHub and the public website and checks SSH read/staging permissions without changing server files. Editing and publishing remain disabled until the release workflow is integrated.</p>
