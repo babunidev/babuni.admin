@@ -2,19 +2,22 @@ import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { createServer } from 'vite'
 
-test('project capabilities deny remote adapters and any current write capability',async()=>{
+test('project capabilities allow only scoped remote read probes and deny all write capabilities',async()=>{
   const vite=await createServer({configFile:false,server:{middlewareMode:true},logLevel:'error'})
   try {
     const {hasCapability,specForProfile}=await vite.ssrLoadModule('/vite/connectionAdapters.ts')
     const local={projectId:'morkahja',kind:'local-files'}
     assert.equal(hasCapability(local,'local:inspect'),true)
     assert.equal(hasCapability(local,'local:connect'),true)
-    for(const kind of ['postgres-ssh','github','remote-publish']) {
-      const projectId=kind==='postgres-ssh'?'morkahja':'babuni-dev'
+    for(const [kind,projectId,transport,capabilities] of [
+      ['postgres-ssh','morkahja','planned',['ssh:preflight','ssh:probe','ssh:read']],
+      ['github','babuni-dev','read-only',['github:probe']],
+      ['remote-publish','babuni-dev','read-only',['website:probe']],
+    ]) {
       const remote={projectId,kind}
-      assert.equal(specForProfile(remote).transport,'planned')
-      assert.deepEqual(specForProfile(remote).capabilities,kind==='postgres-ssh'?['ssh:preflight','ssh:probe','ssh:read']:[])
-      for(const op of ['local:inspect','local:connect','remote:read','remote:write']) {
+      assert.equal(specForProfile(remote).transport,transport)
+      assert.deepEqual(specForProfile(remote).capabilities,capabilities)
+      for(const op of ['local:inspect','local:connect','remote:read','remote:write','github:write','website:publish']) {
         assert.equal(hasCapability(remote,op),false)
       }
     }
@@ -24,6 +27,10 @@ test('project capabilities deny remote adapters and any current write capability
     assert.equal(hasCapability({projectId:'babuni-dev',kind:'postgres-ssh'},'ssh:preflight'),false)
     assert.equal(hasCapability({projectId:'babuni-dev',kind:'postgres-ssh'},'ssh:probe'),false)
     assert.equal(hasCapability({projectId:'babuni-dev',kind:'postgres-ssh'},'ssh:read'),false)
+    assert.equal(hasCapability({projectId:'babuni-dev',kind:'github'},'github:probe'),true)
+    assert.equal(hasCapability({projectId:'babuni-dev',kind:'remote-publish'},'website:probe'),true)
+    assert.equal(hasCapability({projectId:'morkahja',kind:'github'},'github:probe'),false)
+    assert.equal(hasCapability({projectId:'morkahja',kind:'remote-publish'},'website:probe'),false)
     assert.equal(hasCapability(local,'local:write'),false)
     assert.equal(specForProfile({projectId:'babuni-dev',kind:'local-files'}),null)
     assert.equal(specForProfile({projectId:'morkahja',kind:'github'}),null)
