@@ -86,7 +86,9 @@ export function ConnectionsPage() {
     try{return p.id===window.localStorage.getItem('babuni-admin:morkahja:moderation-profile')}
     catch{return false}
   })
-  const legacy=profiles.filter(p=>p.id!==active?.id)
+  const legacy=profiles.filter(p=>p.projectId==='morkahja' && p.id!==active?.id)
+  const github=profiles.find(p=>p.projectId==='babuni-dev' && p.kind==='github' && p.target==='babunidev/babuni.dev')
+  const website=profiles.find(p=>p.projectId==='babuni-dev' && p.kind==='remote-publish' && p.target==='www.babuni.dev')
   async function operation(action:()=>Promise<void>) {
     setBusy(true)
     try {await action();await reload()}
@@ -120,6 +122,20 @@ export function ConnectionsPage() {
     await operation(async()=>{
       const result=await api<{status:{code:string}}>('POST','/'+profile.id+'/test')
       setProbeStatus(result.status.code)
+    })
+  }
+  async function addPortfolioConnection(kind:'github'|'remote-publish') {
+    await operation(async()=>{
+      await api('POST','/',{
+        projectId:'babuni-dev',kind,
+        displayName:kind==='github'?'Babuni Dev GitHub':'Babuni Dev website',
+        target:kind==='github'?'babunidev/babuni.dev':'www.babuni.dev',
+      })
+    })
+  }
+  async function checkPortfolioConnection(profile:Profile) {
+    await operation(async()=>{
+      await api('POST','/'+profile.id+'/test')
     })
   }
   async function checkDatabase(profile:Profile) {
@@ -199,6 +215,32 @@ export function ConnectionsPage() {
         <p className="text-xs text-fog">{profile.kind} · {profile.target}</p>
       </div>)}
     </details>}
-    <p className="text-xs text-fog">babuni.dev publishing is not yet connected through this interface. The Morkahja administrator connection is working independently.</p>
+    <section className="space-y-4 rounded-lg border border-gold/20 bg-slate/50 p-5" aria-label="Babuni Dev connections">
+      <div>
+        <h2 className="text-lg font-medium text-parchment">Babuni Dev</h2>
+        <p className="mt-1 text-xs text-fog">Website and source-repository connections in the same Babuni Admin tool. Morkahja's administrator connection above is unchanged.</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {([
+          {kind:'github' as const,profile:github,title:'GitHub source',target:'babunidev/babuni.dev',action:'Check GitHub (read-only)'},
+          {kind:'remote-publish' as const,profile:website,title:'Live website',target:'www.babuni.dev',action:'Check live HTTPS'},
+        ]).map(item=><div key={item.kind} className="space-y-3 rounded border border-gold/15 bg-ash/30 p-4">
+          <h3 className="text-sm font-medium text-parchment">{item.title}</h3>
+          <p className="break-all text-xs text-fog">{item.target}</p>
+          {item.profile ? <>
+            <p className="text-xs text-fog">Status: {item.profile.code || 'NOT_CHECKED'}</p>
+            <p className="text-xs text-fog">{item.profile.detail}</p>
+            {item.profile.lastSuccessAt && <p className="text-xs text-fog">Last successful check: {checked(item.profile.lastSuccessAt)}</p>}
+            <button className={button} disabled={busy} type="button"
+              onClick={()=>{void checkPortfolioConnection(item.profile!)}}>{item.action}</button>
+          </> : <>
+            <p className="text-xs text-fog">Connection not configured.</p>
+            <button className={button} disabled={busy} type="button"
+              onClick={()=>{void addPortfolioConnection(item.kind)}}>Set up {item.title}</button>
+          </>}
+        </div>)}
+      </div>
+      <p className="text-xs text-fog">GitHub uses the existing desktop GitHub CLI login. The website check verifies public HTTPS only. Neither check edits files, connects through SSH or publishes changes; those operations are the next Babuni Dev milestones.</p>
+    </section>
   </div>
 }
