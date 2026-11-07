@@ -3,7 +3,7 @@ import { PageHeader } from '../shared/components/PageHeader'
 import { localConnectionApi as api } from '../shared/services/localConnectionClient'
 
 type ProjectId = 'morkahja' | 'babuni-dev'
-type Kind = 'local-files' | 'postgres-ssh' | 'github' | 'remote-publish'
+type Kind = 'local-files' | 'postgres-ssh' | 'postgres-ssh-moderation' | 'ssh-content' | 'github' | 'remote-publish'
 type ProfileState = 'not-configured' | 'available' | 'connected' | 'disconnected' | 'degraded' | 'error'
 type CredentialState = 'not-required' | 'stored' | 'missing' | 'locked' | 'unavailable'
 interface ContentReport {
@@ -200,6 +200,8 @@ export function ConnectionsPage() {
             </p>}
             {p.kind==='github' && <p className="mt-1 text-xs text-fog">Read-only verification uses the existing GitHub CLI login on this computer, not an administrator token in this form.</p>}
             {p.kind==='remote-publish' && <p className="mt-1 text-xs text-fog">HTTPS availability is not an authenticated deployment connection. SSH publishing remains disabled.</p>}
+            {(p.kind==='postgres-ssh-moderation'||p.kind==='ssh-content') &&
+              <p className="mt-1 text-xs text-fog">Preserved from the Morkahja development branch. This branch cannot use this connection; its saved configuration is retained.</p>}
             <p className="mt-1 text-xs text-fog">Allowed operations: {p.capabilities?.join(', ')||'None (adapter planned)'}</p>
           </div>
           <div className="flex flex-wrap gap-2">
