@@ -2,6 +2,7 @@ import { createServer } from 'node:http'
 import { timingSafeEqual } from 'node:crypto'
 import { inspectContent } from './inspectContent.mjs'
 import { probeProfile, inspectionState } from './connectionHealth.mjs'
+import { probeBabuniDevConnection } from './babuniDevConnections.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
@@ -109,7 +110,10 @@ const server=createServer(async(req,res)=>{
     if (req.method==='POST' && action==='test') {
       const previous=states.get(id) || {}
       const result=hasCapability(profile,'ssh:preflight')
-        ? await preflightSshHost(profile) : await probeProfile(profile,previous)
+        ? await preflightSshHost(profile)
+        : hasCapability(profile,'github:probe') || hasCapability(profile,'website:probe')
+          ? await probeBabuniDevConnection(profile,previous)
+          : await probeProfile(profile,previous)
       const status=previous.state==='connected' && result.state==='available'
         ? {...result,state:'connected',code:'LOCAL_READ_ONLY_CONNECTED'} : result
       states.set(id,status)
