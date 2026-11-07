@@ -2,7 +2,7 @@
 ## 2026-11-07 — Consolidate Babuni Dev into one administrator connection
 
 - Replaced the two per-target Babuni Dev setup cards with one preconfigured Babuni Dev administrator view on the existing **Connection** screen.
-- Added a manual read-only check of the canonical website's deployed directory using the existing operator-approved pinned SSH host/key and a fixed remote Python inspector. No arbitrary remote filesystem access or upload is exposed.
+- Added a manual read-only check of the canonical website's deployed directory using the existing approved VPS host pin and pre-existing `babunideploy` SSH key with a fixed remote Python inspector. The probe also checks whether the deployment release directory is writable, without writing anything. No arbitrary remote filesystem access or upload is exposed.
 - Kept GitHub CLI and public HTTPS checks as separate observable statuses; successful checks never claim write or publishing permission.
 - Added a one-time, capability-restricted retirement path for the superseded Morkahja Overview profile, removing its saved keyring entry only on the user's explicit action.
 - Added targeted tests for the integrated portfolio check. No production file, service, GitHub document or SSH credential was changed.
