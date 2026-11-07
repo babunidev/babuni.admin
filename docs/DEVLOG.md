@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-07 — Returning to the portfolio connection
+
+With Morkahja's direct content publishing deferred until its game developer can revise the data architecture, the next useful part of my admin workbench is the Babuni Dev connection. The first AI implementation stays deliberately narrow: two manual, read-only checks in the existing local service, one through my desktop GitHub CLI login and the other against the live website over HTTPS. Neither check can publish or edit, and the actual desktop connection still needs verification. This establishes a safer starting point for the document editor and deployment workflow without pretending those features already work.
+
+
 ## 2026-11-05 — Checking the real expansion list before installing new counters
 
 The prepared achievements and unlock totals were ready in source, but they still depended on expansion identifiers from the game repository rather than a verified deployed catalog. To avoid introducing incorrect counts into my live Overview, AI prepared a narrowly scoped read-only JSON audit helper and synthetic tests. It reports only the IDs and their active states, refusing malformed or unexpected entries. The next step still needs to happen on my game server: verify its actual catalog and explicitly review the proposed SQL before any database view is created.
