@@ -1,5 +1,14 @@
 # Babuni Admin — Changelog
 
+## 2026-11-07 — Initial Babuni Dev read-only connection checks
+
+- Added a dedicated portfolio probe in the loopback local service for the fixed `babunidev/babuni.dev` repository, using the existing local GitHub CLI login and a fixed read-only metadata request.
+- Added a bounded canonical HTTPS homepage availability check for `www.babuni.dev`, without SSH or publishing access.
+- Exposed only `github:probe` and `website:probe` capabilities in the existing Connections interface, with explicit read-only labels, scope denial and safe error reporting.
+- Added synthetic tests for approved/denied targets, success, failure, bounded status and retained prior success; adapted the existing denied-target integration fixture.
+- CI and operator live verification remain to be checked. No GitHub source edits, production website files, server accounts or credentials were changed.
+
+
 ## 2026-11-05 — Prepare the deployed expansion catalog audit
 
 - Added a standalone, operator-run read-only verifier for the live game-server `expansiondata.json`, comparing canonical IDs to the previously prepared Batch A SQL allowlist.
