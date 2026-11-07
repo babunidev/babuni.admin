@@ -1,4 +1,10 @@
 # Babuni Admin — Changelog
+## 2026-11-07 — Preserve Morkahja connection profiles when switching branches
+
+- Registered existing Morkahja development connection kinds as inactive compatibility profiles so an unfamiliar saved kind does not prevent Babuni Admin startup.
+- Kept their existing IDs, names, targets, and credential identities while granting no Morkahja moderation or content access from the Babuni Dev branch.
+- Added a cross-branch profile persistence regression test. Live operator startup verification remains pending.
+
 
 ## 2026-11-07 — Initial Babuni Dev read-only connection checks
 
