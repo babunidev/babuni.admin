@@ -130,8 +130,6 @@ export async function probeBabuniDevConnection(profile, previous = {}, dependenc
 // The portfolio lives on the same VPS, but authentication is still checked
 // through the existing operator-approved SSH identity and pinned host key.
 // The endpoint accepts NO browser-provided host, directory, user or command.
-const WEBSITE_ROOT = '/var/www/babuni.dev/current'
-const WEBSITE_RELEASES = '/var/www/babuni.dev/releases'
 const DEPLOY_USER = 'babunideploy'
 const DEPLOY_KEY_NAME = 'id_ed25519_babuni_deploy'
 const WEBSITE_ROOT_INSPECTOR = [
