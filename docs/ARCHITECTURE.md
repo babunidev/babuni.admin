@@ -1,5 +1,14 @@
 # Babuni Admin — Architecture
 
+## Shared Connection interface with two active workspaces (2026-11-07)
+
+The **Connection** page is shared by Morkahja and Babuni Dev in one local-only application. It keeps the original unique Morkahja administrator profile and its existing host, database, moderation, content and artwork management paths. Babuni Dev has two separate remote targets managed on the same screen, without introducing a second administrator or a separate running app. Future workspaces may add their own bounded adapters.
+
+The Babuni Dev source-check adapter calls `gh api --hostname github.com repos/babunidev/babuni.dev` through the local service with no shell, supplied argument substitutions or browser token. It checks the expected repository identity and branch. The website adapter performs one HEAD request to `https://www.babuni.dev/` with redirects disabled and expects HTML HTTP 200. Each is manual, read-only and target-allowlisted. Both are connection diagnostics, not an authenticated deployment session. GitHub edits, release publishing, revision verification and rollback remain future milestones.
+
+The active Morkahja adapter capabilities `ssh:moderation` and `ssh:content` remain present. No previous profiles or keyring data are migrated or deleted by these new connection cards.
+
+
 ## Persistent Morkahja image workspace cache
 
 The Morkahja workspace mounts `src/app/MorkahjaImageCacheController.tsx` exactly once while active, triggering a new `POST /local-connections-api/:profileId/content-image-sync` request and polling `GET .../content-image-status` for progress. The local service deduplicates sync attempts and rechecks every ten minutes. Neither tab switching nor ordinary preview rendering opens an SSH connection.
