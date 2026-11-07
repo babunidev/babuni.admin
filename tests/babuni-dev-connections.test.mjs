@@ -4,6 +4,7 @@ import {
   PORTFOLIO_GITHUB_REPO,
   PORTFOLIO_LIVE_HOST,
   probeBabuniDevConnection,
+  checkBabuniDevAdministrator,
 } from '../local-service/babuniDevConnections.mjs'
 
 const github = { projectId: 'babuni-dev', kind: 'github', target: PORTFOLIO_GITHUB_REPO }
@@ -78,4 +79,44 @@ test('read probes report failures safely and preserve last confirmed success', a
   })
   assert.equal(unavailableSite.code, 'WEBSITE_UNREACHABLE')
   assert.doesNotMatch(JSON.stringify(unavailableSite), /certificate content secret/)
+})
+
+test('one portfolio administrator inherits approved host identity but no write capability', async () => {
+  let sshCalls=0
+  const profile={projectId:'morkahja',kind:'postgres-ssh-moderation',target:'owner.example.invalid'}
+  const options={
+    githubLookup:async()=>({full_name:PORTFOLIO_GITHUB_REPO,default_branch:'main'}),
+    websiteLookup:async()=>({status:200,contentType:'text/html'}),
+    readConfig:async()=>({ok:true,config:{host:profile.target,sshUser:'operator'}}),
+    sshLookup:async config=>{sshCalls++;assert.equal(config.host,profile.target)
+      return {ok:true,code:'PORTFOLIO_SSH_READ_VERIFIED'}},
+  }
+  const status=await checkBabuniDevAdministrator(profile,options)
+  assert.equal(status.ok,true)
+  assert.equal(status.code,'PORTFOLIO_READ_CONNECTION_READY')
+  assert.equal(status.publishingEnabled,false)
+  assert.equal(status.host,profile.target)
+  assert.equal(status.github.code,'GITHUB_READ_VERIFIED')
+  assert.equal(status.website.code,'WEBSITE_HTTPS_AVAILABLE')
+  assert.equal(status.ssh.code,'PORTFOLIO_SSH_READ_VERIFIED')
+  assert.equal(sshCalls,1)
+  const denied=await checkBabuniDevAdministrator({...profile,kind:'postgres-ssh'},options)
+  assert.equal(denied.code,'ADMIN_CONNECTION_MISSING')
+  assert.equal(sshCalls,1)
+})
+
+test('portfolio administrator shows independent GitHub, HTTPS and SSH failure states', async () => {
+  const profile={projectId:'morkahja',kind:'postgres-ssh-moderation',target:'owner.example.invalid'}
+  const status=await checkBabuniDevAdministrator(profile,{
+    githubLookup:async()=>{throw Error('private auth message')},
+    websiteLookup:async()=>({status:404,contentType:'text/html'}),
+    readConfig:async()=>({ok:false,code:'SSH_FINGERPRINT_MISMATCH'}),
+    sshLookup:async()=>{throw Error('should not run')},
+  })
+  assert.equal(status.ok,false)
+  assert.equal(status.github.code,'GITHUB_READ_FAILED')
+  assert.equal(status.website.code,'WEBSITE_UNEXPECTED_RESPONSE')
+  assert.equal(status.ssh.code,'SSH_FINGERPRINT_MISMATCH')
+  assert.equal(status.publishingEnabled,false)
+  assert.doesNotMatch(JSON.stringify(status),/private auth message/)
 })
