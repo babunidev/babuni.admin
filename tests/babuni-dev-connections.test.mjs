@@ -87,10 +87,11 @@ test('one portfolio administrator inherits approved host identity but no write c
   const options={
     githubLookup:async()=>({full_name:PORTFOLIO_GITHUB_REPO,default_branch:'main'}),
     websiteLookup:async()=>({status:200,contentType:'text/html'}),
-    readConfig:async()=>({ok:true,config:{host:profile.target,sshUser:'operator'}}),
+    sshPreflight:async()=>({code:'SSH_HOST_KEY_PINNED_OFFLINE'}),
     keyStatus:async()=>true,
     sshLookup:async config=>{sshCalls++;assert.equal(config.host,profile.target)
       assert.equal(config.sshUser,'babunideploy')
+      assert.equal(config.sshPort,22)
       assert.match(config.sshIdentityFile,/id_ed25519_babuni_deploy$/)
       return {ok:true,code:'PORTFOLIO_SSH_STAGING_VERIFIED'}},
   }
@@ -113,13 +114,33 @@ test('portfolio administrator shows independent GitHub, HTTPS and SSH failure st
   const status=await checkBabuniDevAdministrator(profile,{
     githubLookup:async()=>{throw Error('private auth message')},
     websiteLookup:async()=>({status:404,contentType:'text/html'}),
-    readConfig:async()=>({ok:false,code:'SSH_FINGERPRINT_MISMATCH'}),
+    sshPreflight:async()=>({code:'SSH_HOST_NOT_PINNED'}),
     sshLookup:async()=>{throw Error('should not run')},
   })
   assert.equal(status.ok,false)
   assert.equal(status.github.code,'GITHUB_READ_FAILED')
   assert.equal(status.website.code,'WEBSITE_UNEXPECTED_RESPONSE')
-  assert.equal(status.ssh.code,'SSH_FINGERPRINT_MISMATCH')
+  assert.equal(status.ssh.code,'SSH_HOST_NOT_PINNED')
   assert.equal(status.publishingEnabled,false)
   assert.doesNotMatch(JSON.stringify(status),/private auth message/)
+})
+
+test('portfolio SSH preflight does not require enabling Morkahja moderation', async () => {
+  const profile = {projectId:'morkahja',kind:'postgres-ssh-moderation',target:'owner.example.invalid'}
+  let calls = 0
+  const status = await checkBabuniDevAdministrator(profile,{
+    githubLookup:async()=>({full_name:PORTFOLIO_GITHUB_REPO,default_branch:'main'}),
+    websiteLookup:async()=>({status:200,contentType:'text/html'}),
+    sshPreflight:async()=>{calls++;return {code:'SSH_HOST_KEY_PINNED_OFFLINE'}},
+    keyStatus:async()=>true,
+    sshLookup:async config=>{
+      assert.deepEqual(Object.keys(config).sort(),
+        ['host','sshIdentityFile','sshPort','sshUser'])
+      assert.equal(config.sshUser,'babunideploy')
+      return {ok:true,code:'PORTFOLIO_SSH_STAGING_VERIFIED'}
+    },
+  })
+  assert.equal(status.ok,true)
+  assert.equal(calls,1)
+  assert.notEqual(status.ssh.code,'REMOTE_MODERATION_DISABLED')
 })
