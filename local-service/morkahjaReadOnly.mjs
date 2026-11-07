@@ -1,4 +1,5 @@
 import pg from 'pg'
+import { readProgression } from './progressionMetrics.mjs'
 import { inspectReadOnlyDatabase } from './sshPostgresProbe.mjs'
 
 export const PLAYER_PAGE_SIZE = 20
@@ -13,7 +14,7 @@ export function parsePlayerPage(value) {
   return value.page
 }
 
-// The live Morkahja role can SELECT only from these two owner-controlled
+// The live Morkahja role can SELECT only from the approved owner-controlled
 // views. Never query public.players, sessions, avatars or game_events directly.
 const OVERVIEW_SQL = [
   'SELECT players, avatars, active_sessions, events_last_24h',
@@ -40,7 +41,7 @@ const BOUNDARY_SQL = [
   ' SELECT 1 FROM pg_class c',
   ' JOIN pg_namespace n ON n.oid=c.relnamespace',
   " WHERE n.nspname='public' AND c.relname IN",
-  " ('players','avatars','sessions','game_events')",
+  " ('players','avatars','sessions','game_events','player_achievements')",
   " AND has_any_column_privilege(current_user,c.oid,'SELECT')",
   ' ) AS raw_table_access',
 ].join('\n')
@@ -106,6 +107,7 @@ export async function queryMorkahjaReadOnly(config,endpoint,password,kind,page=1
       overview={
         players:Number(row.players),avatars:Number(row.avatars),
         activeSessions:Number(row.active_sessions),eventsLast24h:Number(row.events_last_24h),
+        ...await readProgression(client,config),
       }
       if(kind==='overview') return {ok:true,data:overview}
     }

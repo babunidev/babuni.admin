@@ -55,7 +55,7 @@ valid_expansions AS (
 ),
 player_quality AS (
   SELECT
-    COUNT(*) FILTER (WHERE jsonb_typeof(data) <> 'object')::bigint
+    COUNT(*) FILTER (WHERE jsonb_typeof(data) IS DISTINCT FROM 'object')::bigint
       AS invalid_player_documents,
     COUNT(*) FILTER (WHERE data ? 'unlockedDiceIds'
       AND jsonb_typeof(data->'unlockedDiceIds') <> 'array')::bigint

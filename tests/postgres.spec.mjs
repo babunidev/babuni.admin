@@ -184,7 +184,10 @@ test('dedicated read-only dashboard returns bounded data without session cleanup
     assert.ok(overview.data.activeSessions>=1)
     assert.ok(overview.data.eventsLast24h>=0)
     assert.deepEqual(Object.keys(overview.data).sort(),
-      ['players','avatars','activeSessions','eventsLast24h'].sort())
+      ['players','avatars','activeSessions','eventsLast24h',
+        'achievementsUnlocked','playersWithAchievements','diceUnlocks','expansionUnlocks'].sort())
+    for (const field of ['achievementsUnlocked','playersWithAchievements',
+      'diceUnlocks','expansionUnlocks']) assert.equal(overview.data[field],null)
     const first=await queryMorkahjaReadOnly(config,endpoint,password,'players',1)
     const second=await queryMorkahjaReadOnly(config,endpoint,password,'players',2)
     const combined=await queryMorkahjaReadOnly(config,endpoint,password,'dashboard',2)

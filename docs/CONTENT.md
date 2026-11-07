@@ -1,5 +1,10 @@
 # Morkahja Admin — managed content and data contract
 
+## Batch A aggregate response
+
+The read-only Overview additionally returns `achievementsUnlocked`, `playersWithAchievements`, `diceUnlocks` and `expansionUnlocks`, each a nonnegative safe integer or null. Quality diagnostics remain inside the service's normalization; no player IDs or raw JSON accompany these fields. Null means unavailable, not zero. Counts represent earned achievement records and per-player non-default ownership, never purchase or revenue totals.
+
+
 **Creative owner:** Babuni.dev.  
 **Scope:** Data schema and content-management interface, **not an export of actual player/game records**.
 
