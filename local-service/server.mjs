@@ -112,7 +112,8 @@ const server=createServer(async(req,res)=>{
       const result=hasCapability(profile,'ssh:preflight')
         ? await preflightSshHost(profile)
         : hasCapability(profile,'github:probe') || hasCapability(profile,'website:probe')
-          ? await probeBabuniDevConnection(profile,previous)
+          ? {...await probeBabuniDevConnection(profile,previous),
+              credential:await credentialStatus(profile)}
           : await probeProfile(profile,previous)
       const status=previous.state==='connected' && result.state==='available'
         ? {...result,state:'connected',code:'LOCAL_READ_ONLY_CONNECTED'} : result
