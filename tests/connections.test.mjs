@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createServer } from 'vite'
@@ -38,4 +38,44 @@ test('connection profiles are private metadata, remain disabled and persist loca
     assert.deepEqual(new LocalConnectionRegistry(file).list(), [])
     assert.equal(registry.remove(created.id),false)
   } finally { await vite?.close(); rmSync(root,{recursive:true,force:true}) }
+})
+
+test('switching branches preserves unknown Morkahja connection profiles without enabling them', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'babuni-profile-compat-'))
+  const file = join(root, 'connections.json')
+  let vite
+  try {
+    const retained = [
+      { id:'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',projectId:'morkahja',
+        kind:'postgres-ssh',displayName:'Morkahja server',target:'example.invalid',
+        enabled:false,createdAt:'2026-11-04T10:00:00.000Z' },
+      { id:'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',projectId:'morkahja',
+        kind:'postgres-ssh-moderation',displayName:'Morkahja administrator',
+        target:'example.invalid',enabled:false,createdAt:'2026-11-05T10:00:00.000Z' },
+      { id:'cccccccc-cccc-4ccc-cccc-cccccccccccc',projectId:'morkahja',
+        kind:'ssh-content',displayName:'Morkahja content',
+        target:'example.invalid',enabled:false,createdAt:'2026-11-05T10:00:00.000Z' },
+    ]
+    writeFileSync(file,JSON.stringify(retained,null,2)+'\n')
+    vite = await createServer({ configFile:false, server:{middlewareMode:true}, logLevel:'error' })
+    const { LocalConnectionRegistry } = await vite.ssrLoadModule('/vite/localConnectionRegistry.ts')
+    const { specForProfile } = await vite.ssrLoadModule('/vite/connectionAdapters.ts')
+    const registry = new LocalConnectionRegistry(file)
+    assert.equal(registry.list().length,3)
+    for(const profile of registry.list().filter(p=>p.kind!=='postgres-ssh')){
+      const spec = specForProfile(profile)
+      assert.equal(spec.transport,'planned')
+      assert.deepEqual(spec.capabilities,[])
+    }
+    assert.deepEqual(JSON.parse(readFileSync(file,'utf8')),retained)
+    registry.add({projectId:'babuni-dev',kind:'github',
+      displayName:'Website source',target:'babunidev/babuni.dev'})
+    assert.deepEqual(JSON.parse(readFileSync(file,'utf8')).slice(0,3),retained)
+    assert.equal(new LocalConnectionRegistry(file).list().length,4)
+    assert.throws(()=>registry.add({projectId:'babuni-dev',kind:'postgres-ssh-moderation',
+      displayName:'Invalid cross-project',target:'example.invalid'}),/INVALID_PROFILE/)
+  } finally {
+    await vite?.close()
+    rmSync(root,{recursive:true,force:true})
+  }
 })
