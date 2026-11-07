@@ -2,7 +2,7 @@ import { createServer } from 'node:http'
 import { timingSafeEqual } from 'node:crypto'
 import { inspectContent } from './inspectContent.mjs'
 import { probeProfile, inspectionState } from './connectionHealth.mjs'
-import { probeBabuniDevConnection } from './babuniDevConnections.mjs'
+import { probeBabuniDevConnection, checkBabuniDevAdministrator } from './babuniDevConnections.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
@@ -24,6 +24,8 @@ if (!TOKEN || TOKEN.length < 32 || !Number.isInteger(PORT) || PORT < 1024 || POR
 }
 const registry = new LocalConnectionRegistry(process.env.BABUNI_TEST_PROFILE_FILE)
 const states = new Map()
+let portfolioReport = null
+let portfolioCheckActive = false
 function send(res, code, data) {
   res.writeHead(code, {'Content-Type':'application/json; charset=utf-8',
     'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'})
@@ -79,6 +81,50 @@ const server=createServer(async(req,res)=>{
       ok:true,service:'available',mode:'local-only',
       keyring:await keyringHealth(),checkedAt:new Date().toISOString(),
     })
+    // One fixed Babuni Dev administrator derives its host from the approved
+    // Morkahja operator profile; no separate website or GitHub profile to create.
+    if (req.method==='GET' && path==='/portfolio/status') {
+      const admins=registry.list().filter(p=>
+        p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation')
+      return send(res,200,{
+        configured:admins.length===1,
+        host:admins.length===1 ? admins[0].target : null,
+        repository:'babunidev/babuni.dev',website:'www.babuni.dev',
+        report:portfolioReport,
+        legacyProfileCount:registry.list().filter(p=>
+          p.projectId==='morkahja' && p.kind==='postgres-ssh').length,
+      })
+    }
+    if (req.method==='POST' && path==='/portfolio/check') {
+      if(portfolioCheckActive)return send(res,409,{error:'PORTFOLIO_CHECK_BUSY'})
+      const admins=registry.list().filter(p=>
+        p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation')
+      if(admins.length!==1)return send(res,409,{error:'ADMIN_CONNECTION_MISSING'})
+      portfolioCheckActive=true
+      try {
+        const report=await checkBabuniDevAdministrator(admins[0])
+        portfolioReport=report
+        return send(res,200,report)
+      } finally {portfolioCheckActive=false}
+    }
+    // Explicit retirement of the superseded Overview-only profile. No other
+    // workspace accounts, moderation profiles or SSH configurations are touched.
+    if (req.method==='POST' && path==='/maintenance/retire-legacy') {
+      const all=registry.list()
+      if(all.filter(p=>p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation').length!==1) {
+        return send(res,409,{error:'ADMIN_CONNECTION_MISSING'})
+      }
+      if(isSshProbeActive() || isModerationActive() || isContentActive() || portfolioCheckActive)
+        return send(res,409,{error:'REMOTE_PROBE_BUSY'})
+      const legacy=all.filter(p=>p.projectId==='morkahja' && p.kind==='postgres-ssh')
+      for(const profile of legacy) {
+        try {await clearCredential(profile)}
+        catch{return send(res,503,{error:'KEYRING_UNAVAILABLE'})}
+        registry.remove(profile.id)
+        states.delete(profile.id)
+      }
+      return send(res,200,{ok:true,removed:legacy.length})
+    }
     if (req.method==='GET' && path==='/') return send(res,200,{
       profiles:await Promise.all(registry.list().map(listedProfile)),
     })
