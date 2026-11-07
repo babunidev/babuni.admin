@@ -1,5 +1,16 @@
 # Babuni Admin — Decisions and Alternatives
 
+## 2026-11-07 — Prioritize Babuni Dev while game content architecture is revised
+
+**Creative direction:** Set aside direct Morkahja encounter publishing while the game developer designs a compatible live-content architecture. Resume the original goal of editing and managing babuni.dev through Babuni Admin.
+
+**First implementation choice:** Reuse the existing local-only connection manager rather than introduce a hosted administration page or a general website write endpoint. Two fixed outbound checks establish an observable starting point: GitHub repository identity through the operator's authenticated `gh` CLI, and canonical website HTTPS availability. This is AI's narrow Phase 2 implementation of the requested connections, not a claim that full website publishing is ready.
+
+**Deferred:** GitHub source-document reading/writing, content revision comparisons, scoped deploy credentials, release identity, staged atomic publishing, targeted asset generation and end-to-end rollback. The live Morkahja publishing adapter remains deferred separately; none of its database or file privileges are shared with Babuni Dev.
+
+**Verification boundary:** Synthetic tests and the resulting GitHub review checks are distinct from the creative's eventual Nobara connection tests. Production website and game data were not changed.
+
+
 ## 2026-11-05 — Separate deployed catalog verification from SQL migration
 
 **Creative direction:** Continue the Morkahja Overview statistics milestone step by step, preserving the established read-only and operator-approval boundaries.
