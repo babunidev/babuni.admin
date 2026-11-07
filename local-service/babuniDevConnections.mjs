@@ -1,6 +1,9 @@
 import { spawn } from 'node:child_process'
 import { readMorkahjaModerationConfig } from './morkahjaModerationConfig.mjs'
 import { buildContentSshArgs } from './morkahjaContentRunner.mjs'
+import { lstat } from 'node:fs/promises'
+import { homedir } from 'node:os'
+import { join } from 'node:path'
 
 // Fixed, server-owned Phase 2 scope. A profile name or target never extends access.
 export const PORTFOLIO_GITHUB_REPO = 'babunidev/babuni.dev'
@@ -128,13 +131,18 @@ export async function probeBabuniDevConnection(profile, previous = {}, dependenc
 // through the existing operator-approved SSH identity and pinned host key.
 // The endpoint accepts NO browser-provided host, directory, user or command.
 const WEBSITE_ROOT = '/var/www/babuni.dev/current'
+const WEBSITE_RELEASES = '/var/www/babuni.dev/releases'
+const DEPLOY_USER = 'babunideploy'
+const DEPLOY_KEY_NAME = 'id_ed25519_babuni_deploy'
 const WEBSITE_ROOT_INSPECTOR = [
   'import json, os',
   'root = "/var/www/babuni.dev/current"',
   'usable = os.path.isdir(root) and os.access(root, os.R_OK | os.X_OK)',
   'index = os.path.join(root, "index.html")',
   'index_readable = os.path.isfile(index) and os.access(index, os.R_OK)',
-  'print(json.dumps({"usable": bool(usable), "indexReadable": bool(index_readable)}))',
+  'releases = "/var/www/babuni.dev/releases"',
+  'staging_writable = os.path.isdir(releases) and os.access(releases, os.W_OK | os.X_OK)',
+  'print(json.dumps({"usable": bool(usable), "indexReadable": bool(index_readable), "stagingWritable": bool(staging_writable)}))',
 ].join('\n') + '\n'
 
 function portfolioSshEnvironment(env = process.env) {
@@ -186,12 +194,15 @@ export async function checkPortfolioSshRoot(config, deps = {}) {
       let parsed
       try { parsed = JSON.parse(stdout) }
       catch { return finish({ ok: false, code: 'PORTFOLIO_SSH_INVALID_RESPONSE' }) }
-      if (typeof parsed?.usable !== 'boolean' || typeof parsed?.indexReadable !== 'boolean') {
+      if (typeof parsed?.usable !== 'boolean' || typeof parsed?.indexReadable !== 'boolean' ||
+          typeof parsed?.stagingWritable !== 'boolean') {
         return finish({ ok: false, code: 'PORTFOLIO_SSH_INVALID_RESPONSE' })
       }
-      return finish(parsed.usable && parsed.indexReadable
-        ? { ok: true, code: 'PORTFOLIO_SSH_READ_VERIFIED' }
-        : { ok: false, code: 'PORTFOLIO_ROOT_UNREADABLE' })
+      return finish(!parsed.usable || !parsed.indexReadable
+        ? { ok: false, code: 'PORTFOLIO_ROOT_UNREADABLE' }
+        : parsed.stagingWritable
+          ? { ok: true, code: 'PORTFOLIO_SSH_STAGING_VERIFIED' }
+          : { ok: false, code: 'PORTFOLIO_STAGING_UNWRITABLE' })
     })
     child.stdin?.on('error', () => {})
     try { child.stdin?.end(WEBSITE_ROOT_INSPECTOR) }
@@ -218,9 +229,23 @@ export async function checkBabuniDevAdministrator(adminProfile, deps = {}) {
   try {
     const authorized = await (deps.readConfig || readMorkahjaModerationConfig)(adminProfile)
     if (!authorized.ok) ssh = { ok: false, code: authorized.code }
-    else ssh = await (deps.sshLookup || checkPortfolioSshRoot)(authorized.config)
+    else {
+      // The existing VPS host and pin are shared; the website uses its
+      // pre-existing least-privileged deployment account and private key.
+      const keyPath = join(homedir(), '.ssh', DEPLOY_KEY_NAME)
+      const keyStatus = deps.keyStatus || (async () => {
+        const stat = await lstat(keyPath)
+        return stat.isFile() && !stat.isSymbolicLink() &&
+          (typeof process.getuid !== 'function' || stat.uid === process.getuid()) &&
+          (stat.mode & 0o077) === 0
+      })
+      if (!await keyStatus(keyPath)) ssh = { ok: false, code: 'PORTFOLIO_DEPLOY_KEY_UNAVAILABLE' }
+      else ssh = await (deps.sshLookup || checkPortfolioSshRoot)({
+        ...authorized.config, sshUser: DEPLOY_USER, sshIdentityFile: keyPath,
+      })
+    }
   } catch {
-    ssh = { ok: false, code: 'PORTFOLIO_SSH_FAILED' }
+    ssh = { ok: false, code: 'PORTFOLIO_DEPLOY_KEY_UNAVAILABLE' }
   }
   const allGood = github.state === 'available' && website.state === 'available' && ssh.ok
   return {
