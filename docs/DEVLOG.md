@@ -1,7 +1,7 @@
 # Babuni Admin — Development Journal
 ## 2026-11-07 — One connection that already knows my server
 
-Seeing separate GitHub and website setup buttons made the portfolio connection feel like another account-management exercise, even though my admin workbench already knows the VPS and the operator who uses it. At my direction, AI replaced those cards with a single Babuni Dev administrator panel, deriving the server link from my existing approved Morkahja SSH connection while checking GitHub independently through the desktop login. The older Morkahja Overview-only profile can now be retired explicitly, leaving the one administrator connection in place. The server check only reads the deployed website directory; real publication and the local SSH acceptance check are not yet completed.
+Seeing separate GitHub and website setup buttons made the portfolio connection feel like another account-management exercise, even though my admin workbench already knows the VPS and the operator who uses it. At my direction, AI replaced those cards with a single Babuni Dev administrator panel, deriving the server host from my existing approved administrator connection while using the dedicated website deployment key for a fixed SSH staging-access check and checking GitHub independently through the desktop login. The older Morkahja Overview-only profile can now be retired explicitly, leaving the one administrator connection in place. The server check only reads the deployed website directory; real publication and the local SSH acceptance check are not yet completed.
 
 
 ## 2026-11-07 — Keeping the workbench whole
