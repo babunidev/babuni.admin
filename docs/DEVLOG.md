@@ -1,5 +1,10 @@
 # Babuni Admin — Development Journal
 
+## 2026-11-07 — Keeping the workbench whole
+
+Switching from work on Morkahja to my portfolio was supposed to change the development focus, not replace the tool we had already built. Instead, the first Babuni Dev connection experiment was placed on a separate branch based on older code; running it brought back the outdated Connections interface and hid the newer game administration features. After I pointed that out, AI returned to the advanced codebase and added the read-only GitHub and website checks there, keeping the existing single administrator connection and Morkahja workspace. Both workspaces now belong to the same source version; live portfolio publication and local acceptance are still ahead.
+
+
 ## 2026-11-06 — Keeping the pictures nearby
 
 The image reader finally displayed real artwork, but switching between Content tabs still forced fresh downloads from my server, sometimes taking long enough to interrupt ordinary editing. A small memory cache turned out to be the wrong approach: only a handful of thumbnails survived navigation, and none survived a restart. At my direction, AI implemented a persistent local image cache that fills for the whole Morkahja workspace and checks for changed files instead of downloading them again. Automated tests cover persistence and incremental updates; the first real-server cache sync remains to be verified.
