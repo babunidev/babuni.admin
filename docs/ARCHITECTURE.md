@@ -1,4 +1,12 @@
 # Babuni Admin — Architecture
+## One operator connection, two project scopes (2026-11-07)
+
+The **Connection** screen contains the existing Morkahja administrator profile and a Babuni Dev administrator view that is **derived**, not a second saved account or a requirement to configure two remote project targets. The local service resolves exactly one `postgres-ssh-moderation` profile for the approved host, and Babuni Dev uses its trusted SSH identity and pinned host key for a fixed, one-shot, read-only inspection of `/var/www/babuni.dev/current/index.html`. The private moderation config must pass its existing opt-in and fingerprint checks. No browser parameters can select another host, filesystem path or command, and the inspection does not try to write files.
+
+The fixed `babunidev/babuni.dev` GitHub API metadata check uses the operator's existing `gh` CLI auth; the public `www.babuni.dev` HTTPS check has no login. Their status is reported separately from the pinned SSH site-read check. The site-root check establishes only existence and read access by this SSH identity. **It does not establish rights to stage or activate an Astro release.** The PostgreSQL database password is unrelated to SSH authentication and remains in the OS keyring; SSH private-key passphrases remain with the operator's existing SSH agent.
+
+The protected local service exposes `GET /portfolio/status` and a manual `POST /portfolio/check`, with no write or arbitrary-command endpoint. A separate `POST /maintenance/retire-legacy` permits deletion only of saved `morkahja/postgres-ssh` fallback profiles after exactly one current administrator exists. It preserves the primary administrator and denies cleanup during active remote work; if the old credential cannot be cleared safely, the corresponding profile is retained. The UI exposes this action only while obsolete profiles remain. Local CI uses synthetic fixtures; live SSH and published revision still need operator checks.
+
 
 ## Shared Connection interface with two active workspaces (2026-11-07)
 
