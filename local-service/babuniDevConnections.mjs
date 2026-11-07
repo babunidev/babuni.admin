@@ -237,10 +237,12 @@ export async function checkBabuniDevAdministrator(adminProfile, deps = {}) {
       } else {
         const keyPath = join(homedir(), '.ssh', DEPLOY_KEY_NAME)
         const keyStatus = deps.keyStatus || (async () => {
-          const stat = await lstat(keyPath)
-          return stat.isFile() && !stat.isSymbolicLink() &&
-            (typeof process.getuid !== 'function' || stat.uid === process.getuid()) &&
-            (stat.mode & 0o077) === 0
+          try {
+            const stat = await lstat(keyPath)
+            return stat.isFile() && !stat.isSymbolicLink() &&
+              (typeof process.getuid !== 'function' || stat.uid === process.getuid()) &&
+              (stat.mode & 0o077) === 0
+          } catch { return false }
         })
         if (!await keyStatus(keyPath)) ssh = { ok: false, code: 'PORTFOLIO_DEPLOY_KEY_UNAVAILABLE' }
         else ssh = await (deps.sshLookup || checkPortfolioSshRoot)({
