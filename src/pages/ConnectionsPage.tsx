@@ -36,17 +36,21 @@ const kinds:Record<ProjectId,{value:Kind;label:string}[]> = {
     {value:'postgres-ssh',label:'PostgreSQL via SSH (operator-enabled health check)'},
   ],
   'babuni-dev':[
-    {value:'github',label:'GitHub repository (planned)'},
-    {value:'remote-publish',label:'Remote publishing (planned)'},
+    {value:'github',label:'GitHub source (authenticated read-only check)'},
+    {value:'remote-publish',label:'Live website (HTTPS read-only check; publishing planned)'},
   ],
 }
 
 function stateLabel(profile:Profile) {
   if (profile.state==='connected') return 'Connected — local read-only session'
-  if (profile.state==='available') return 'Available — local check only'
+  if (profile.state==='available') return profile.projectId==='babuni-dev'
+    ? 'Available — remote read-only check; publishing not configured'
+    : 'Available — local check only'
   if (profile.state==='disconnected') return profile.code==='REMOTE_DB_HEALTHY_READ_ONLY'?'Remote health checked — tunnel closed':'Disconnected'
   if (profile.state==='degraded') return 'Degraded — some content is unavailable'
-  if (profile.state==='error') return 'Error — local check failed'
+  if (profile.state==='error') return profile.projectId==='babuni-dev'
+    ? 'Error — remote read-only check failed'
+    : 'Error — local check failed'
   return 'Not connected — profile only'
 }
 function checkedTime(value?:string) {
@@ -172,7 +176,7 @@ export function ConnectionsPage() {
         </label>
         <label className="text-sm text-fog">Target (no credentials)
           <input className={field} required maxLength={250} value={target} onChange={e=>setTarget(e.target.value)}
-            placeholder={kind==='local-files'?'/home/babuni/Projects/Morkahja/client/public':kind==='github'?'babunidev/babuni.admin':'host.example.com'}/>
+            placeholder={kind==='local-files'?'/home/babuni/Projects/Morkahja/client/public':kind==='github'?'babunidev/babuni.dev':kind==='remote-publish'?'www.babuni.dev':'host.example.com'}/>
         </label>
         <div className="sm:col-span-2 flex items-center justify-between gap-4">
           <span className="text-xs text-fog">No passwords, SSH keys or tokens in this form. Remote credentials are managed separately in the Linux keyring.</span>
@@ -192,8 +196,10 @@ export function ConnectionsPage() {
             <p className="mt-1 text-xs text-fog">Result: {p.code||'NOT_CHECKED'} · Checked: {checkedTime(p.checkedAt)}</p>
             {p.lastSuccessAt && <p className="mt-1 text-xs text-fog">Last successful check: {checkedTime(p.lastSuccessAt)}</p>}
             {p.kind!=='local-files' && <p className="mt-1 text-xs text-fog">
-              Credential: {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · No persistent connection or write permission
+              Credential (future operations): {credentialLabel(p.credential)} · ID: <code>{p.id}</code> · No persistent connection or write permission
             </p>}
+            {p.kind==='github' && <p className="mt-1 text-xs text-fog">Read-only verification uses the existing GitHub CLI login on this computer, not an administrator token in this form.</p>}
+            {p.kind==='remote-publish' && <p className="mt-1 text-xs text-fog">HTTPS availability is not an authenticated deployment connection. SSH publishing remains disabled.</p>}
             <p className="mt-1 text-xs text-fog">Allowed operations: {p.capabilities?.join(', ')||'None (adapter planned)'}</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -203,7 +209,7 @@ export function ConnectionsPage() {
               <button type="button" disabled={busy} onClick={()=>{void inspect(p.id)}}>Inspect</button>}
             <button type="button" disabled={busy} onClick={()=>{
               void operation(()=>api('POST','/'+p.id+'/test'))
-            }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">{p.capabilities?.includes('ssh:preflight')?'Check pinned key (offline)':'Test'}</button>
+            }} className="rounded border border-gold/20 px-3 py-1 text-xs text-gold-bright disabled:opacity-50">{p.capabilities?.includes('ssh:preflight')?'Check pinned key (offline)':p.capabilities?.includes('github:probe')?'Check GitHub (read-only)':p.capabilities?.includes('website:probe')?'Check live HTTPS':'Test'}</button>
             {p.capabilities?.includes('ssh:probe') &&
               <button type="button" disabled={busy} onClick={()=>{
                 void operation(()=>api('POST','/'+p.id+'/probe'))
