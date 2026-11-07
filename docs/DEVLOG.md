@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-07 — Keeping my saved connections across branches
+
+Testing the new Babuni Dev branch exposed an unexpected dependency on the earlier Morkahja work: my saved administrator profile used a connection kind the new branch did not recognize, so the local service refused to start. Rather than discard those settings, AI added compatibility-only entries and a persistence test. The Morkahja profiles stay intact but inactive on this branch; restarting the real application with them remains to be verified.
+
 
 ## 2026-11-07 — Returning to the portfolio connection
 
