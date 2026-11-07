@@ -1,4 +1,11 @@
 # Babuni Admin — Changelog
+## 2026-11-07 — Fix portfolio SSH check blocked by Morkahja switch
+
+- Corrected the Babuni Dev administrator check after a real Nobara screenshot showed GitHub and HTTPS passing but server SSH returning `REMOTE_MODERATION_DISABLED`.
+- Babuni Dev now validates the approved VPS SSH host pin directly, then uses the pre-existing `babunideploy` key on standard SSH port 22. It no longer requires Morkahja moderation to be enabled and does not alter the game's moderation authorization.
+- Improved the UI to explain connection results in readable language, while retaining detailed codes in the local service response.
+- Added isolated regression coverage; the real website SSH check still requires operator verification.
+
 ## 2026-11-07 — Consolidate Babuni Dev into one administrator connection
 
 - Replaced the two per-target Babuni Dev setup cards with one preconfigured Babuni Dev administrator view on the existing **Connection** screen.
