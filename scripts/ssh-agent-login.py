@@ -86,9 +86,10 @@ def agent_state(fingerprint):
 
 
 def askpass_program():
-    # Prefer KDE's wallet-integrated GUI rather than caching a passphrase here.
-    candidates = ["/usr/bin/ksshaskpass", shutil.which("ksshaskpass"),
-                  os.environ.get("SSH_ASKPASS")]
+    # Use the session's configured helper first; otherwise prefer KDE's
+    # wallet-integrated GUI rather than caching a passphrase here.
+    candidates = [os.environ.get("SSH_ASKPASS"), "/usr/bin/ksshaskpass",
+                  shutil.which("ksshaskpass")]
     for name in candidates:
         if name and os.path.isabs(name) and os.access(name, os.X_OK):
             return name
