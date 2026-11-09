@@ -1,4 +1,18 @@
 # Babuni Admin — Changelog
+## 2026-11-09 — Babuni Dev Documents page
+
+- Added `local-service/portfolioDocuments.mjs` and three session-protected routes (`GET /portfolio/documents`, `POST /portfolio/document-check`, `POST /portfolio/document-publish`). Requests accept only the standard babuni.dev document names; the browser cannot supply a command, a path outside that list or a shell string. One run at a time, bounded output, timeouts, and failure categories that expose no raw error text.
+- Added the Documents page and navigation entry under Babuni Dev. A document is checked against the live site first, and publishing needs an explicit confirmation.
+- Publishing uses the babuni.dev repository's `scripts/publish-document.sh`, which needs the deployment key loaded in the desktop SSH agent and stops with a clear message otherwise.
+- Added four tests for the route module; relaxed one outdated regression assertion that pinned the Babuni Dev navigation to a single link. Suite: 86/86.
+- Verified: dry-run checks through the routes, and one real publication through the page (release `20261109-123701-c67d005-doc`). Only babuni.dev documents are supported; editing and other repositories are not implemented.
+
+## 2026-11-08 — Repository consolidation and login-script fix
+
+- Merged pull requests #28 and #29 into `main` (merge commits `af597ab` and `18ce036`, 2026-11-07). Closed #8, #9 and #30 as superseded and deleted 31 remote branches after checking each against its pull request.
+- Fixed `scripts/ssh-agent-login.py`: the session's `SSH_ASKPASS` helper is now tried before the KDE default. The login test no longer depends on the desktop it runs on.
+- Babuni Dev connection check verified on the Nobara desktop (GitHub, HTTPS, SSH release staging).
+
 ## 2026-11-07 — Fix portfolio SSH check blocked by Morkahja switch
 
 - Corrected the Babuni Dev administrator check after a real Nobara screenshot showed GitHub and HTTPS passing but server SSH returning `REMOTE_MODERATION_DISABLED`.

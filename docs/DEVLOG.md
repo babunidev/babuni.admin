@@ -1,4 +1,12 @@
 # Babuni Admin — Development Journal
+## 2026-11-09 — Publishing from the admin tool
+
+The journal on my website could finally be updated without a rebuild, but only through a terminal script. At my direction, AI wired that script into the local service behind a fixed list of standard document names and added a Documents page under Babuni Dev, with a check, a confirmation and a publish button. Publishing a changelog entry through the page was the first real use: the live release changed, the previous one stayed in place for rollback, and an unrelated project page kept answering. Editing still happens by committing in the checkout; an editor inside the tool and documents from the other repositories are still ahead.
+
+## 2026-11-08 — One branch again
+
+Weeks of short-lived branches had left 28 stale ones next to the real work. Following AI's checks, I merged the two open pull requests that carried the unified tool, closed three superseded ones and deleted the rest, after comparing each branch with its pull request instead of trusting Git's own history. Only `main` remains. The Babuni Dev connection had passed on my desktop just before (GitHub, HTTPS and release staging over SSH), and a failing login test that depended on my desktop's SSH helper was fixed along the way.
+
 ## 2026-11-07 — Separating the website connection from game moderation
 
 The first live check of my portfolio administrator found GitHub and the public website available, but SSH was blocked by a setting meant to authorize Morkahja moderation. That dependency did not belong in the website connection. AI adjusted the new probe to verify the existing trusted VPS host directly and use the dedicated website deployment key, leaving the game's moderation gate intact. The interface also explains connection states in ordinary language; whether the SSH check succeeds on my computer still needs to be observed.

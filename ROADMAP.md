@@ -1,9 +1,27 @@
 # Babuni Admin — Development Roadmap
+## 2026-11-09 — Babuni Dev documents: check and publish
+
+- [x] Add fixed-scope check and publish routes to the local service, limited to the standard babuni.dev documents and to the tested publish script.
+- [x] Add a Documents page under Babuni Dev with a per-document check, a confirmation step and a publish button.
+- [x] Verify the first publication through the page: live release `20261109-123701-c67d005-doc`, previous release kept for rollback.
+- [ ] Publish documents from the other 36 connected repositories; this must also update the pinned snapshot in the babuni.dev repository so a full build does not revert them.
+- [ ] Pull the latest committed version of a document from its own repository, show the difference from the live site and publish after confirmation.
+- [ ] Edit documents in the tool and commit them to their repository, with a conflict check.
+- [ ] Prune old website releases on the server.
+
+## 2026-11-08 — One branch, one tool
+
+- [x] Merge the two open pull requests that carried the unified tool (#28 and #29, merged 2026-11-07) into `main`.
+- [x] Close the superseded pull requests (#8, #9, #30) and delete all 31 stale remote branches; `main` is the only branch.
+- [x] Fix the SSH login script so the session's configured askpass helper is preferred; the full suite passes (82/82 at that point).
+- [x] Verify the Babuni Dev connection on the Nobara desktop: GitHub read access, website HTTPS and SSH release staging all report verified.
+- [x] Verify dedicated deployment-key authentication, readable live release and release-directory permissions on Nobara.
+
 ## 2026-11-07 — Portfolio SSH does not depend on Morkahja moderation
 
 - [x] Fix Babuni Dev connection check blocked by `REMOTE_MODERATION_DISABLED` despite GitHub and HTTPS success on the operator's desktop.
 - [x] Reuse the approved VPS host key and website-specific `babunideploy` key without enabling unrelated Morkahja database/moderation features.
-- [ ] Verify dedicated deployment-key authentication, readable live release, and release-directory permissions on Nobara.
+- [x] Verify dedicated deployment-key authentication, readable live release, and release-directory permissions on Nobara.
 
 ## 2026-11-07 — One configured portfolio administrator
 
@@ -21,7 +39,7 @@
 - [x] Preserve the advanced Morkahja workspace, its single administrator profile, moderation, content tools and local image cache while redirecting development toward Babuni Dev.
 - [x] Integrate the two read-only Babuni Dev checks into the existing **Connection** page, not a separate version of the console: approved `babunidev/babuni.dev` GitHub CLI metadata and fixed `www.babuni.dev` HTTPS homepage.
 - [x] Retain strict project-specific capabilities; do not change or disable the Morkahja administrator adapter.
-- [ ] Verify GitHub CLI login and public website checks from the operator's Nobara desktop using the unified application.
+- [x] Verify GitHub CLI login and public website checks from the operator's Nobara desktop using the unified application.
 - [ ] Implement Babuni Dev source document browsing/editing with revision checks and original GitHub repository as authoritative source.
 - [ ] Implement coherent website staging, publication and rollback through scoped deployment access; no static partial edits without verified dependent outputs.
 - [ ] Resume game-side encounter publishing only after the Morkahja developer provides a compatible live-content architecture.
