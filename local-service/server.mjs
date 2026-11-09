@@ -3,6 +3,7 @@ import { timingSafeEqual } from 'node:crypto'
 import { inspectContent } from './inspectContent.mjs'
 import { probeProfile, inspectionState } from './connectionHealth.mjs'
 import { probeBabuniDevConnection, checkBabuniDevAdministrator } from './babuniDevConnections.mjs'
+import { listDocuments as listPortfolioDocuments, runPublish as runPortfolioDocument } from './portfolioDocuments.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
@@ -109,6 +110,22 @@ const server=createServer(async(req,res)=>{
     }
     // Explicit retirement of the superseded Overview-only profile. No other
     // workspace accounts, moderation profiles or SSH configurations are touched.
+    // Babuni Dev documents: fixed allowlist, fixed script, one run at a time.
+    if (req.method==='GET' && path==='/portfolio/documents') {
+      try { return send(res,200,{documents:await listPortfolioDocuments()}) }
+      catch(error) { return send(res,409,{error:error.message==='CHECKOUT_UNAVAILABLE'?'CHECKOUT_UNAVAILABLE':'DOCUMENT_LIST_FAILED'}) }
+    }
+    if (req.method==='POST' && (path==='/portfolio/document-check' || path==='/portfolio/document-publish')) {
+      const input=await body(req)
+      try {
+        const result=await runPortfolioDocument(input?.path,path==='/portfolio/document-publish')
+        return send(res,result.ok?200:502,result)
+      } catch(error) {
+        const known=['DOCUMENT_PATH_DENIED','PUBLISH_BUSY','CHECKOUT_UNAVAILABLE']
+        const code=known.includes(error.message)?error.message:'PUBLISH_FAILED'
+        return send(res,code==='DOCUMENT_PATH_DENIED'?400:409,{error:code})
+      }
+    }
     if (req.method==='POST' && path==='/maintenance/retire-legacy') {
       const all=registry.list()
       if(all.filter(p=>p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation').length!==1) {
