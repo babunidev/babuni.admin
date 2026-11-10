@@ -7,6 +7,7 @@ import { join } from 'node:path'
 import {
   SNAPSHOT, listSources, parsePullOutput, parseSiteOutput, runPull, runSitePublish,
   commitAndPushSnapshot, checkoutState, resetSiteState,
+  parseReleaseName, setStatusReaders, siteStatus, repositoryChanges, publishAll,
 } from '../local-service/portfolioSite.mjs'
 import { withPublishLock } from '../local-service/publishLock.mjs'
 
@@ -204,6 +205,7 @@ test('site publish failures map exit codes and an unverified switch', async () =
   for (const [script, code] of [
     ['echo "SSH_KEY_NOT_LOADED" >&2; exit 3', 'SSH_KEY_NOT_LOADED'],
     ['echo "BUILD_FAILED secret" >&2; exit 4', 'BUILD_FAILED'],
+    ['echo "Creating release new"; echo "VERIFY_FAILED" >&2; exit 5', 'VERIFY_FAILED'],
     ['echo "Creating release new"; exit 1', 'PUBLISH_UNVERIFIED'],
     ['exit 9', 'PUBLISH_FAILED'],
   ]) {
@@ -228,5 +230,139 @@ test('one lock covers document publishing, pulls and site publishing', async () 
     release()
     await held
     assert.equal((await runSitePublish(false, f.root)).ok, true)
+  } finally { f.cleanup() }
+})
+
+// ---- One-page status and one-click publish ----
+
+/** Fake pull: reports one changed repository; --write rewrites the snapshot. */
+const pullScript = (removed = 0, writeRemoved = removed) => `
+const { writeFileSync } = require('node:fs')
+const write = process.argv.includes('--write')
+const n = write ? ${writeRemoved} : ${removed}
+console.log('same      babunidev/Addon')
+console.log('CHANGED   babunidev/Game                    aaaaaaaa -> bbbbbbbb')
+console.log('            CHANGED README.md')
+for (let i = 0; i < n; i++) console.log('            REMOVED docs/OLD' + i + '.md')
+if (write) {
+  writeFileSync(${JSON.stringify(SNAPSHOT)}, JSON.stringify({ 'babunidev/Game': { commit: 'b' }, 'babunidev/Addon': { commit: 'b' } }, null, 2))
+  console.log('Snapshot updated for 1 repository(ies). Review with git diff, then commit and publish.')
+} else console.log('1 repository(ies) have document changes. Add --write to update the snapshot.')
+`.replace("const { writeFileSync } = require('node:fs')", "import { writeFileSync } from 'node:fs'")
+
+test('release names are parsed and anything else is rejected', () => {
+  assert.deepEqual(parseReleaseName('20261110-004601-fd89891-site\n'), { name: '20261110-004601-fd89891-site', commit: 'fd89891', kind: 'site' })
+  assert.equal(parseReleaseName('20261109-123701-c67d005-doc').kind, 'doc')
+  for (const bad of ['', 'fd89891', '<html>', '20261110-004601-fd89891-site; rm -rf /']) assert.equal(parseReleaseName(bad), null)
+})
+
+test('site status lists commits not yet live and the uncommitted snapshot', async () => {
+  const f = fakeCheckout()
+  try {
+    const first = git(f.root, 'rev-parse', '--short', 'HEAD')
+    setStatusReaders({ release: async () => `20261110-000000-${first}-site` })
+    let status = await siteStatus(f.root)
+    assert.deepEqual([status.upToDate, status.pendingCommits.length, status.snapshotWaiting], [true, 0, false])
+
+    writeFileSync(join(f.root, 'other.txt'), 'new\n')
+    git(f.root, 'commit', '-q', '-am', 'docs: new journal entry')
+    git(f.root, 'push', '-q', 'origin', 'main')
+    writeFileSync(join(f.root, SNAPSHOT), '{}')
+    status = await siteStatus(f.root)
+    assert.equal(status.upToDate, false)
+    assert.deepEqual(status.pendingCommits.map(c => c.subject), ['docs: new journal entry'])
+    assert.equal(status.snapshotWaiting, true)
+
+    setStatusReaders({ release: async () => `20261110-000000-${first}-doc` })
+    git(f.root, 'checkout', '-q', '--', SNAPSHOT)
+    git(f.root, 'reset', '-q', '--hard', 'origin/main')
+    const head = git(f.root, 'rev-parse', '--short', 'HEAD')
+    setStatusReaders({ release: async () => `20261110-000000-${head}-doc` })
+    assert.equal((await siteStatus(f.root)).upToDate, false, 'a single-document release is never a full match')
+    setStatusReaders({ release: async () => { throw new Error('offline') } })
+    status = await siteStatus(f.root)
+    assert.deepEqual([status.live, status.upToDate], [null, false])
+  } finally { f.cleanup() }
+})
+
+test('repository changes are cached and list GitHub repositories missing from the website', async () => {
+  resetSiteState()
+  const f = fakeCheckout({ pull: pullScript() })
+  try {
+    setStatusReaders({ repositories: async () => [
+      { nameWithOwner: 'babunidev/Game', isPrivate: false, isArchived: false },
+      { nameWithOwner: 'babunidev/NewTool', isPrivate: false, isArchived: false },
+      { nameWithOwner: 'babunidev/Secret', isPrivate: true, isArchived: false },
+      { nameWithOwner: 'babunidev/Old', isPrivate: false, isArchived: true },
+      { nameWithOwner: 'babunidev/Later', isPrivate: false, isArchived: false },
+    ] })
+    const first = await repositoryChanges(false, f.root)
+    assert.deepEqual([first.ok, first.cached, first.changedCount], [true, false, 1])
+    assert.deepEqual(first.notOnWebsite, [
+      { repository: 'babunidev/Later', private: false },
+      { repository: 'babunidev/NewTool', private: false },
+      { repository: 'babunidev/Secret', private: true },
+    ])
+    assert.equal((await repositoryChanges(false, f.root)).cached, true)
+    assert.equal((await repositoryChanges(true, f.root)).cached, false)
+    setStatusReaders({ repositories: async () => { throw new Error('no gh') } })
+    assert.equal((await repositoryChanges(false, f.root)).notOnWebsite, null)
+  } finally { f.cleanup() }
+})
+
+test('publish everything pulls, commits only the snapshot, pushes and publishes in one call', async () => {
+  resetSiteState()
+  const f = fakeCheckout({ pull: pullScript(), site: SITE_SCRIPT })
+  try {
+    await assert.rejects(publishAll(false, f.root), /CHECK_REQUIRED/)
+    await repositoryChanges(true, f.root)
+    writeFileSync(join(f.root, 'other.txt'), 'unrelated local edit\n')
+    const result = await publishAll(false, f.root)
+    assert.equal(result.ok, true)
+    assert.equal(result.steps.pull.written, true)
+    assert.equal(result.steps.push.repositories, 1)
+    assert.deepEqual([result.steps.site.published, result.steps.site.newRelease], [true, 'new'])
+    assert.equal(git(f.origin, 'log', '-1', '--format=%s', 'main'), 'content: pull document changes from 1 source repository')
+    assert.deepEqual(git(f.origin, 'show', '--name-only', '--format=', 'main').split('\n'), [SNAPSHOT])
+    assert.equal(readFileSync(join(f.root, 'other.txt'), 'utf8'), 'unrelated local edit\n')
+    await assert.rejects(publishAll(false, f.root), /CHECK_REQUIRED/, 'a publish uses up its check')
+  } finally { f.cleanup() }
+})
+
+test('publish everything without repository changes publishes the website repository only', async () => {
+  resetSiteState()
+  const f = fakeCheckout({ pull: "console.log('same      babunidev/Game'); console.log('No document changes.')", site: SITE_SCRIPT })
+  try {
+    await repositoryChanges(true, f.root)
+    const result = await publishAll(false, f.root)
+    assert.deepEqual([result.ok, result.steps.pull, result.steps.push, result.steps.site.published], [true, null, null, true])
+  } finally { f.cleanup() }
+})
+
+test('publish everything guards removals and undoes a write that removes more than the check showed', async () => {
+  resetSiteState()
+  const f = fakeCheckout({ pull: pullScript(1, 2), site: SITE_SCRIPT })
+  try {
+    await repositoryChanges(true, f.root)
+    await assert.rejects(publishAll(false, f.root), /REMOVALS_NOT_ACCEPTED/)
+    const result = await publishAll(true, f.root)
+    assert.deepEqual([result.ok, result.step, result.error], [false, 'pull', 'CHANGED_SINCE_CHECK'])
+    assert.equal(git(f.root, 'status', '--porcelain', '--', SNAPSHOT), '', 'snapshot restored')
+    assert.equal(git(f.origin, 'log', '-1', '--format=%s', 'main'), 'init', 'nothing pushed')
+  } finally { f.cleanup() }
+})
+
+test('publish everything stops before writing on a stale checkout or a failed build', async () => {
+  resetSiteState()
+  const f = fakeCheckout({ pull: pullScript(), site: '#!/usr/bin/env bash\necho "BUILD_FAILED" >&2\nexit 4\n' })
+  try {
+    await repositoryChanges(true, f.root)
+    git(f.root, 'checkout', '-q', '-b', 'feature')
+    await assert.rejects(publishAll(false, f.root), /NOT_ON_MAIN/)
+    assert.equal(git(f.root, 'status', '--porcelain', '--', SNAPSHOT), '')
+    git(f.root, 'checkout', '-q', 'main')
+    const result = await publishAll(false, f.root)
+    assert.deepEqual([result.ok, result.step, result.error], [false, 'site', 'BUILD_FAILED'])
+    assert.equal(result.steps.push.ok, true, 'the snapshot commit was pushed before the build failed')
   } finally { f.cleanup() }
 })

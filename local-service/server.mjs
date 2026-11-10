@@ -6,7 +6,7 @@ import { probeBabuniDevConnection, checkBabuniDevAdministrator } from './babuniD
 import { listDocuments as listPortfolioDocuments, runPublish as runPortfolioDocument } from './portfolioDocuments.mjs'
 import {
   listSources as listPortfolioSources, checkoutState as portfolioCheckoutState, runPull as runPortfolioPull,
-  commitAndPushSnapshot, runSitePublish,
+  commitAndPushSnapshot, runSitePublish, siteStatus, repositoryChanges, publishAll,
 } from './portfolioSite.mjs'
 import { publishLockHolder } from './publishLock.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
@@ -140,7 +140,13 @@ const server=createServer(async(req,res)=>{
         return send(res,200,{sources,state,busy:publishLockHolder()})
       } catch { return send(res,409,{error:'CHECKOUT_UNAVAILABLE'}) }
     }
+    if (req.method==='GET' && path==='/portfolio/site-status') {
+      try { return send(res,200,{...await siteStatus(),busy:publishLockHolder()}) }
+      catch { return send(res,409,{error:'CHECKOUT_UNAVAILABLE'}) }
+    }
     const siteRoutes={
+      '/portfolio/changes':input=>repositoryChanges(input?.refresh===true),
+      '/portfolio/publish-all':input=>publishAll(input?.acceptRemovals===true),
       '/portfolio/pull-check':input=>runPortfolioPull(input?.target,false),
       '/portfolio/pull-write':input=>runPortfolioPull(input?.target,true,input?.acceptRemovals===true),
       '/portfolio/snapshot-push':()=>commitAndPushSnapshot(),
@@ -154,7 +160,7 @@ const server=createServer(async(req,res)=>{
         return send(res,result.ok?200:502,result)
       } catch(error) {
         const known=['SOURCE_DENIED','PUBLISH_BUSY','CHECKOUT_UNAVAILABLE','CHECK_REQUIRED','REMOVALS_NOT_ACCEPTED',
-          'FETCH_FAILED','NOT_ON_MAIN','BEHIND_ORIGIN','UNPUSHED_OTHER_COMMITS','NOTHING_TO_COMMIT','COMMIT_FAILED','ORIGIN_MOVED']
+          'FETCH_FAILED','SNAPSHOT_DIRTY','NOT_ON_MAIN','BEHIND_ORIGIN','UNPUSHED_OTHER_COMMITS','NOTHING_TO_COMMIT','COMMIT_FAILED','ORIGIN_MOVED']
         const code=known.includes(error.message)?error.message:'PORTFOLIO_OPERATION_FAILED'
         return send(res,code==='SOURCE_DENIED'?400:409,{error:code})
       }
