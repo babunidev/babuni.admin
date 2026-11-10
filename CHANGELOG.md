@@ -1,4 +1,16 @@
 # Babuni Admin — Changelog
+## 2026-11-10 — Babuni Dev Repositories page
+
+- Added `local-service/portfolioSite.mjs` and six session-protected routes for documents from the other connected repositories: list sources and checkout state, pull check, pull write, commit-and-push of the snapshot file, site dry run and site publish. They run babuni.dev's `scripts/pull-repository.mjs` and `scripts/publish-site.sh` with fixed arguments; targets are limited to the connected repositories in the babuni.dev connection map.
+- Writes require a preceding check: a snapshot write needs a check of the same target and explicit acceptance when documents would be removed; a site publish needs a dry run of the same `origin/main` commit. The commit step stages nothing else, refuses other branches, a stale checkout and unpushed commits that touch other files.
+- Added `local-service/publishLock.mjs`; single-document publishing now shares this lock with the new operations.
+- Added the Repositories page and navigation entry under Babuni Dev, with three confirmed steps (pull, commit and push, publish).
+- Added `tests/portfolio-site.test.mjs` (10 tests: parsers, allowlist, check-before-write gates, commit isolation against a local bare remote, exit-code mapping, shared lock). Suite 96/96; `npm run build` and `npm run lint` pass.
+- Replaced the Babuni Dev Overview placeholder ("content manager is planned") with links to Connection, Documents and Repositories and a short list of what is not available yet; the top bar no longer says "Planned features". Browser smoke tests updated for three navigation links (not run locally; Playwright is not installed here).
+- Consolidated `ROADMAP.md`: one current open-work list at the top; items found done or superseded in the dated sections are marked with their evidence.
+- Ignored Python `__pycache__/` directories.
+- Verified read-only against the real checkout on Nobara (AI-run, through the module): source listing (37 repositories), checkout state, pull checks (`--all` and one repository; no document changes at the time) and one site dry run (built `fd89891`, 1045 files, live release `20261110-004601-fd89891-site`, nothing to publish). No snapshot write, push or site publish has been run through the page yet.
+
 ## 2026-11-09 — Babuni Dev Documents page
 
 - Added `local-service/portfolioDocuments.mjs` and three session-protected routes (`GET /portfolio/documents`, `POST /portfolio/document-check`, `POST /portfolio/document-publish`). Requests accept only the standard babuni.dev document names; the browser cannot supply a command, a path outside that list or a shell string. One run at a time, bounded output, timeouts, and failure categories that expose no raw error text.

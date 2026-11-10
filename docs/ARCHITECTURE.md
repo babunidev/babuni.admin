@@ -1,4 +1,19 @@
 # Babuni Admin — Architecture
+## Babuni Dev documents from other repositories (2026-11-10)
+
+`local-service/portfolioSite.mjs` connects three fixed babuni.dev tools to the Repositories page. Each runs from the babuni.dev checkout (`BABUNI_DEV_CHECKOUT`, default `~/Projects/babunidev/babuni.dev`) with a fixed argument list and no shell:
+
+| Route | Runs | Gate |
+| --- | --- | --- |
+| `GET /portfolio/sources` | reads `src/content/project-repositories.json`; `git fetch` and status | none (read-only) |
+| `POST /portfolio/pull-check` | `node --experimental-strip-types scripts/pull-repository.mjs <repo or --all>` | target must be `all` or a listed connected repository |
+| `POST /portfolio/pull-write` | the same with `--write` | a check of the same target within the hour; `acceptRemovals: true` when that check listed removed documents |
+| `POST /portfolio/snapshot-push` | `git commit --only -- src/content/repository-documents.json`, `git push origin HEAD:main` | on `main`, not behind `origin/main`, no unpushed commit touching other files |
+| `POST /portfolio/site-check` | `scripts/publish-site.sh` (dry run) | none (builds and compares only) |
+| `POST /portfolio/site-publish` | `scripts/publish-site.sh --apply` | a dry run within the hour of the same `origin/main` commit |
+
+`local-service/publishLock.mjs` is one lock shared with single-document publishing, so no two of these operations, and no document publish, can run at the same time (`PUBLISH_BUSY`). Script stderr is used only to classify failures (`GITHUB_LOGIN_MISSING`, `SNAPSHOT_DIRTY`, `SSH_KEY_NOT_LOADED`, `BUILD_FAILED`, `PUBLISH_UNVERIFIED`, …) and is never returned. Site-publish output is kept in full (rolling tail beyond 8 MB), returned as counts plus the first 400 paths, with a 20-minute timeout that stops the script's whole process group.
+
 ## Portfolio SSH check independent of Morkahja moderation (2026-11-07)
 
 The Babuni Dev connection derives the approved VPS host **name** from the unique saved owner profile. Its SSH preflight checks the exact trusted host-key entry using `sshHostPreflight.mjs`, independently of the `BABUNI_MORKAHJA_REMOTE_MODERATION` feature gate. After that check, the fixed deployment identity `babunideploy` and local `~/.ssh/id_ed25519_babuni_deploy` key are used on SSH port 22 for a one-shot inspection. The deployment key is required to be owned by the operator and inaccessible to other users; no browser-supplied username, remote path, key or command can modify the operation. Morkahja's moderation gate remains unchanged for all game operations.

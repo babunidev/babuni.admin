@@ -1,10 +1,49 @@
 # Babuni Admin — Development Roadmap
+
+## Current open work — consolidated 2026-11-10
+
+This is the one list of what is still open. The dated sections below stay as history; their open items were collected here, and items found already done or superseded are marked where they appear.
+
+### Babuni Dev (active priority)
+
+- [ ] Verify the first real snapshot write, push and site publish through the Repositories page on Nobara.
+- [ ] Compare one document from its own repository with the live site, then publish after confirmation.
+- [ ] Edit documents in the tool and commit them to their repository, with a conflict check.
+- [ ] Prune old website releases on the server.
+- [ ] Later (Phase 3): Markdown preview, images, galleries and metadata; publication history and rollback in the UI; module creation and reordering.
+
+### Checks on the Nobara desktop
+
+- [ ] Retire the superseded `postgres-ssh` Overview profile with the Connection page's retirement action.
+- [ ] Persistent image cache: first bulk sync, tab navigation, warm restart and an image replacement.
+- [ ] A disposable content edit, its backup and the game-side reload.
+- [ ] A moderation action (timeout, then unban) on a designated test account, only with explicit operator authorization.
+- [ ] A controlled SSH read interruption: no tunnel left open and no stale success shown.
+
+### Morkahja (paused or waiting on decisions)
+
+- [ ] Paused: live encounter publishing, until the game developer delivers the agreed runtime-content architecture.
+- [ ] Remote image upload with revision checks, backup and atomic replacement.
+- [ ] New Overview metrics: approve definitions, add SELECT-only views, verify, then add cards.
+- [ ] Remove unused legacy APIs and profile kinds once the live workflows above are confirmed.
+
+### Security and maintenance
+
+- [ ] Release gate (below) for every new live write path.
+- [ ] Action attribution and recoverable writes for project-scoped live operations.
+- [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.
+- [ ] Resolve the 12 moderate lint/tooling advisories ([audit](docs/DEPENDENCY_AUDIT_2026-11-03.md)).
+- [ ] Fix the Vite config import-extension warnings.
+- [ ] Resolve local and remote content API inconsistencies; make sure a mock fallback can never look like a successful live write.
+- [ ] Update the browser smoke tests' Babuni Dev expectations in CI (adjusted 2026-11-10 for three navigation links; not run locally because Playwright is not installed here).
+
 ## 2026-11-09 — Babuni Dev documents: check and publish
 
 - [x] Add fixed-scope check and publish routes to the local service, limited to the standard babuni.dev documents and to the tested publish script.
 - [x] Add a Documents page under Babuni Dev with a per-document check, a confirmation step and a publish button.
 - [x] Verify the first publication through the page: live release `20261109-123701-c67d005-doc`, previous release kept for rollback.
-- [ ] Publish documents from the other 36 connected repositories; this must also update the pinned snapshot in the babuni.dev repository so a full build does not revert them.
+- [x] Connect documents from the other 36 connected repositories: Repositories page with pull check/write, snapshot commit and push, and site dry run/publish (2026-11-10). Follows the [babuni.dev briefing](https://github.com/babunidev/babuni.dev/blob/main/docs/ADMIN_INTEGRATION.md#briefing-for-babuni-admin--ready-to-connect-2026-11-10).
+- [ ] Verify the first real snapshot write, push and site publish through the Repositories page on Nobara. *(In current open work.)*
 - [ ] Pull the latest committed version of a document from its own repository, show the difference from the live site and publish after confirmation.
 - [ ] Edit documents in the tool and commit them to their repository, with a conflict check.
 - [ ] Prune old website releases on the server.
@@ -29,8 +68,8 @@
 - [x] Preserve automatic Morkahja Overview, Moderation, Content, and image cache behavior in the same app.
 - [x] Implement fixed-scope GitHub/HTTPS/SSH read-only checks, reusing the approved VPS host fingerprint and the already configured dedicated `babunideploy` identity/key without exposing a password or creating another UI profile.
 - [x] Add an explicitly triggered, narrowly scoped retirement action for the superseded `postgres-ssh` Morkahja server profile; keep the primary administrator and any credential untouched.
-- [ ] Verify the three checks and retire the old profile on the Nobara desktop. CI cannot establish live SSH permissions or actual local key unlock.
-- [ ] Implement Babuni Dev document editing, reviewed GitHub updates, secure website deployment and rollback; verify actual site filesystem rights before enabling writes.
+- [x] Verify the three checks on the Nobara desktop (2026-11-08). Retiring the old profile is still open and listed in current open work.
+- [ ] Implement Babuni Dev document editing, reviewed GitHub updates, secure website deployment and rollback; verify actual site filesystem rights before enabling writes. *(Deployment and rollback: done through Documents (2026-11-09) and Repositories (2026-11-10). Editing: in current open work.)*
 - [ ] Keep Morkahja live encounter publishing paused until the game developer delivers the agreed runtime-content architecture.
 
 
@@ -40,8 +79,8 @@
 - [x] Integrate the two read-only Babuni Dev checks into the existing **Connection** page, not a separate version of the console: approved `babunidev/babuni.dev` GitHub CLI metadata and fixed `www.babuni.dev` HTTPS homepage.
 - [x] Retain strict project-specific capabilities; do not change or disable the Morkahja administrator adapter.
 - [x] Verify GitHub CLI login and public website checks from the operator's Nobara desktop using the unified application.
-- [ ] Implement Babuni Dev source document browsing/editing with revision checks and original GitHub repository as authoritative source.
-- [ ] Implement coherent website staging, publication and rollback through scoped deployment access; no static partial edits without verified dependent outputs.
+- [ ] Implement Babuni Dev source document browsing/editing with revision checks and original GitHub repository as authoritative source. *(In current open work.)*
+- [x] Implement coherent website staging, publication and rollback through scoped deployment access; no static partial edits without verified dependent outputs. *(babuni.dev's publish scripts, connected 2026-11-09 and 2026-11-10.)*
 - [ ] Resume game-side encounter publishing only after the Morkahja developer provides a compatible live-content architecture.
 
 
@@ -62,7 +101,7 @@
 - [x] Implement an authenticated image read through the existing administrator SSH configuration, no domain/DNS setup.
 - [x] Restrict requests to five mapped game asset directories and bounded WebP basenames.
 - [x] Wire lazy images to encounters, solutions, expansions, frames, portraits and detail views.
-- [ ] Verify actual image display on Nobara using the live server; fix any naming/path discrepancies found.
+- [x] Verify actual image display on Nobara using the live server. *(Observed loading live; see DEVLOG 2026-11-06, "Keeping the pictures nearby".)*
 - [ ] Implement remote image upload, revision checks, backup and atomic replacement separately.
 
 
@@ -73,9 +112,9 @@
 - [x] View stored credential availability, SSH host check, one-shot database read check, server address and last successful connection in Connection.
 - [x] Preserve older profiles without automatically deleting credentials or changing PostgreSQL roles.
 - [x] Verify actual Moderation account list on the operator's desktop: 62 players displayed using the administrator account.
-- [ ] Verify automatic Overview and Content live loads on Nobara after updating.
+- [x] Verify automatic Overview and Content live loads on Nobara after updating. *(Overview statistics and Content records loaded; DEVLOG 2026-11-06.)*
 - [ ] Verify a disposable test content edit and its backup and game-side reload.
-- [ ] Wire babuni.dev website administration and deployment to the same operator's server setup; this is not yet implemented.
+- [x] Wire babuni.dev website administration and deployment to the same operator's server setup. *(Connection check 2026-11-08, Documents 2026-11-09, Repositories 2026-11-10.)*
 - [ ] Complete remote image management.
 - [ ] Remove unused legacy APIs and profile kinds after live workflows are confirmed.
 
@@ -87,9 +126,9 @@
 - [x] Replace the proposed extra read-only moderator login with `scripts/morkahja-admin-role.sql`, granting only the existing tool's needed player and Overview view operations; no PostgreSQL superuser or arbitrary SQL API.
 - [x] Remove the separate moderation write opt-in; the administrator credential itself permits fixed timeout, ban and unban transactions.
 - [x] Reuse administrator SSH identity for fixed deployed content JSON operations, with revision checks and backups.
-- [ ] Operator-run the admin role setup, store its password once in the Linux keyring, activate the one profile and verify real Overview, Moderation and Content on Nobara.
+- [x] Operator-run the admin role setup, store its password once in the Linux keyring, activate the one profile and verify real Overview, Moderation and Content on Nobara. *(Reads verified: 62 accounts, Overview statistics, Content records; DEVLOG 2026-11-06. Writes: in current open work.)*
 - [ ] Finish remote image uploads and actual game-visible editing; verify backup/rollback and connection cleanup.
-- [ ] Pass full CI for this revision and merge only after live acceptance.
+- [x] Pass full CI for this revision and merge. *(Merged as #28/#29 on 2026-11-07.)*
 
 ## 2026-11-06 — Restore existing live Moderation and Content workflows
 
@@ -101,13 +140,13 @@
 - [x] Separate read-only player listing/details from mutation authority: the moderator profile can now use a distinct SELECT-only role, with a second environment gate for all writes. Prepare operator-review SQL `scripts/morkahja-moderation-read-role.sql` (not applied).
 - [x] Correct player/detail source isolation, missing-player/error states, sample-data labeling, current progression levels and session-based presence wording; add synthetic account/detail coverage.
 - [x] Prepare a metadata-only deployed-schema preflight (`scripts/morkahja-moderation-schema-preflight.sql`) and a local config helper (`scripts/prepare-morkahja-moderation-config.py`) that reuses verified Overview metadata without copying secrets, with regression tests.
-- [ ] Operator-run the schema preflight, approve and provision the SELECT-only role, configure the independent keyring credential and verify the real list/side panel on Nobara. No production credentials or roles were created in this branch.
-- [ ] Later, separately review narrow UPDATE/DELETE grants and enable `BABUNI_MORKAHJA_MODERATION_WRITES=enabled` for timeout/ban/unban.
+- [x] ~~Operator-run the schema preflight, approve and provision the SELECT-only role, configure the independent keyring credential and verify the real list/side panel on Nobara.~~ *Superseded by the single administrator profile (2026-11-06), whose real list was verified.*
+- [x] ~~Later, separately review narrow UPDATE/DELETE grants and enable `BABUNI_MORKAHJA_MODERATION_WRITES=enabled` for timeout/ban/unban.~~ *Superseded: the single administrator profile removed this switch (2026-11-06); a live test-account check is in current open work.*
 - [x] Implement a separately gated `ssh-content` profile and source-level read/write transport for the five JSON catalogs in the deployed `/var/www/morkahja/game` tree; content editor tabs can select the profile. Remote images and live visual verification remain pending.
 - [x] Implement revision-checked, serialized, backed-up atomic JSON writes for encounters, solutions, expansions, frames and portraits through a fixed-path one-shot SSH worker. **Not enabled or executed on the live server.**
-- [ ] Implement secured live image reads and uploads for encounter/solution imagery, frame artwork and portraits; existing local upload paths must not be mistaken for remote publication.
+- [ ] Implement secured live image reads and uploads for encounter/solution imagery, frame artwork and portraits; existing local upload paths must not be mistaken for remote publication. *(Reads done 2026-11-06; uploads in current open work.)*
 - [ ] Verify failure recovery, transaction rollback, tunnel cleanup and source/permission gating in isolated fixtures and on designated development data.
-- [ ] Complete CI, controlled live acceptance tests and merge through a reviewed pull request.
+- [x] Complete CI and merge through a reviewed pull request. *(Merged 2026-11-07; live acceptance items are in current open work.)*
 
 ## 2026-11-05 — Reconcile operator-verified desktop and Overview behavior
 
@@ -281,7 +320,7 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Add Morkahja-only offline SSH host-key trust preflight: dedicated operator-managed known_hosts file, exact host matching, OpenSSH parser check, invalid/unsafe store denial and no outbound connection; verified only by fixture CI tests. [Design](docs/LOCAL_CONNECTION_MANAGER.md).
 - [x] Implement a **disabled-by-default**, operator-gated Morkahja SSH/PostgreSQL health probe: exact host and approved fingerprint, private identity file, keyring password, hardened OpenSSH invocation, temporary loopback tunnel, fixed read-only PostgreSQL metadata/privilege query and tunnel cleanup. Fixture tests verify code paths; **no live Morkahja host has been contacted**. [Configuration and safety](docs/MORKAHJA_SSH_READONLY_PROBE.md).
 - [x] Operator configured the approved SSH host identity and dedicated database read-only role and demonstrated a successful live health check followed by view-only data retrieval on Nobara. Independent hardening of future write-capable adapters remains open.
-- [ ] Implement GitHub remote transport and future authenticated project-scoped content workflows; neither is enabled.
+- [ ] Implement GitHub remote transport and future authenticated project-scoped content workflows. *(Publishing now runs through babuni.dev's scripts; GitHub editing is in current open work.)*
 - [x] Operator verified the live protected SSH/PostgreSQL health probe and subsequently the restricted-view dashboard using the dedicated `babuni_admin_probe` role. The observed real Morkahja data access remained SELECT-only; this does not authorize moderation, arbitrary SQL or remote writes.
 - [x] Add read-only inspection of five known Morkahja JSON datasets through the local service; file counts and status only, using isolated fixtures.
 - [x] Add local service/keyring health, per-profile timestamps and structured error codes; distinguish complete, degraded and failed content inspection without claiming remote connectivity.
@@ -295,7 +334,7 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Verify real locked default-collection behavior on Nobara: `npm run keyring:inspect` returned `locked` for the collection, keyring health and nonexistent test-profile credential (operator-reported, 2026-11-04).
 - [x] Verify unlock recovery: after unlocking KDE Wallet, inspection returned `unlocked`, `available` and `missing` again (operator-reported, 2026-11-04). This verifies status recovery, not a post-unlock credential store/retrieve test.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
-- [ ] Extend verified Babuni Dev GitHub metadata access into source-document read/write access, then implement a controlled publishing transport; read-only checks now exist.
+- [ ] Extend verified Babuni Dev GitHub metadata access into source-document read/write access, then implement a controlled publishing transport. *(Publishing done 2026-11-09/10; read/write editing in current open work.)*
 - [x] Audit current connection and legacy static middleware boundaries; add project-scope/denied-operation tests and prevent local asset symlink escapes. [Review](docs/PHASE2_SECURITY_REVIEW_2026-11-04.md).
 - [ ] Complete operator authentication/authorization, project-scoped live operations, action attribution, recoverable writes and remaining security release gates. Browser origin/session guards alone are insufficient.
 - [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.
@@ -399,9 +438,9 @@ No code changes, infrastructure changes or tests were made during the Oct 26 doc
 
 - [x] Recheck core documentation against the current package and Vite configuration.
 - [x] Retain the comprehensive October 26 security and design audit instead of rewriting it.
-- [ ] Execute `npm run build` and `npm run lint` in a safe development checkout; record actual output, dependency versions and commit.
+- [x] Execute `npm run build` and `npm run lint`; record actual output. *(Done in CI from 2026-11-03; see Phase 1.)*
 - [ ] Test privileged middleware boundaries, browser-exposed settings and authentication with fixtures only, before any trusted connection.
 - [ ] Verify local game-data edits against an isolated copy, then decide on backup/versioning and rollback rules before production use.
 - [ ] Resolve the creator's still-open decisions on local-only operation, mock fallback, permissions and operator audit trails.
 
-The current `package.json` does not define a dedicated `test` script. Nothing in this checkpoint is an approval to connect to or modify real player data.
+At the time, `package.json` did not define a dedicated `test` script (`npm test` exists since Phase 1). Nothing in this checkpoint is an approval to connect to or modify real player data.

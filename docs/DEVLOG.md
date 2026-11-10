@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-10 — Bringing the other repositories along
+
+Publishing from the admin tool covered only the website's own documents. Changes in the other 36 repositories still needed three terminal steps: pull them into the website's pinned snapshot, commit and push that file, then build and publish the site. The babuni.dev side had just prepared those tools along with a briefing for this application, and I asked AI to connect them next. The new Repositories page runs the three steps in order, each with a check and a confirmation, and the local service refuses a write that skips its check, a removal I have not confirmed, or a publish of a commit I have not seen in a dry run. Only the snapshot file is ever committed. A dry run against the real site built cleanly and found nothing to publish; the first real write and publish through the page are still ahead.
+
 ## 2026-11-09 — Publishing from the admin tool
 
 The journal on my website could finally be updated without a rebuild, but only through a terminal script. At my direction, AI wired that script into the local service behind a fixed list of standard document names and added a Documents page under Babuni Dev, with a check, a confirmation and a publish button. Publishing a changelog entry through the page was the first real use: the live release changed, the previous one stayed in place for rollback, and an unrelated project page kept answering. Editing still happens by committing in the checkout; an editor inside the tool and documents from the other repositories are still ahead.

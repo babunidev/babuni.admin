@@ -1,4 +1,12 @@
 # Babuni Admin — Decisions and Alternatives
+## 2026-11-10 — Documents from other repositories go through the site build
+
+**Creative direction:** Next on the roadmap is publishing documents from the other 36 connected repositories, following the briefing the babuni.dev repository provided for this admin tool.
+
+**Decision:** Follow the briefing's path: pull into the pinned snapshot, commit and push that one file, then build and publish committed `origin/main` with `publish-site.sh`. `publish-document.sh` stays limited to babuni.dev's own documents. Each step is a dry run first and a confirmed apply second, enforced by the local service rather than the page alone: a write without a matching recent check is refused, removed documents need explicit acceptance, and a site publish is refused if `origin/main` moved since the dry run. The page commits and pushes the snapshot itself instead of handing that step to the terminal, but only that file and only from a clean, current `main`; anything else stops with a reason. One lock covers every publishing operation because both scripts switch the live `current` link.
+
+**Open:** First real write, push and site publish through the page; pruning old releases is a separate roadmap item.
+
 ## 2026-11-07 — Avoid secondary setup for the same owner and server
 
 **Creative decision:** The administration tool belongs to one operator and should show a stable project-specific Babuni Dev administrator alongside Morkahja, while being ready for more project workspaces. Entering the portfolio workspace must not require manually creating two separate GitHub and website profiles. The older Morkahja server fallback profile can be retired because the owner administrator now serves the game workspace.
