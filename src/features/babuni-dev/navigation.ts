@@ -4,4 +4,5 @@ import type { NavItem } from '../morkahja/navigation'
 export const babuniDevNavItems: NavItem[] = [
   { to: '/babuni-dev', label: 'Overview', icon: '◈' },
   { to: '/babuni-dev/documents', label: 'Documents', icon: '❏' },
+  { to: '/babuni-dev/repositories', label: 'Repositories', icon: '⇄' },
 ]

@@ -1,0 +1,86 @@
+import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+import { describeError as describeDocumentError } from './portfolioDocuments'
+
+export interface CheckoutState {
+  fetched: boolean
+  branch: string
+  snapshotDirty: boolean
+  ahead: number
+  behind: number
+  aheadOnlySnapshot: boolean
+  head: string
+  originMain: string
+}
+export interface SourcesResponse { sources: string[]; state: CheckoutState; busy: string | null }
+
+export interface DocumentChange { kind: 'NEW' | 'CHANGED' | 'REMOVED'; path: string }
+export interface RepositoryPull {
+  repository: string
+  changed: boolean
+  from?: string
+  to?: string
+  headMoved?: boolean
+  changes: DocumentChange[]
+}
+export interface PullResult {
+  ok: boolean
+  write: boolean
+  written?: boolean
+  repositories: RepositoryPull[]
+  changedCount: number
+  removedCount: number
+  summary: string | null
+  error?: string
+}
+export interface PushResult { ok: boolean; commit: string; repositories: number | null; error?: string }
+export interface SiteChange { kind: 'CHANGED' | 'ADDED' | 'REMOVED'; path: string }
+export interface SiteResult {
+  ok: boolean
+  apply: boolean
+  commit: string | null
+  liveRelease: string | null
+  buildFiles: number | null
+  nothing: boolean
+  differCount: number | null
+  creating: string | null
+  newRelease: string | null
+  published: boolean
+  rollback: string | null
+  changes: SiteChange[]
+  counts: Record<SiteChange['kind'], number>
+  total: number
+  truncated: boolean
+  error?: string
+}
+
+export const loadSources = () => localConnectionApi<SourcesResponse>('GET', '/portfolio/sources')
+export const checkPull = (target: string) =>
+  localConnectionApi<PullResult>('POST', '/portfolio/pull-check', { target })
+export const writePull = (target: string, acceptRemovals: boolean) =>
+  localConnectionApi<PullResult>('POST', '/portfolio/pull-write', { target, acceptRemovals })
+export const pushSnapshot = () => localConnectionApi<PushResult>('POST', '/portfolio/snapshot-push', {})
+export const checkSite = () => localConnectionApi<SiteResult>('POST', '/portfolio/site-check', {})
+export const publishSite = () => localConnectionApi<SiteResult>('POST', '/portfolio/site-publish', {})
+
+const MESSAGES: Record<string, string> = {
+  SOURCE_DENIED: 'That repository is not a connected source.',
+  GITHUB_LOGIN_MISSING: 'The GitHub CLI is not logged in. Run gh auth login in a terminal, then retry.',
+  SNAPSHOT_DIRTY: 'The snapshot already has uncommitted changes. Commit and push them first (step 2).',
+  PULL_FAILED: 'The pull script failed. The snapshot was not changed.',
+  PULL_TIMEOUT: 'The pull script took too long and was stopped.',
+  PULL_START_FAILED: 'The pull script could not be started.',
+  CHECK_REQUIRED: 'Run the check again first; the last one is missing or out of date.',
+  REMOVALS_NOT_ACCEPTED: 'This update removes documents from the website. Confirm the removals first.',
+  FETCH_FAILED: 'GitHub could not be reached to compare with origin/main.',
+  NOT_ON_MAIN: 'The babuni.dev checkout is not on the main branch.',
+  BEHIND_ORIGIN: 'The babuni.dev checkout is behind origin/main. Pull it in a terminal first.',
+  UNPUSHED_OTHER_COMMITS: 'The checkout has unpushed commits that change other files. Push or remove them in a terminal; this page only pushes the snapshot.',
+  NOTHING_TO_COMMIT: 'There is no snapshot change to commit or push.',
+  COMMIT_FAILED: 'The snapshot commit failed. Nothing was pushed.',
+  PUSH_FAILED: 'The commit was made locally but could not be pushed. Retry, or push in a terminal.',
+  ORIGIN_MOVED: 'origin/main changed since the dry run. Run the dry run again.',
+  BUILD_FAILED: 'The website build failed. Nothing was published.',
+  PUBLISH_UNVERIFIED: 'The release was created but the live check did not confirm it. Check https://www.babuni.dev/release.txt before doing anything else.',
+  PORTFOLIO_OPERATION_FAILED: 'The operation failed unexpectedly.',
+}
+export const describeSiteError = (code: string) => MESSAGES[code] ?? describeDocumentError(code)
