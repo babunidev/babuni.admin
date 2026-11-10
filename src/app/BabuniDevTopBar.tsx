@@ -15,7 +15,7 @@ export function BabuniDevTopBar() {
       </button>
       <div>
         <p className="text-xs uppercase tracking-widest text-fog">Babuni Dev</p>
-        <p className="text-sm text-parchment">Portfolio workspace · Planned features</p>
+        <p className="text-sm text-parchment">Portfolio workspace · www.babuni.dev</p>
       </div>
     </header>
   )

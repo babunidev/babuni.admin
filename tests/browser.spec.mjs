@@ -34,9 +34,9 @@ test('Babuni Dev overview renders its own navigation and no Morkahja server head
     assert.equal(await page.title().then(t => typeof t), 'string')
     await page.getByRole('heading', { name: 'Babuni Dev', exact: true }).waitFor()
     assert.equal(await page.getByRole('combobox', { name: 'Select workspace' }).inputValue(), 'babuni-dev')
-    assert.equal(await page.getByRole('navigation', { name: 'Babuni Dev navigation' }).getByRole('link').count(), 1)
-    await page.getByRole('heading', { name: 'Workspace established' }).waitFor()
-    assert.equal(await page.getByText('Portfolio workspace · Planned features').isVisible(), true)
+    assert.equal(await page.getByRole('navigation', { name: 'Babuni Dev navigation' }).getByRole('link').count(), 3)
+    await page.getByRole('heading', { name: 'Not available yet' }).waitFor()
+    assert.equal(await page.getByText('Portfolio workspace · www.babuni.dev').isVisible(), true)
     assert.equal(await page.getByText('Realm Console').count(), 0)
     assert.deepEqual(unexpectedErrors, [])
   } finally {
@@ -62,8 +62,8 @@ test('switching workspaces updates rendered header, links, URL, and browser hist
 
     await chooser.selectOption('babuni-dev')
     await page.waitForURL(origin + '/babuni-dev')
-    await page.getByRole('heading', { name: 'Workspace established' }).waitFor()
-    assert.equal(await page.getByRole('navigation', { name: 'Babuni Dev navigation' }).getByRole('link').count(), 1)
+    await page.getByRole('heading', { name: 'Not available yet' }).waitFor()
+    assert.equal(await page.getByRole('navigation', { name: 'Babuni Dev navigation' }).getByRole('link').count(), 3)
 
     await page.goBack()
     await page.waitForURL(origin + '/players')

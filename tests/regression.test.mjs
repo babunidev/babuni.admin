@@ -159,7 +159,7 @@ test('workspace shell uses URL-derived navigation and distinct top bars without 
   assert.match(sidebar, /workspaceForPath\(pathname\)/)
   assert.match(sidebar, /navigate\(target.home\)/)
   assert.match(sidebar, /current.navItems.map/)
-  assert.match(overview, /not available yet/)
+  assert.match(overview, /Not available yet/)
   assert.doesNotMatch(overview, /fetch\(|localStorage|contentApi/)
 })
 
