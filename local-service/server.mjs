@@ -4,6 +4,11 @@ import { inspectContent } from './inspectContent.mjs'
 import { probeProfile, inspectionState } from './connectionHealth.mjs'
 import { probeBabuniDevConnection, checkBabuniDevAdministrator } from './babuniDevConnections.mjs'
 import { listDocuments as listPortfolioDocuments, runPublish as runPortfolioDocument } from './portfolioDocuments.mjs'
+import {
+  listSources as listPortfolioSources, checkoutState as portfolioCheckoutState, runPull as runPortfolioPull,
+  commitAndPushSnapshot, runSitePublish,
+} from './portfolioSite.mjs'
+import { publishLockHolder } from './publishLock.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
@@ -124,6 +129,34 @@ const server=createServer(async(req,res)=>{
         const known=['DOCUMENT_PATH_DENIED','PUBLISH_BUSY','CHECKOUT_UNAVAILABLE']
         const code=known.includes(error.message)?error.message:'PUBLISH_FAILED'
         return send(res,code==='DOCUMENT_PATH_DENIED'?400:409,{error:code})
+      }
+    }
+    // Documents from the other connected repositories: pull into the snapshot,
+    // commit and push only that file, then build and publish origin/main.
+    // Fixed scripts, one lock shared with document publishing.
+    if (req.method==='GET' && path==='/portfolio/sources') {
+      try {
+        const [sources,state]=await Promise.all([listPortfolioSources(),portfolioCheckoutState()])
+        return send(res,200,{sources,state,busy:publishLockHolder()})
+      } catch { return send(res,409,{error:'CHECKOUT_UNAVAILABLE'}) }
+    }
+    const siteRoutes={
+      '/portfolio/pull-check':input=>runPortfolioPull(input?.target,false),
+      '/portfolio/pull-write':input=>runPortfolioPull(input?.target,true,input?.acceptRemovals===true),
+      '/portfolio/snapshot-push':()=>commitAndPushSnapshot(),
+      '/portfolio/site-check':()=>runSitePublish(false),
+      '/portfolio/site-publish':()=>runSitePublish(true),
+    }
+    if (req.method==='POST' && Object.hasOwn(siteRoutes,path)) {
+      const input=await body(req)
+      try {
+        const result=await siteRoutes[path](input)
+        return send(res,result.ok?200:502,result)
+      } catch(error) {
+        const known=['SOURCE_DENIED','PUBLISH_BUSY','CHECKOUT_UNAVAILABLE','CHECK_REQUIRED','REMOVALS_NOT_ACCEPTED',
+          'FETCH_FAILED','NOT_ON_MAIN','BEHIND_ORIGIN','UNPUSHED_OTHER_COMMITS','NOTHING_TO_COMMIT','COMMIT_FAILED','ORIGIN_MOVED']
+        const code=known.includes(error.message)?error.message:'PORTFOLIO_OPERATION_FAILED'
+        return send(res,code==='SOURCE_DENIED'?400:409,{error:code})
       }
     }
     if (req.method==='POST' && path==='/maintenance/retire-legacy') {

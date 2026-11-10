@@ -2,10 +2,11 @@ import { spawn, execFile } from 'node:child_process'
 import { stat } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
+import { withPublishLock } from './publishLock.mjs'
 
 // Fixed, server-owned scope: the babuni.dev checkout and its standard documents.
 export const DEFAULT_CHECKOUT = join(homedir(), 'Projects/babunidev/babuni.dev')
-const checkoutPath = () => process.env.BABUNI_DEV_CHECKOUT || DEFAULT_CHECKOUT
+export const checkoutPath = () => process.env.BABUNI_DEV_CHECKOUT || DEFAULT_CHECKOUT
 const ALLOWED = /^(?:(?:README|CONCEPT|CHANGELOG|ROADMAP)\.md|docs\/[A-Z][A-Z_]*\.md)$/
 
 export function isAllowedDocumentPath(path) {
@@ -39,39 +40,33 @@ export async function listDocuments(checkout = checkoutPath()) {
   return out.split('\n').filter(isAllowedDocumentPath).sort()
 }
 
-let active = false
-
 /** Dry run by default; apply=true publishes. Stderr is drained and never exposed. */
 export async function runPublish(path, apply = false, checkout = checkoutPath()) {
   if (!isAllowedDocumentPath(path)) throw new Error('DOCUMENT_PATH_DENIED')
-  if (active) throw new Error('PUBLISH_BUSY')
   const script = join(checkout, 'scripts/publish-document.sh')
   try { await stat(script) } catch { throw new Error('CHECKOUT_UNAVAILABLE') }
-  active = true
-  try {
-    return await new Promise(resolve => {
-      const child = spawn(script, apply ? [path, '--apply'] : [path], {
-        cwd: checkout, shell: false, stdio: ['ignore', 'pipe', 'pipe'],
-      })
-      let out = '', size = 0, done = false
-      const finish = value => { if (done) return; done = true; clearTimeout(timer); resolve(value) }
-      const timer = setTimeout(() => {
-        child.kill('SIGKILL')
-        finish({ ok: false, code: 'PUBLISH_TIMEOUT', error: 'PUBLISH_TIMEOUT' })
-      }, apply ? 180000 : 90000)
-      child.stdout.on('data', chunk => {
-        if (size + chunk.length > 65536) return
-        size += chunk.length
-        out += chunk.toString('utf8')
-      })
-      child.stderr.on('data', () => {})
-      child.on('error', () => finish({ ok: false, code: 'PUBLISH_START_FAILED', error: 'PUBLISH_START_FAILED' }))
-      child.on('close', code => {
-        const parsed = parsePublishOutput(out)
-        if (code === 0) return finish({ ok: true, apply, ...parsed })
-        const failure = code === 3 ? 'SSH_KEY_NOT_LOADED' : 'PUBLISH_FAILED'
-        finish({ ok: false, code: failure, error: failure, ...parsed })
-      })
+  return withPublishLock('document', () => new Promise(resolve => {
+    const child = spawn(script, apply ? [path, '--apply'] : [path], {
+      cwd: checkout, shell: false, stdio: ['ignore', 'pipe', 'pipe'],
     })
-  } finally { active = false }
+    let out = '', size = 0, done = false
+    const finish = value => { if (done) return; done = true; clearTimeout(timer); resolve(value) }
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL')
+      finish({ ok: false, code: 'PUBLISH_TIMEOUT', error: 'PUBLISH_TIMEOUT' })
+    }, apply ? 180000 : 90000)
+    child.stdout.on('data', chunk => {
+      if (size + chunk.length > 65536) return
+      size += chunk.length
+      out += chunk.toString('utf8')
+    })
+    child.stderr.on('data', () => {})
+    child.on('error', () => finish({ ok: false, code: 'PUBLISH_START_FAILED', error: 'PUBLISH_START_FAILED' }))
+    child.on('close', code => {
+      const parsed = parsePublishOutput(out)
+      if (code === 0) return finish({ ok: true, apply, ...parsed })
+      const failure = code === 3 ? 'SSH_KEY_NOT_LOADED' : 'PUBLISH_FAILED'
+      finish({ ok: false, code: failure, error: failure, ...parsed })
+    })
+  }))
 }

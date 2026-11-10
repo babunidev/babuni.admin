@@ -1,0 +1,232 @@
+import { spawn, execFile } from 'node:child_process'
+import { readFile, stat } from 'node:fs/promises'
+import { join } from 'node:path'
+import { checkoutPath } from './portfolioDocuments.mjs'
+import { withPublishLock } from './publishLock.mjs'
+
+// Documents from the other connected repositories reach the website in three
+// fixed steps, each run from the babuni.dev checkout with a fixed argument list:
+//   1. scripts/pull-repository.mjs  updates the pinned snapshot (check, then --write)
+//   2. commit and push that one snapshot file to origin/main
+//   3. scripts/publish-site.sh      builds origin/main and publishes changed files
+const LOCAL = 'babunidev/babuni.dev'
+export const SNAPSHOT = 'src/content/repository-documents.json'
+const CONNECTIONS = 'src/content/project-repositories.json'
+const CHECK_VALID_MS = 60 * 60 * 1000
+
+let lastPullCheck = null
+let lastSiteCheck = null
+export function resetSiteState() { lastPullCheck = null; lastSiteCheck = null }
+
+const git = (args, cwd, timeout = 30000) => new Promise((resolve, reject) =>
+  execFile('git', args, {
+    cwd, timeout, maxBuffer: 1 << 24, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+  }, (error, out) => error ? reject(error) : resolve(out.trim())))
+
+/** Unique connected source repositories, read from the checkout's own connection map. */
+export async function listSources(checkout = checkoutPath()) {
+  let map
+  try { map = JSON.parse(await readFile(join(checkout, CONNECTIONS), 'utf8')) }
+  catch { throw new Error('CHECKOUT_UNAVAILABLE') }
+  const names = Object.values(map)
+    .filter(entry => entry?.status === 'connected' && typeof entry.repository === 'string' && entry.repository !== LOCAL)
+    .map(entry => entry.repository)
+  return [...new Set(names)].sort((a, b) => a.localeCompare(b))
+}
+
+async function resolveTarget(target, checkout) {
+  if (target === 'all') return '--all'
+  const sources = await listSources(checkout)
+  if (typeof target !== 'string' || !sources.includes(target)) throw new Error('SOURCE_DENIED')
+  return target
+}
+
+/** Runs one fixed script. Keeps all stdout (rolling tail beyond 8 MB); stderr is
+ * only used to classify a failure and is never returned. */
+function runScript(command, args, { cwd, timeout, env }) {
+  return new Promise(resolve => {
+    let child
+    try {
+      child = spawn(command, args, {
+        cwd, shell: false, detached: true, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, ...env },
+      })
+    } catch { return resolve({ code: null, startFailed: true, out: '', err: '' }) }
+    let out = '', err = '', done = false
+    const finish = value => { if (done) return; done = true; clearTimeout(timer); resolve(value) }
+    const kill = signal => { try { process.kill(-child.pid, signal) } catch { /* already gone */ } }
+    const timer = setTimeout(() => {
+      kill('SIGTERM')
+      setTimeout(() => kill('SIGKILL'), 10000).unref()
+      finish({ code: null, timedOut: true, out, err })
+    }, timeout)
+    child.stdout.on('data', chunk => {
+      out += chunk.toString('utf8')
+      if (out.length > 8 << 20) out = out.slice(-65536)
+    })
+    child.stderr.on('data', chunk => { if (err.length < 8192) err += chunk.toString('utf8') })
+    child.on('error', () => finish({ code: null, startFailed: true, out, err }))
+    child.on('close', code => finish({ code, out, err }))
+  })
+}
+
+export function parsePullOutput(text) {
+  const repositories = []
+  let summary = null
+  for (const line of String(text).split('\n')) {
+    let m = /^CHANGED\s+(\S+)\s+(\S+) -> (\S+)\s*$/.exec(line)
+    if (m) { repositories.push({ repository: m[1], changed: true, from: m[2], to: m[3], changes: [] }); continue }
+    m = /^same\s+(\S+)(?:\s+\(head moved .*\))?\s*$/.exec(line)
+    if (m) { repositories.push({ repository: m[1], changed: false, headMoved: line.includes('(head moved'), changes: [] }); continue }
+    m = /^\s{4,}(NEW|CHANGED|REMOVED)\s+(.+)$/.exec(line)
+    if (m && repositories.length) { repositories.at(-1).changes.push({ kind: m[1], path: m[2] }); continue }
+    if (/^(No document changes\.|\d+ repository\(ies\) have document changes|Snapshot updated for \d+)/.test(line)) summary = line
+  }
+  const changed = repositories.filter(r => r.changed)
+  const removed = changed.reduce((n, r) => n + r.changes.filter(c => c.kind === 'REMOVED').length, 0)
+  return { repositories, changedCount: changed.length, removedCount: removed, summary }
+}
+
+function pullFailure(err) {
+  if (/No GitHub login/.test(err)) return 'GITHUB_LOGIN_MISSING'
+  if (/uncommitted changes/.test(err)) return 'SNAPSHOT_DIRTY'
+  if (/Not a connected public source/.test(err)) return 'SOURCE_DENIED'
+  return 'PULL_FAILED'
+}
+
+/** Check (write=false) or update the working-tree snapshot (write=true). A write
+ * needs a check of the same target first, and explicit acceptance of removals. */
+export async function runPull(target, write = false, acceptRemovals = false, checkout = checkoutPath()) {
+  const arg = await resolveTarget(target, checkout)
+  const script = join(checkout, 'scripts/pull-repository.mjs')
+  try { await stat(script) } catch { throw new Error('CHECKOUT_UNAVAILABLE') }
+  if (write) {
+    if (!lastPullCheck || lastPullCheck.target !== target || Date.now() - lastPullCheck.at > CHECK_VALID_MS)
+      throw new Error('CHECK_REQUIRED')
+    if (lastPullCheck.removedCount > 0 && acceptRemovals !== true) throw new Error('REMOVALS_NOT_ACCEPTED')
+  }
+  return withPublishLock('pull', async () => {
+    const run = await runScript(process.execPath,
+      ['--experimental-strip-types', script, arg, ...(write ? ['--write'] : [])],
+      { cwd: checkout, timeout: 5 * 60000, env: { NODE_OPTIONS: '--no-network-family-autoselection' } })
+    const parsed = parsePullOutput(run.out)
+    if (run.code !== 0) {
+      const error = run.timedOut ? 'PULL_TIMEOUT' : run.startFailed ? 'PULL_START_FAILED' : pullFailure(run.err)
+      return { ok: false, write, error, ...parsed }
+    }
+    if (write) lastPullCheck = null
+    else lastPullCheck = { target, removedCount: parsed.removedCount, at: Date.now() }
+    return { ok: true, write, written: write && parsed.changedCount > 0, ...parsed }
+  })
+}
+
+/** Where the checkout stands between the pull and the site publish. */
+export async function checkoutState(checkout = checkoutPath(), fetch = true) {
+  let fetched = false
+  if (fetch) { try { await git(['fetch', '-q', 'origin', 'main'], checkout, 60000); fetched = true } catch { /* offline */ } }
+  let branch, dirty, ahead, behind, head, origin
+  try {
+    branch = await git(['symbolic-ref', '--short', '-q', 'HEAD'], checkout).catch(() => '')
+    dirty = (await git(['status', '--porcelain', '--', SNAPSHOT], checkout)) !== ''
+    ahead = Number(await git(['rev-list', '--count', 'origin/main..HEAD'], checkout))
+    behind = Number(await git(['rev-list', '--count', 'HEAD..origin/main'], checkout))
+    head = await git(['rev-parse', '--short', 'HEAD'], checkout)
+    origin = await git(['rev-parse', '--short', 'origin/main'], checkout)
+  } catch { throw new Error('CHECKOUT_UNAVAILABLE') }
+  let aheadOnlySnapshot = true
+  if (ahead > 0) {
+    const files = (await git(['diff', '--name-only', 'origin/main...HEAD'], checkout)).split('\n').filter(Boolean)
+    aheadOnlySnapshot = files.length > 0 && files.every(file => file === SNAPSHOT)
+  }
+  return { fetched, branch, snapshotDirty: dirty, ahead, behind, aheadOnlySnapshot, head, originMain: origin }
+}
+
+async function countChangedRepositories(checkout) {
+  try {
+    const before = JSON.parse(await git(['show', 'HEAD:' + SNAPSHOT], checkout))
+    const after = JSON.parse(await readFile(join(checkout, SNAPSHOT), 'utf8'))
+    const keys = new Set([...Object.keys(before), ...Object.keys(after)])
+    return [...keys].filter(key => JSON.stringify(before[key]) !== JSON.stringify(after[key])).length
+  } catch { return 0 }
+}
+
+/** Commits only the snapshot file and pushes it. Refuses to carry any other
+ * local commit or change to origin/main. */
+export async function commitAndPushSnapshot(checkout = checkoutPath()) {
+  return withPublishLock('snapshot', async () => {
+    const state = await checkoutState(checkout)
+    if (!state.fetched) throw new Error('FETCH_FAILED')
+    if (state.branch !== 'main') throw new Error('NOT_ON_MAIN')
+    if (state.behind > 0) throw new Error('BEHIND_ORIGIN')
+    if (state.ahead > 0 && !state.aheadOnlySnapshot) throw new Error('UNPUSHED_OTHER_COMMITS')
+    if (!state.snapshotDirty && state.ahead === 0) throw new Error('NOTHING_TO_COMMIT')
+    let repositories = null
+    if (state.snapshotDirty) {
+      repositories = await countChangedRepositories(checkout)
+      const message = repositories > 0
+        ? `content: pull document changes from ${repositories} source ${repositories === 1 ? 'repository' : 'repositories'}`
+        : 'content: update repository document snapshot'
+      try { await git(['commit', '-q', '-m', message, '--only', '--', SNAPSHOT], checkout) }
+      catch { throw new Error('COMMIT_FAILED') }
+    }
+    const commit = await git(['rev-parse', '--short', 'HEAD'], checkout)
+    try { await git(['push', '-q', 'origin', 'HEAD:main'], checkout, 120000) }
+    catch { return { ok: false, error: 'PUSH_FAILED', commit, repositories } }
+    return { ok: true, commit, repositories }
+  })
+}
+
+export function parseSiteOutput(text, limit = 400) {
+  const changes = []
+  const counts = { CHANGED: 0, ADDED: 0, REMOVED: 0 }
+  const result = {
+    commit: null, liveRelease: null, buildFiles: null, nothing: false, differCount: null,
+    creating: null, newRelease: null, published: false, rollback: null,
+  }
+  for (const line of String(text).split('\n')) {
+    let m = /^Building origin\/main (\S+); live release: (?:releases\/)?(\S+)$/.exec(line)
+    if (m) { result.commit = m[1]; result.liveRelease = m[2]; continue }
+    m = /^Build finished: (\d+) files$/.exec(line)
+    if (m) { result.buildFiles = Number(m[1]); continue }
+    m = /^(CHANGED|ADDED|REMOVED)\s+(.+)$/.exec(line)
+    if (m) { counts[m[1]]++; if (changes.length < limit) changes.push({ kind: m[1], path: m[2] }); continue }
+    if (line.startsWith('Nothing to publish')) { result.nothing = true; continue }
+    m = /^Dry run: (\d+) path\(s\) differ/.exec(line)
+    if (m) { result.differCount = Number(m[1]); continue }
+    m = /^Creating release (\S+)$/.exec(line)
+    if (m) { result.creating = m[1]; continue }
+    m = /^Published and verified: (\S+)$/.exec(line)
+    if (m) { result.published = true; result.newRelease = m[1]; continue }
+    if (line.startsWith('Rollback: ')) result.rollback = line.slice('Rollback: '.length)
+  }
+  const total = counts.CHANGED + counts.ADDED + counts.REMOVED
+  return { ...result, changes, counts, total, truncated: total > changes.length }
+}
+
+/** Dry run (apply=false) or publish. A publish needs a dry run of the same
+ * origin/main commit first, so nothing unseen goes live. */
+export async function runSitePublish(apply = false, checkout = checkoutPath()) {
+  const script = join(checkout, 'scripts/publish-site.sh')
+  try { await stat(script) } catch { throw new Error('CHECKOUT_UNAVAILABLE') }
+  return withPublishLock('site', async () => {
+    if (apply) {
+      if (!lastSiteCheck || Date.now() - lastSiteCheck.at > CHECK_VALID_MS) throw new Error('CHECK_REQUIRED')
+      try { await git(['fetch', '-q', 'origin', 'main'], checkout, 60000) } catch { throw new Error('FETCH_FAILED') }
+      const origin = await git(['rev-parse', '--short', 'origin/main'], checkout)
+      if (origin !== lastSiteCheck.commit) throw new Error('ORIGIN_MOVED')
+    }
+    const run = await runScript(script, apply ? ['--apply'] : [], { cwd: checkout, timeout: 20 * 60000 })
+    const parsed = parseSiteOutput(run.out)
+    if (run.code === 0) {
+      lastSiteCheck = apply || !parsed.commit ? null : { commit: parsed.commit, at: Date.now() }
+      return { ok: true, apply, ...parsed }
+    }
+    lastSiteCheck = null
+    let error = 'PUBLISH_FAILED'
+    if (run.timedOut) error = 'PUBLISH_TIMEOUT'
+    else if (run.startFailed) error = 'PUBLISH_START_FAILED'
+    else if (run.code === 3) error = 'SSH_KEY_NOT_LOADED'
+    else if (run.code === 4) error = 'BUILD_FAILED'
+    else if (parsed.creating) error = 'PUBLISH_UNVERIFIED'
+    return { ok: false, apply, error, ...parsed }
+  })
+}
