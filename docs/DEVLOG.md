@@ -5,6 +5,8 @@ The first Repositories page worked, but using it meant clicking Check on every s
 
 When I started the app, the panel said publishing was waiting, which confused me at first. AI traced it to another session that was halfway through adding new repositories to the website in the babuni.dev folder. Its unfinished document list would have been committed and pushed on its own by the new button, so AI changed the button to pause and explain instead whenever that list holds someone else's uncommitted changes.
 
+Once that work was committed, the panel showed my admin's documents and the newly connected eldgrim waiting. One click on **Publish everything** pulled them, pushed the snapshot and published the site; a few minutes later the panel said everything was live, with the previous release kept for rollback.
+
 ## 2026-11-10 — Bringing the other repositories along
 
 Publishing from the admin tool covered only the website's own documents. Changes in the other 36 repositories still needed three terminal steps: pull them into the website's pinned snapshot, commit and push that file, then build and publish the site. The babuni.dev side had just prepared those tools along with a briefing for this application, and I asked AI to connect them next. The new Repositories page runs the three steps in order, each with a check and a confirmation, and the local service refuses a write that skips its check, a removal I have not confirmed, or a publish of a commit I have not seen in a dry run. Only the snapshot file is ever committed. A dry run against the real site built cleanly and found nothing to publish; the first real write and publish through the page are still ahead.

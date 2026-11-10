@@ -7,8 +7,8 @@ This is the one list of what is still open. The dated sections below stay as his
 ### Babuni Dev (active priority)
 
 - [x] One-click publishing: the Overview checks everything on open and **Publish everything** pulls, pushes and publishes (2026-11-10).
-- [ ] Verify the first real **Publish everything** on Nobara (babuni.admin's own documents are waiting as of 2026-11-10).
-- [ ] Decide whether the four public repositories not on the website (`ClearViewForever`, `eldgrim`, `wowforeveraddonsbabuni`, `wowforeverstuff`) should get projects there; that work happens in the babuni.dev repository.
+- [x] Verify the first real **Publish everything** on Nobara: release `20261110-052014-6f4f44a-site` (46 files), snapshot commit `6f4f44a` for babuni.admin and eldgrim, previous release `20261110-051242-a215af6-site` kept for rollback (2026-11-10, operator screenshots; live `release.txt` confirmed).
+- [x] The four public repositories that were missing are now connected on the website (done in the babuni.dev repository on 2026-11-10); only the private `azeroth-moments` and `Ethera` remain unlisted.
 - [ ] Compare one document from its own repository with the live site, then publish after confirmation.
 - [ ] Edit documents in the tool and commit them to their repository, with a conflict check.
 - [ ] Prune old website releases on the server.

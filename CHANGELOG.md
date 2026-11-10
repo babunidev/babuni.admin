@@ -1,4 +1,9 @@
 # Babuni Admin — Changelog
+## 2026-11-10 — First real one-click publish
+
+- Verified on Nobara through the Overview's **Publish everything** (operator screenshots): document changes from babuni.admin and eldgrim pulled, snapshot commit `6f4f44a` pushed to babuni.dev, release `20261110-052014-6f4f44a-site` published and verified with 46 changed files. The previous release `20261110-051242-a215af6-site` stays for rollback. The follow-up check reported everything live; `https://www.babuni.dev/release.txt` was confirmed independently.
+- No code changes.
+
 ## 2026-11-10 — One-click publishing on the Babuni Dev Overview
 
 - The Babuni Dev Overview now opens with a publish panel (`src/features/babuni-dev/components/PublishPanel.tsx`). It checks automatically: the live release from `https://www.babuni.dev/release.txt`, commits on babuni.dev `origin/main` that are not live, a waiting snapshot, uncommitted files in the checkout, document changes in all connected repositories (cached for ten minutes; **Check again** refreshes), and GitHub repositories that are not on the website.
