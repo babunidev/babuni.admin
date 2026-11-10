@@ -1,4 +1,8 @@
 # Babuni Admin — Changelog
+## 2026-11-10 — Documentation readability
+
+- Replaced a long sequence of dated status notes with a clear guide to the Morkahja and Babuni Dev workspaces, local setup, permissions and security. This editorial change did not run privileged operations or deploy anything.
+
 ## 2026-11-10 — Remove old website releases
 
 - New **Old releases on the server** panel on the Babuni Dev Overview: **Check** lists the releases that would be removed and the space they free, and **Remove N old releases** removes exactly that list. The live release, the one before it, anything newer than the live one and the newest five always stay. Folders with other names are listed and never removed.
