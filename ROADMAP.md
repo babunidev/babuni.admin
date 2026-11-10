@@ -35,7 +35,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [ ] Resolve the 12 moderate lint/tooling advisories ([audit](docs/DEPENDENCY_AUDIT_2026-11-03.md)).
 - [ ] Fix the Vite config import-extension warnings.
 - [ ] Resolve local and remote content API inconsistencies; make sure a mock fallback can never look like a successful live write.
-- [ ] Update the browser smoke tests' Babuni Dev expectations in CI (adjusted 2026-11-10 for three navigation links; not run locally because Playwright is not installed here).
+- [x] Update the browser smoke tests' Babuni Dev expectations: CI failed on 2026-11-09 after Documents added a second link; fixed for three links and [CI passed](https://github.com/babunidev/babuni.admin/actions/runs/42732207059) on 2026-11-10 (all five jobs).
 
 ## 2026-11-09 — Babuni Dev documents: check and publish
 
