@@ -35,26 +35,21 @@ The first live check of my portfolio administrator found GitHub and the public w
 
 Seeing separate GitHub and website setup buttons made the portfolio connection feel like another account-management exercise, even though my admin workbench already knows the VPS and the operator who uses it. At my direction, AI replaced those cards with a single Babuni Dev administrator panel, deriving the server host from my existing approved administrator connection while using the dedicated website deployment key for a fixed SSH staging-access check and checking GitHub independently through the desktop login. The older Morkahja Overview-only profile can now be retired explicitly, leaving the one administrator connection in place. The server check only reads the deployed website directory; real publication and the local SSH acceptance check are not yet completed.
 
-
 ## 2026-11-07 — Keeping the workbench whole
 
 Switching from work on Morkahja to my portfolio was supposed to change the development focus, not replace the tool we had already built. Instead, the first Babuni Dev connection experiment was placed on a separate branch based on older code; running it brought back the outdated Connections interface and hid the newer game administration features. After I pointed that out, AI returned to the advanced codebase and added the read-only GitHub and website checks there, keeping the existing single administrator connection and Morkahja workspace. Both workspaces now belong to the same source version; live portfolio publication and local acceptance are still ahead.
-
 
 ## 2026-11-06 — Keeping the pictures nearby
 
 The image reader finally displayed real artwork, but switching between Content tabs still forced fresh downloads from my server, sometimes taking long enough to interrupt ordinary editing. A small memory cache turned out to be the wrong approach: only a handful of thumbnails survived navigation, and none survived a restart. At my direction, AI implemented a persistent local image cache that fills for the whole Morkahja workspace and checks for changed files instead of downloading them again. Automated tests cover persistence and incremental updates; the first real-server cache sync remains to be verified.
 
-
 ## 2026-11-06 — Connecting the missing pictures
 
 Content records finally loaded from my server, but their images were absent. Local checks confirmed that the files exist under `/var/www/morkahja` and can be read using the already configured SSH account; the earlier proposed public hostname did not resolve. Rather than introducing another connection, AI added a small image reader to the existing administrator SSH workflow and updated the image views to request only visible pictures. The change is committed and covered by automated tests, but real-server image display still needs checking before I call it finished.
 
-
 ## 2026-11-06 — Content connection error
 
 After the Overview loaded real statistics through the single administrator profile, the Content page instead returned `REMOTE_CONTENT_FAILED`. Inspection revealed an AI implementation mistake: the unified Content configuration called a helper without importing it. AI corrected the import and added a regression check. The actual remote catalog has not been verified yet.
-
 
 ## 2026-11-06 — Simplifying the way I connect
 
@@ -82,72 +77,57 @@ The new Overview fields initially broke an older PostgreSQL fixture that expecte
 
 After checking the running backend's expansion catalog, I approved and applied the prepared database view. Its first restricted read returned 75 achievement unlocks across 52 players, with 10 dice and 6 expansion unlocks; every quality counter was zero. With that boundary verified, I asked AI to connect the four totals to my local Overview. AI added the fixed aggregate query, explicit field approval, unavailable states and fixtures; the live Nobara display still needs verification.
 
-
 ## 2026-11-05 — Checking the real expansion list before installing new counters
 
 The prepared achievements and unlock totals were ready in source, but they still depended on expansion identifiers from the game repository rather than a verified deployed catalog. To avoid introducing incorrect counts into my live Overview, AI prepared a narrowly scoped read-only JSON audit helper and synthetic tests. It reports only the IDs and their active states, refusing malformed or unexpected entries. The next step still needs to happen on my game server: verify its actual catalog and explicitly review the proposed SQL before any database view is created.
-
 
 ## 2026-11-05 — Preparing the first additional Overview counters
 
 After defining what the new statistics should mean, the first implementation step focused on achievements and permanent unlock ownership. My requirement remains that Babuni Admin must only receive aggregate figures, not underlying player records. AI prepared a separate owner-controlled PostgreSQL view and synthetic tests, designed to count earned achievements and non-default dice and expansion unlocks while treating malformed stored data as unavailable instead of zero. The client catalog provided candidate expansion IDs, but the server's deployed catalog still needs checking. Nothing has been changed on the live database and no new UI statistic is displayed yet.
 
-
-
 ## 2026-11-05 — Defining the numbers before displaying them
 
 The real database and its restricted read-only role were now checked, so the remaining work in this first milestone was deciding what each new Overview number should actually mean. Rather than count an eight-hour session as a person currently online or assume an open room still has players in it, AI compared the game’s heartbeat, room, achievement and unlock code and drafted precise counting rules. A two-minute activity window was proposed from the game's 45-second heartbeat, alongside separate counts for unlocked achievements, current gems and non-default ownership. The definitions remain proposals for my approval and further verification; no database view or dashboard card was added.
-
 
 ## 2026-11-05 — Confirming the dashboard's restricted database role
 
 After inspecting the live schema, the remaining question was whether the dashboard login could inherit wider rights or create objects. From my Ubuntu server, I ran another read-only PostgreSQL check and supplied its results for AI to review. The probe account had no additional role memberships, elevated role attributes or CREATE permission in the tested database and schemas. AI added this verification to the development records while leaving the permissions themselves untouched. Choosing reliable definitions for online players, rooms, achievements and other statistics is still ahead.
 
-
 ## 2026-11-05 — Checking the database before adding statistics
 
 The first read-only dashboard was working, but new figures would require understanding what actually exists in the live database. After copying the prepared metadata script to my Ubuntu server, I ran its read-only PostgreSQL audit and shared the output with AI for interpretation. Six game tables and the two restricted views were present; the dashboard's database role could select the views but not the underlying game tables. The expected purchase tables were absent from the audited public schema, so purchase statistics cannot be assumed. AI recorded the findings without touching game data or permissions, leaving role-membership checks and precise metric definitions for the next step.
-
 
 ## 2026-11-05 — Bringing the roadmap up to date
 
 The requested SSH-agent check on my Nobara desktop returned `SSH_LOGIN_IDENTITY_READY` and the expected public-key fingerprint. Earlier live tests had also shown all four player-preview pages working, game activity changing the session/event totals, and a recovered Overview populated under my remembered connection after the service was restarted. AI reconciled those observations with older unchecked roadmap items instead of treating the same tasks as unfinished. The post-login output is operator-reported evidence, not an independently observed logout sequence; controlled connection failure tests and the live schema audit remain open.
 
-
 ## 2026-11-05 — Finding the source of future Overview counters
 
 With the secure dashboard now reading real player information, more interesting figures could be added: actual online presence, open rooms, achievements, gems, dice, expansions and purchases. A review of Morkahja's code showed that these are separate kinds of information, not interchangeable counts. AI traced their storage models and prepared a metadata-only SQL audit to compare the source definitions with the real database. The new counters remain unimplemented until the live schema is confirmed and restricted aggregate views are approved.
-
 
 ## 2026-11-05 — Preparing SSH access for the next login
 
 The automatic Overview failure was traced to the desktop SSH agent having no identities loaded. After adding the approved key and restarting the old application process, my live Morkahja figures returned. To avoid manually repeating that step after each computer login, AI prepared an optional per-user loader that relies on the existing agent and graphical passphrase prompt. Isolated tests passed, but its first real Nobara login is not yet verified.
 
-
 ## 2026-11-05 — A remembered connection that could not reconnect
 
 After switching to a remembered overview, my next local screenshot showed `SSH_SESSION_FAILED` where the live figures should have appeared. The stored profile had been restored, but the SSH process exited before its temporary database tunnel became ready. Since the code discarded SSH's diagnostic output, there was no reliable way to know whether the server, key, authentication or forward caused the exit. AI added tightly limited error classification and a fake-SSH regression test, keeping the raw output private and all existing trust checks unchanged. Identifying the actual failure on my PC remains the next verification step.
-
 
 ## 2026-11-05 — Making the admin look like one Babuni project
 
 Although the application had grown beyond Morkahja, its browser tab still called it Morkahja Admin and the shared interface had no matching icon. For consistency with the Babuni Dev website, I chose its existing favicon as the mark for Babuni Admin too. AI reused the original WebP asset without changing its artwork, corrected the browser title and added the icon beside the shared sidebar name, with a browser regression test for both workspaces. Morkahja remains the name of its game workspace; no game data or connection behavior changed.
 
-
 ## 2026-11-04 — Turning the working data check into a proper overview
 
 With the player list now navigating through every page and back, the real game test confirmed that active-session and recent-event counts respond to play. Returning to the site still required choosing the connection and clicking two separate buttons, which made the otherwise useful overview unnecessarily awkward. My direction was to remember the selection, load both panels together on opening the page, put connection controls below the information, and distinguish **Overview** from **Moderation**. AI changed the UI and combined the two fixed database reads into one temporary read-only SSH request. Extra counters remain a separate data-definition decision, since a session is not a room and the game exposes no approved aggregate view yet for gems, achievements or unlock transactions. The new remembered-selection behavior still needs a real desktop check.
-
 
 ## 2026-11-04 — Seeing Morkahja data through the finished read-only path
 
 After the restricted views and adapter were in place, the first successful snapshots appeared in my local Morkahja dashboard. The overview showed 62 players, 90 avatars, no active sessions and no events in the preceding 24 hours; the separate player preview displayed names, avatar counts and last-played dates. The interface also reported that SSH disconnected after each request. With the requested overview and preview now working against the live database, the remaining checks are page navigation, reconciling the zero activity counts with gameplay and testing failures without leaving a connection open.
 
-
 ## 2026-11-04 — Reading through restricted views instead of sensitive tables
 
 The first live dashboard query exposed an important permission boundary: the database role could connect safely but had no reason to read entire player or session tables. On my Ubuntu server, I followed the proposed restricted-view approach and verified that the new views could be read while the underlying sensitive tables stayed inaccessible. AI then changed the dashboard adapter to query only those views, reinforced the role checks and added disposable PostgreSQL tests. The database-side permission checks succeeded; the browser's first successful live snapshot still needs verification.
-
 
 ## 2026-11-04 — Diagnosing the first read-only database failure
 
@@ -156,7 +136,6 @@ The first attempt to load real Morkahja dashboard information returned only `REM
 ## 2026-11-04 — Making the first database information useful without changing anything
 
 With the Morkahja SSH/database health probe finally succeeding on my PC, the next step was to see actual information safely. My requirement was a small database overview and a paginated player list, with no secrets, session cleanup or administrative writes. AI built a separate, manually loaded dashboard and fixed read-only SQL behind an additional owner-controlled permission; the original admin screens were left untouched because their older data path includes maintenance actions. Disposable PostgreSQL and service fixtures exercised the new boundary, while live player-data verification remains separate from the successful SSH health check.
-
 
 ## 2026-11-04 — Finding the first real SSH startup fault
 
@@ -170,7 +149,6 @@ After confirming the local host-key check, the next problem was verifying a real
 
 After verifying the local credential store on Nobara, my next priority was Morkahja's SSH connection. Rather than opening a tunnel immediately, I asked AI to build a local trust check that rejects missing or unsafe host-key entries while keeping network access disabled. The result allows a profile to report whether a privately maintained known-host record exists, but it deliberately cannot claim the actual remote server was verified or that live game data is accessible. An initial integration-test attempt to delete the disposable SSH profile without an available keyring was correctly refused; the test was corrected without weakening that fail-closed behavior.
 
-
 ## 2026-11-04 — Confirming the lock and recovery cycle
 
 After the isolated unavailable-bus check, the last desktop test was to lock KDE Wallet itself. Using the read-only diagnostic, I observed the default collection, keyring health and unused credential all report `locked`; following an unlock, those statuses returned to `unlocked`, `available` and `missing`. AI recorded the terminal evidence and closed the keyring verification checklist. This establishes desktop lock detection and status recovery, not authorization for live Morkahja operations.
@@ -183,7 +161,6 @@ With the earlier unlocked keyring test working, I ran the new diagnostics on my 
 
 After a successful credential round trip on my Nobara desktop, the remaining keyring question concerned what happens when access is locked or unavailable. AI added a read-only collection-status check and a separate process-isolated bus-failure test, along with stricter path checks for the older Morkahja asset server. The automated fixtures can exercise denied operations, but my actual locked-keyring behavior still needs observation on the PC. Live project editing remains outside the tested security boundary.
 
-
 ## 2026-11-04 — The desktop keyring works
 
 With the synthetic keyring checks already passing in CI, the remaining question was whether the same storage flow worked in my actual Nobara session. After pulling the latest code, I ran `npm run keyring:verify` locally and received successful confirmation of temporary credential storage, retrieval and cleanup. The report establishes an unlocked desktop keyring round trip, not locked-keyring behavior or any working remote connection; no existing SSH keys were used.
@@ -192,11 +169,9 @@ With the synthetic keyring checks already passing in CI, the remaining question 
 
 Once the local Morkahja file checks worked, I wanted profile editing, explicit connection controls and stronger permissions before anything reached a remote project. AI added project-scoped adapter rules, guarded profile edits and manual read-only local Connect, Disconnect and Reconnect actions. New session checks protect the development UI's connection proxy, while disposable service and browser tests examine the workflow. Remote adapters remain disabled, and my actual desktop keyring still needs a synthetic round-trip verification.
 
-
 ## 2026-11-04 — Checking credentials and connection status without exposing either
 
 The first inspection of my Morkahja files found a case-sensitive mismatch: the real portrait dataset used `Avatar`, but the inspector expected `Portraits`. Once the local correction showed the correct portrait count, the next concern was making connection status and credential handling more dependable. AI added a terminal-only Linux keyring adapter, specific directory and JSON error codes, and timestamps that distinguish full, partial and failed read-only checks. Synthetic keyring and filesystem tests exercise the new paths; my real desktop keyring, SSH connections and live remote services have not yet been verified.
-
 
 ## 2026-11-04 — Checking the first connection without opening a remote one
 
@@ -313,7 +288,7 @@ The assistant proposed keeping GitHub as the authoritative record and adding a c
 The previous journal recorded the Morkahja-specific origin, early dashboard work, content editing, repository publication and October audits. Those historical entries follow below as originally documented; their older third-person voice and labels are archival material, not the standard for new Babuni Admin entries.
 
 
-**Creator and creative director:** Babuni.dev  
+**Creative:** Babuni  
 **Retrospective recorded:** 2026-10-26, based on the GitHub tree, source files, initial README and historical commit diffs. This is not a raw personal chat transcript.
 
 ## Why build the backstage of a game?
