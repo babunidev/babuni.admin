@@ -16,11 +16,18 @@ Different operations have different trust levels. A successful connection or rea
 
 ### Babuni Dev
 
-The second workspace is intended to maintain the portfolio's GitHub-backed content and eventually publish selected changes. Its shared **Connection** page can run explicit read-only checks for the fixed GitHub source, the public HTTPS site and selected deployed-file access over the separately pinned deployment SSH identity.
+The portfolio workspace is no longer only a connection prototype. Its **Overview**, **Documents**, **Repositories** and **Connection** pages support distinct publishing and checking jobs:
 
-**GitHub document editing and website publishing are not activated.** A successful SSH or staging-permission check is evidence about that check only, not a production deployment authorization. Desktop acceptance and the full publishing workflow remain to be verified.
+- **Connection** checks the approved GitHub identity, public HTTPS site and fixed deployed-file access. These tests are read-only.
+- **Documents** checks and publishes supported `babuni.dev` documents through a fixed, guarded publishing workflow. It is not a general-purpose Markdown editor.
+- **Repositories** checks connected projects for updated documents, pulls their reviewed snapshots into the portfolio checkout, and provides separate guarded commit/push and site-publish steps.
+- **Overview** includes **Publish everything** for the combined check, snapshot, push and deployment process, along with a separate checked cleanup of old website releases.
 
-For current implementation and verification details, see [architecture](docs/ARCHITECTURE.md), [roadmap](ROADMAP.md) and the [local connection manager](docs/LOCAL_CONNECTION_MANAGER.md).
+The creative verified the first complete **Publish everything** flow on Nobara on **10 November 2026**, including an updated live release. The old-release cleanup was also exercised with a later verification of the live site. This is evidence for those specific executions, not unrestricted publishing authority or proof that all future deployments will succeed.
+
+**Still missing:** editing arbitrary source-repository documents through this UI, broader content management and some browser/device acceptance checks. Live changes require the workflow's own permissions, reviews and safety checks; a read-only connection result alone never grants write access.
+
+For implementation and verification details, see [architecture](docs/ARCHITECTURE.md), [roadmap](ROADMAP.md), [publishing](docs/PUBLISHING.md), and the [local connection manager](docs/LOCAL_CONNECTION_MANAGER.md).
 
 ## Run it locally
 
@@ -79,7 +86,7 @@ It does not automatically install itself or store passphrases. See [SSH agent de
 | **Local UI and profile service** | Runs on loopback; not a publicly hosted admin backend |
 | **Morkahja overview** | Restricted read-only views and manually approved fields; a session count is not proof of real-time presence |
 | **Moderation and content mutation** | Privileged operations; retain independent authorization, auditing and rollback requirements |
-| **Babuni Dev connection checks** | Read-only verification, not GitHub editing or website publishing |
+| **Babuni Dev publishing** | Fixed, guarded document and snapshot publishing workflows are implemented; original-repository editing is still absent |
 | **Production systems** | External to this repository; do not edit them as a side effect of a documentation or UI change |
 
 The code and its history include older Morkahja-specific paths, temporary development adapters and security findings. Their dated descriptions are evidence of earlier states—not necessarily accurate setup advice for the current branch. Consult the linked engineering documents before running privileged features.
