@@ -10,6 +10,7 @@ import {
 } from './portfolioSite.mjs'
 import { publishLockHolder } from './publishLock.mjs'
 import { planReleaseCleanup, applyReleaseCleanup } from './portfolioReleases.mjs'
+import { documentDiff } from './portfolioDiff.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
@@ -144,6 +145,17 @@ const server=createServer(async(req,res)=>{
     if (req.method==='GET' && path==='/portfolio/site-status') {
       try { return send(res,200,{...await siteStatus(),busy:publishLockHolder()}) }
       catch { return send(res,409,{error:'CHECKOUT_UNAVAILABLE'}) }
+    }
+    // What changed inside one document the last all-repository check listed. Read-only.
+    if (req.method==='POST' && path==='/portfolio/document-diff') {
+      const input=await body(req)
+      try {
+        return send(res,200,await documentDiff(String(input?.repository ?? ''),String(input?.path ?? '')))
+      } catch(error) {
+        const code=['CHANGE_NOT_LISTED','CHECKOUT_UNAVAILABLE','GITHUB_READ_FAILED','DOCUMENT_TOO_LARGE'].includes(error.message)
+          ?error.message:'PORTFOLIO_OPERATION_FAILED'
+        return send(res,code==='CHANGE_NOT_LISTED'?400:409,{error:code})
+      }
     }
     // Old website releases on the VPS: a read-only check, then removal of exactly
     // the checked releases. Live, rollback and newest releases are never removed.

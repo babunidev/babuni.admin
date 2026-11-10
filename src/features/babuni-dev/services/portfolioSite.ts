@@ -104,6 +104,23 @@ export interface ReleaseCleanup { ok: boolean; current: string; removed: string[
 export const checkReleases = () => localConnectionApi<ReleasePlan>('POST', '/portfolio/releases-check', {})
 export const cleanupReleases = () => localConnectionApi<ReleaseCleanup>('POST', '/portfolio/releases-cleanup', {})
 
+export interface DocumentDiff {
+  ok: boolean
+  repository: string
+  path: string
+  kind: DocumentChange['kind']
+  branch: string
+  binary: boolean
+  commit?: string
+  movedSinceCheck?: boolean
+  added?: number
+  removed?: number
+  truncated?: boolean
+  lines?: { t: '@' | '+' | '-' | ' '; s: string }[]
+}
+export const loadDocumentDiff = (repository: string, path: string) =>
+  localConnectionApi<DocumentDiff>('POST', '/portfolio/document-diff', { repository, path })
+
 const MESSAGES: Record<string, string> = {
   CHANGED_SINCE_CHECK: 'More documents would be removed than the check showed. Nothing was published; check again.',
   SOURCE_DENIED: 'That repository is not a connected source.',
@@ -125,6 +142,9 @@ const MESSAGES: Record<string, string> = {
   BUILD_FAILED: 'The website build failed. Nothing was published.',
   VERIFY_FAILED: 'The new release did not verify on the live site, so it was switched back to the previous release.',
   PUBLISH_UNVERIFIED: 'The release was created but the live check did not confirm it. Check https://www.babuni.dev/release.txt before doing anything else.',
+  CHANGE_NOT_LISTED: 'That document is not in the last check. Check again first.',
+  GITHUB_READ_FAILED: 'The document could not be read from GitHub.',
+  DOCUMENT_TOO_LARGE: 'The document is too large to compare here.',
   NOTHING_TO_REMOVE: 'There are no old releases to remove.',
   PLAN_STALE: 'The live release changed since the check. Nothing was removed; check again.',
   REMOVE_PARTIAL: 'Some old releases could not be removed. The live site is unaffected; check again.',

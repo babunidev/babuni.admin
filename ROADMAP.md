@@ -9,7 +9,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [x] One-click publishing: the Overview checks everything on open and **Publish everything** pulls, pushes and publishes (2026-11-10).
 - [x] Verify the first real **Publish everything** on Nobara: release `20261110-052014-6f4f44a-site` (46 files), snapshot commit `6f4f44a` for babuni.admin and eldgrim, previous release `20261110-051242-a215af6-site` kept for rollback (2026-11-10, operator screenshots; live `release.txt` confirmed).
 - [x] The four public repositories that were missing are now connected on the website (done in the babuni.dev repository on 2026-11-10); `azeroth-moments` and `Ethera` followed the same day (babuni.dev commits `6e39da7`, `8c8b747`, live in release `20261110-054329-8c8b747-site`).
-- [ ] Compare one document from its own repository with the live site, then publish after confirmation.
+- [x] Compare one document from its own repository with the website's version before publishing: click a changed document in the publish panel (2026-11-10; verified read-only against the real repositories).
 - [ ] Edit documents in the tool and commit them to their repository, with a conflict check.
 - [x] Prune old website releases on the server: **Old releases on the server** panel on the Overview (2026-11-10). Read-only check against the live server found 10 removable releases (about 156 MB).
 - [x] Run the first real cleanup on Nobara: 11 old releases removed, about 174.9 MB (2026-11-10, operator screenshot). Afterwards the live site answered 200 with `release.txt` `20261110-092822-6b3b443-site`, and a new check showed 5 releases kept (including the rollback target `20261110-054329-8c8b747-site`), nothing left to remove and the 8 older folders untouched.
@@ -48,7 +48,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [x] Verify the first publication through the page: live release `20261109-123701-c67d005-doc`, previous release kept for rollback.
 - [x] Connect documents from the other 36 connected repositories: Repositories page with pull check/write, snapshot commit and push, and site dry run/publish (2026-11-10). Follows the [babuni.dev briefing](https://github.com/babunidev/babuni.dev/blob/main/docs/ADMIN_INTEGRATION.md#briefing-for-babuni-admin--ready-to-connect-2026-11-10).
 - [ ] Verify the first real snapshot write, push and site publish through the Repositories page on Nobara. *(In current open work.)*
-- [ ] Pull the latest committed version of a document from its own repository, show the difference from the live site and publish after confirmation.
+- [x] Pull the latest committed version of a document from its own repository, show the difference from the live site and publish after confirmation. *(Done 2026-11-10; see current open work.)*
 - [ ] Edit documents in the tool and commit them to their repository, with a conflict check.
 - [x] Prune old website releases on the server. *(Done 2026-11-10; see current open work.)*
 

@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-10 — Reading the change before publishing it
+
+The publish panel told me which documents had changed, but not what had changed in them. Now each listed document opens a diff of the website's version against the repository's version, so I can read the actual change before clicking **Publish everything**. AI tied it to the documents the last check listed, so the page never fetches anything else. The first real comparison showed exactly the paragraph rewritten in my admin's journal and Eldgrim's new journal entries.
+
 ## 2026-11-10 — Clearing out old releases
 
 One-click publishing made new releases cheap, and every one of them stays on the server. AI added a small panel under the publish panel: a check lists the old releases and the space they take, and one button removes them. The live release, the one I would roll back to and the newest five always stay. The first check against the real server found ten removable releases worth about 156 MB, plus eight folders from older deployment experiments that it leaves alone. By the time I clicked, another publish had pushed one more release out of the newest five, so the button removed eleven, about 175 MB. The site kept answering on the same release, and a second check found nothing left to remove.

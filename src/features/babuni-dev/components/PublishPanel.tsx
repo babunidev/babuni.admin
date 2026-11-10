@@ -3,6 +3,7 @@ import {
   describeSiteError, loadChanges, loadSiteStatus, publishEverything,
   type PublishAllResult, type RepositoryChanges, type SiteStatus,
 } from '../services/portfolioSite'
+import { DocumentDiffView } from './DocumentDiffView'
 
 const kindClass = (kind: string) =>
   kind === 'REMOVED' ? 'text-red-300/90' : kind === 'NEW' ? 'text-gold-bright' : 'text-fog'
@@ -18,6 +19,7 @@ export function PublishPanel() {
   const [publishing, setPublishing] = useState(false)
   const [result, setResult] = useState<PublishAllResult | null>(null)
   const [publishError, setPublishError] = useState<string | null>(null)
+  const [open, setOpen] = useState<string | null>(null)
 
   // Every state update happens in a promise callback, after its request returns.
   const load = useCallback((refresh: boolean, isActive: () => boolean = () => true) => {
@@ -49,6 +51,7 @@ export function PublishPanel() {
     setPublishError(null)
     setResult(null)
     try {
+      setOpen(null)
       const value = await publishEverything((changes?.removedCount ?? 0) > 0)
       setResult(value)
       if (!value.ok && value.error) setPublishError(describeSiteError(value.error))
@@ -148,12 +151,24 @@ export function PublishPanel() {
                 <li key={r.repository}>
                   <span className="font-mono text-gold-bright">{r.repository}</span>
                   <ul className="ml-4 font-mono text-xs">
-                    {r.changes.map(c => <li key={c.kind + c.path} className={kindClass(c.kind)}>{c.kind.padEnd(8)} {c.path}</li>)}
+                    {r.changes.map(c => {
+                      const key = `${r.repository}:${c.path}`
+                      return (
+                        <li key={c.kind + c.path} className={kindClass(c.kind)}>
+                          <button type="button" onClick={() => setOpen(open === key ? null : key)}
+                            aria-expanded={open === key} className="text-left hover:underline">
+                            {c.kind.padEnd(8)} {c.path}
+                          </button>
+                          {open === key && <DocumentDiffView repository={r.repository} path={c.path} />}
+                        </li>
+                      )
+                    })}
                   </ul>
                 </li>
               ))}
             </ul>
           )}
+          {changed.length > 0 && <p className="mt-1 text-xs">Click a document to see what changed.</p>}
           {(changes?.removedCount ?? 0) > 0 && (
             <p className="mt-2 text-red-300/90">{changes?.removedCount} document(s) shown in red will be removed from the website when you publish.</p>
           )}

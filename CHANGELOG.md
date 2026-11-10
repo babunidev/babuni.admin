@@ -1,7 +1,15 @@
 # Babuni Admin — Changelog
+## 2026-11-10 — See what changed in a document before publishing
+
+- In the publish panel, each changed document is now clickable and opens a line diff: the version on the website (the babuni.dev snapshot) against the current version in its repository, with added lines in gold, removed lines in red and three lines of context. It warns when the repository has new commits since the check. Images are listed without a diff.
+- New read-only route `POST /portfolio/document-diff` (`local-service/portfolioDiff.mjs`). It only compares documents the last all-repository check listed, reads GitHub through `gh api` at the branch's current head, and diffs with `git diff --no-index`.
+- Added `tests/portfolio-diff.test.mjs` (5 tests). Suite 118/118; build and lint pass.
+- Verified read-only against the real repositories: a fresh check listed babuni.admin (3 documents) and eldgrim (8 documents). The diffs showed babuni.admin's one changed DEVLOG paragraph and eldgrim's 14 new DEVLOG lines.
+
 ## 2026-11-10 — Documentation readability
 
 - Replaced a long sequence of dated status notes with a clear guide to the Morkahja and Babuni Dev workspaces, local setup, permissions and security. This editorial change did not run privileged operations or deploy anything.
+
 
 ## 2026-11-10 — Remove old website releases
 

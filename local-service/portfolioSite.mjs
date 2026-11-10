@@ -19,6 +19,13 @@ const ALL_CHECK_CACHE_MS = 10 * 60 * 1000
 let lastPullCheck = null
 let lastSiteCheck = null
 let lastAllCheck = null
+/** The change the last all-repository check listed for one document, with the
+ * commit prefix it was checked at; null when that check did not list it. */
+export function checkedChange(repository, path) {
+  const repo = lastAllCheck?.result?.repositories?.find(r => r.repository === repository && r.changed)
+  const change = repo?.changes?.find(c => c.path === path)
+  return change ? { kind: change.kind, to: repo.to ?? null } : null
+}
 export function resetSiteState() { lastPullCheck = null; lastSiteCheck = null; lastAllCheck = null }
 
 const git = (args, cwd, timeout = 30000) => new Promise((resolve, reject) =>
