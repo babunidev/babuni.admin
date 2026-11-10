@@ -90,6 +90,20 @@ export const loadChanges = (refresh: boolean) =>
 export const publishEverything = (acceptRemovals: boolean) =>
   localConnectionApi<PublishAllResult>('POST', '/portfolio/publish-all', { acceptRemovals })
 
+export interface ReleasePlan {
+  ok: boolean
+  current: string
+  previous: string | null
+  keep: string[]
+  remove: string[]
+  freedBytes: number
+  other: string[]
+  error?: string
+}
+export interface ReleaseCleanup { ok: boolean; current: string; removed: string[]; failed?: string[]; freedBytes: number; error?: string }
+export const checkReleases = () => localConnectionApi<ReleasePlan>('POST', '/portfolio/releases-check', {})
+export const cleanupReleases = () => localConnectionApi<ReleaseCleanup>('POST', '/portfolio/releases-cleanup', {})
+
 const MESSAGES: Record<string, string> = {
   CHANGED_SINCE_CHECK: 'More documents would be removed than the check showed. Nothing was published; check again.',
   SOURCE_DENIED: 'That repository is not a connected source.',
@@ -111,6 +125,16 @@ const MESSAGES: Record<string, string> = {
   BUILD_FAILED: 'The website build failed. Nothing was published.',
   VERIFY_FAILED: 'The new release did not verify on the live site, so it was switched back to the previous release.',
   PUBLISH_UNVERIFIED: 'The release was created but the live check did not confirm it. Check https://www.babuni.dev/release.txt before doing anything else.',
+  NOTHING_TO_REMOVE: 'There are no old releases to remove.',
+  PLAN_STALE: 'The live release changed since the check. Nothing was removed; check again.',
+  REMOVE_PARTIAL: 'Some old releases could not be removed. The live site is unaffected; check again.',
+  LIVE_RELEASE_UNKNOWN: 'The live release on the server could not be identified, so nothing was removed.',
+  ADMIN_CONNECTION_MISSING: 'The server connection is not set up on the Connection page.',
+  PORTFOLIO_DEPLOY_KEY_UNAVAILABLE: 'The website deployment key is missing or has unsafe permissions.',
+  RELEASES_SSH_TIMEOUT: 'The server did not answer in time.',
+  RELEASES_SSH_UNAVAILABLE: 'SSH could not be started.',
+  RELEASES_SSH_FAILED: 'The SSH login to the website server failed. Is the deployment key loaded in your SSH agent?',
+  RELEASES_INVALID_RESPONSE: 'The server gave an unexpected answer, so nothing was removed.',
   PORTFOLIO_OPERATION_FAILED: 'The operation failed unexpectedly.',
 }
 export const describeSiteError = (code: string) => MESSAGES[code] ?? describeDocumentError(code)

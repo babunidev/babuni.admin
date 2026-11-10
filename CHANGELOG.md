@@ -1,4 +1,12 @@
 # Babuni Admin — Changelog
+## 2026-11-10 — Remove old website releases
+
+- New **Old releases on the server** panel on the Babuni Dev Overview: **Check** lists the releases that would be removed and the space they free, and **Remove N old releases** removes exactly that list. The live release, the one before it, anything newer than the live one and the newest five always stay. Folders with other names are listed and never removed.
+- New `local-service/portfolioReleases.mjs` and routes `POST /portfolio/releases-check` (read-only) and `POST /portfolio/releases-cleanup`. One fixed Python program goes over the pinned website deployment login. The cleanup needs a check from the last ten minutes, and the server rechecks the live release before removing anything (`PLAN_STALE`). Shares the publish lock.
+- `babuniDevConnections.mjs`: the website SSH target (pinned host, deployment key check) is now `portfolioDeployTarget`, shared by the connection check and the cleanup. Behavior unchanged.
+- Added `tests/portfolio-releases.test.mjs` (9 tests; the real Python program runs against fake release folders with hard links). Suite 113/113; build and lint pass.
+- Read-only check against the live server: live `20261110-054329-8c8b747-site`, 5 releases kept, 10 removable (about 156 MB), 8 older folders with other names listed. Nothing removed yet.
+
 ## 2026-11-10 — Old Morkahja Overview profile retired
 
 - The operator ran **Remove unused Morkahja server profile** on the Connection page. The local profile list (`~/.config/babuni-admin/connections.json`) now holds only the Morkahja administrator, the Babuni Dev GitHub profile and the website publish profile. The retirement action also cleared the old profile's keyring credential. The private `~/.config/babuni-admin/morkahja-probe.json` server config was left on disk by design. No profile reads it any more: the administrator uses `morkahja-moderation.json`. It can be deleted by the operator, or kept as a record.

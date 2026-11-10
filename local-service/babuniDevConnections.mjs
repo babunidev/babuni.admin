@@ -143,7 +143,7 @@ const WEBSITE_ROOT_INSPECTOR = [
   'print(json.dumps({"usable": bool(usable), "indexReadable": bool(index_readable), "stagingWritable": bool(staging_writable)}))',
 ].join('\n') + '\n'
 
-function portfolioSshEnvironment(env = process.env) {
+export function portfolioSshEnvironment(env = process.env) {
   const permitted = {}
   for (const name of ['PATH', 'HOME', 'USER', 'LOGNAME', 'LANG', 'SSH_AUTH_SOCK', 'XDG_RUNTIME_DIR']) {
     if (typeof env[name] === 'string') permitted[name] = env[name]
@@ -208,6 +208,31 @@ export async function checkPortfolioSshRoot(config, deps = {}) {
   })
 }
 
+/** The website deployment login on the administrator's host: pinned host key,
+ *  the dedicated babunideploy key, port 22. Nothing comes from the browser. */
+export async function portfolioDeployTarget(adminProfile, deps = {}) {
+  // Babuni Dev reuses the *host* and approved pinned SSH trust store,
+  // not Morkahja's database or moderation authorization switch.
+  if (!adminProfile || adminProfile.projectId !== 'morkahja' ||
+      adminProfile.kind !== 'postgres-ssh-moderation') {
+    return { ok: false, code: 'ADMIN_CONNECTION_MISSING' }
+  }
+  if (!validSshHostname(adminProfile.target)) return { ok: false, code: 'SSH_HOST_INVALID' }
+  const trust = await (deps.sshPreflight || preflightSshHost)(adminProfile)
+  if (trust.code !== 'SSH_HOST_KEY_PINNED_OFFLINE') return { ok: false, code: trust.code }
+  const keyPath = join(homedir(), '.ssh', DEPLOY_KEY_NAME)
+  const keyStatus = deps.keyStatus || (async () => {
+    try {
+      const stat = await lstat(keyPath)
+      return stat.isFile() && !stat.isSymbolicLink() &&
+        (typeof process.getuid !== 'function' || stat.uid === process.getuid()) &&
+        (stat.mode & 0o077) === 0
+    } catch { return false }
+  })
+  if (!await keyStatus(keyPath)) return { ok: false, code: 'PORTFOLIO_DEPLOY_KEY_UNAVAILABLE' }
+  return { ok: true, config: { host: adminProfile.target, sshPort: 22, sshUser: DEPLOY_USER, sshIdentityFile: keyPath } }
+}
+
 /** One Babuni Dev administrator backed by the existing host identity.
  *  GitHub and public HTTPS remain separate permissions; they do not confer SSH writes.
  */
@@ -225,34 +250,8 @@ export async function checkBabuniDevAdministrator(adminProfile, deps = {}) {
   }, {}, deps)
   let ssh
   try {
-    // Babuni Dev reuses the *host* and approved pinned SSH trust store,
-    // not Morkahja's database or moderation authorization switch.
-    // The existing website deployment account uses standard SSH port 22.
-    if (!validSshHostname(adminProfile.target)) {
-      ssh = { ok: false, code: 'SSH_HOST_INVALID' }
-    } else {
-      const trust = await (deps.sshPreflight || preflightSshHost)(adminProfile)
-      if (trust.code !== 'SSH_HOST_KEY_PINNED_OFFLINE') {
-        ssh = { ok: false, code: trust.code }
-      } else {
-        const keyPath = join(homedir(), '.ssh', DEPLOY_KEY_NAME)
-        const keyStatus = deps.keyStatus || (async () => {
-          try {
-            const stat = await lstat(keyPath)
-            return stat.isFile() && !stat.isSymbolicLink() &&
-              (typeof process.getuid !== 'function' || stat.uid === process.getuid()) &&
-              (stat.mode & 0o077) === 0
-          } catch { return false }
-        })
-        if (!await keyStatus(keyPath)) ssh = { ok: false, code: 'PORTFOLIO_DEPLOY_KEY_UNAVAILABLE' }
-        else ssh = await (deps.sshLookup || checkPortfolioSshRoot)({
-          host: adminProfile.target,
-          sshPort: 22,
-          sshUser: DEPLOY_USER,
-          sshIdentityFile: keyPath,
-        })
-      }
-    }
+    const target = await portfolioDeployTarget(adminProfile, deps)
+    ssh = target.ok ? await (deps.sshLookup || checkPortfolioSshRoot)(target.config) : target
   } catch {
     ssh = { ok: false, code: 'PORTFOLIO_SSH_CHECK_FAILED' }
   }

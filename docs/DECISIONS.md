@@ -1,4 +1,12 @@
 # Babuni Admin — Decisions and Alternatives
+## 2026-11-10 — Which old releases to remove
+
+**Creative direction:** Every publish leaves a copy of the site on the server. I asked AI to build the cleanup that was next on the roadmap.
+
+**Decision:** One cleanup with a fixed rule: keep the live release, the one before it (the rollback target), anything newer than the live one (for example a release that failed its check and was switched back), and the newest five. The rule lives in the local service, not the browser. A check lists what would go and how much space it frees; one click removes exactly that list, and the server refuses if the live release changed in between. It is a manual button, not automatic after every publish, so removing files from the server stays a visible action.
+
+**Alternatives not taken:** Automatic cleanup inside `publish-site.sh` (that is the babuni.dev repository's script; changing it there would need its own decision). Age-based rules (a quiet month would remove everything but the newest). Removing the eight older folders with other naming schemes (`-local`, `-content`, bare commits) from before the current scripts: their history is unclear, so they are only listed.
+
 ## 2026-11-10 — Open, see what changed, publish with one click
 
 **Creative direction:** Checking each document or repository by hand is too much for a tool only I use (with AI). Opening the Babuni Dev workspace should show at once whether anything is waiting, from the website itself and from every connected repository, and one Publish click should put it live without a second confirmation. All repositories are meant to be on the website.

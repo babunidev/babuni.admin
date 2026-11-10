@@ -9,6 +9,7 @@ import {
   commitAndPushSnapshot, runSitePublish, siteStatus, repositoryChanges, publishAll,
 } from './portfolioSite.mjs'
 import { publishLockHolder } from './publishLock.mjs'
+import { planReleaseCleanup, applyReleaseCleanup } from './portfolioReleases.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
@@ -143,6 +144,21 @@ const server=createServer(async(req,res)=>{
     if (req.method==='GET' && path==='/portfolio/site-status') {
       try { return send(res,200,{...await siteStatus(),busy:publishLockHolder()}) }
       catch { return send(res,409,{error:'CHECKOUT_UNAVAILABLE'}) }
+    }
+    // Old website releases on the VPS: a read-only check, then removal of exactly
+    // the checked releases. Live, rollback and newest releases are never removed.
+    if (req.method==='POST' && (path==='/portfolio/releases-check' || path==='/portfolio/releases-cleanup')) {
+      await body(req)
+      const admins=registry.list().filter(p=>p.projectId==='morkahja' && p.kind==='postgres-ssh-moderation')
+      if(admins.length!==1)return send(res,409,{error:'ADMIN_CONNECTION_MISSING'})
+      try {
+        const result=path==='/portfolio/releases-check'
+          ? await planReleaseCleanup(admins[0]) : await applyReleaseCleanup(admins[0])
+        return send(res,result.ok?200:502,result)
+      } catch(error) {
+        const code=['PUBLISH_BUSY','CHECK_REQUIRED','NOTHING_TO_REMOVE'].includes(error.message)?error.message:'PORTFOLIO_OPERATION_FAILED'
+        return send(res,409,{error:code})
+      }
     }
     const siteRoutes={
       '/portfolio/changes':input=>repositoryChanges(input?.refresh===true),

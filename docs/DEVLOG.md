@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-10 — Clearing out old releases
+
+One-click publishing made new releases cheap, and every one of them stays on the server. AI added a small panel under the publish panel: a check lists the old releases and the space they take, and one button removes them. The live release, the one I would roll back to and the newest five always stay. The first check against the real server found ten removable releases worth about 156 MB, plus eight folders from older deployment experiments that it leaves alone. The first real cleanup is my click.
+
 ## 2026-11-10 — One server login fewer
 
 The game workspace had carried an old, limited server profile since before the single administrator connection replaced it. I removed it with the Connection page's retirement button, and AI confirmed from the local profile list that only the administrator and the two website profiles remain.

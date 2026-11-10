@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { PublishPanel } from '../components/PublishPanel'
+import { ReleaseCleanupPanel } from '../components/ReleaseCleanupPanel'
 
 // The publish panel checks automatically on open; the tool cards are static links.
 const tools = [
@@ -40,11 +41,11 @@ export function OverviewPage() {
           </li>
         ))}
       </ul>
+      <ReleaseCleanupPanel />
       <section className="mt-6 max-w-4xl rounded-lg border border-gold/15 bg-slate/50 p-5">
         <h2 className="text-base font-medium text-gold-bright">Not available yet</h2>
         <p className="mt-2 text-sm leading-relaxed text-fog">
           Documents are still edited and committed in their own repositories; there is no editor here yet.
-          Pruning old releases on the server is also still planned.
         </p>
       </section>
     </div>
