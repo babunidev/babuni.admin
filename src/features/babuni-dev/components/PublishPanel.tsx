@@ -63,11 +63,13 @@ export function PublishPanel() {
   const changed = changes?.ok ? changes.repositories.filter(r => r.changed) : []
   const pendingCommits = site?.pendingCommits ?? []
   const somethingWaiting = changed.length > 0 || (site !== null && !site.upToDate)
-  const canPublish = !checking && !publishing && changes?.ok === true && site !== null && somethingWaiting
+  const blocked = site?.state.snapshotDirty === true
+  const canPublish = !checking && !publishing && changes?.ok === true && site !== null && somethingWaiting && !blocked
   const notOnWebsite = changes?.notOnWebsite ?? []
 
   let headline = 'Checking…'
   if (publishing) headline = 'Publishing… the site build takes several minutes.'
+  else if (!checking && blocked) headline = 'Publishing is paused while other work in babuni.dev is unfinished.'
   else if (!checking && site && changes?.ok) headline = somethingWaiting ? 'Changes are waiting to be published.' : 'Everything is live.'
   else if (!checking && (siteError || changesError)) headline = 'The check did not finish.'
 
@@ -112,7 +114,13 @@ export function PublishPanel() {
         <div>
           <h3 className="text-parchment">Website repository (babuni.dev)</h3>
           {site && pendingCommits.length === 0 && !site.snapshotWaiting && <p>No unpublished commits on main.</p>}
-          {site?.snapshotWaiting && <p>A pulled snapshot is waiting to be committed and published.</p>}
+          {blocked && (
+            <p className="text-red-300/90">
+              The document snapshot in the babuni.dev checkout has uncommitted changes from other work there.
+              Publish everything never commits someone else&apos;s unfinished changes; commit and push that work first, then check again.
+            </p>
+          )}
+          {site?.snapshotWaiting && !blocked && <p>A snapshot commit is waiting to be pushed and published.</p>}
           {pendingCommits.length > 0 && (
             <ul className="font-mono text-xs">
               {pendingCommits.map(c => <li key={c.commit}>{c.commit} {c.subject}</li>)}

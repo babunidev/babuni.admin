@@ -94,7 +94,7 @@ const MESSAGES: Record<string, string> = {
   CHANGED_SINCE_CHECK: 'More documents would be removed than the check showed. Nothing was published; check again.',
   SOURCE_DENIED: 'That repository is not a connected source.',
   GITHUB_LOGIN_MISSING: 'The GitHub CLI is not logged in. Run gh auth login in a terminal, then retry.',
-  SNAPSHOT_DIRTY: 'The snapshot already has uncommitted changes. Commit and push them first (Repositories page, step 2).',
+  SNAPSHOT_DIRTY: 'The document snapshot already has uncommitted changes from other work in the babuni.dev checkout. Commit and push that work first, then check again.',
   PULL_FAILED: 'The pull script failed. The snapshot was not changed.',
   PULL_TIMEOUT: 'The pull script took too long and was stopped.',
   PULL_START_FAILED: 'The pull script could not be started.',

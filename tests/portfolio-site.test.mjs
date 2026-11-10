@@ -329,6 +329,18 @@ test('publish everything pulls, commits only the snapshot, pushes and publishes 
   } finally { f.cleanup() }
 })
 
+test('publish everything never commits a snapshot that other work already modified', async () => {
+  resetSiteState()
+  const f = fakeCheckout({ pull: "console.log('same      babunidev/Game'); console.log('No document changes.')", site: SITE_SCRIPT })
+  try {
+    await repositoryChanges(true, f.root)
+    writeFileSync(join(f.root, SNAPSHOT), '{"half-finished": true}')
+    await assert.rejects(publishAll(false, f.root), /SNAPSHOT_DIRTY/)
+    assert.equal(readFileSync(join(f.root, SNAPSHOT), 'utf8'), '{"half-finished": true}', 'left untouched')
+    assert.equal(git(f.origin, 'log', '-1', '--format=%s', 'main'), 'init', 'nothing pushed')
+  } finally { f.cleanup() }
+})
+
 test('publish everything without repository changes publishes the website repository only', async () => {
   resetSiteState()
   const f = fakeCheckout({ pull: "console.log('same      babunidev/Game'); console.log('No document changes.')", site: SITE_SCRIPT })

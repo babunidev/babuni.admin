@@ -328,7 +328,9 @@ async function notOnWebsite(checkout) {
 /** One click: pull every connected repository's document changes, commit and
  * push the snapshot, then build and publish origin/main. Needs the page's
  * all-repository check from the last hour; removals it listed must be accepted,
- * and a write that removes more than that check showed is undone. */
+ * and a write that removes more than that check showed is undone. It only
+ * commits a snapshot it wrote itself: an already modified snapshot belongs to
+ * other work in the checkout and stops the publish. */
 export async function publishAll(acceptRemovals = false, checkout = checkoutPath()) {
   const script = join(checkout, 'scripts/publish-site.sh')
   try { await stat(script) } catch { throw new Error('CHECKOUT_UNAVAILABLE') }
@@ -337,10 +339,10 @@ export async function publishAll(acceptRemovals = false, checkout = checkoutPath
   if (checked.removedCount > 0 && acceptRemovals !== true) throw new Error('REMOVALS_NOT_ACCEPTED')
   return withPublishLock('publish-all', async () => {
     let state = await checkoutState(checkout)
+    if (state.snapshotDirty) throw new Error('SNAPSHOT_DIRTY')
     assertPushable(state)
     const steps = { pull: null, push: null, site: null }
     if (checked.changedCount > 0) {
-      if (state.snapshotDirty) throw new Error('SNAPSHOT_DIRTY')
       steps.pull = await pullUnlocked('all', '--all', true, checkout)
       if (!steps.pull.ok) return { ok: false, step: 'pull', error: steps.pull.error, steps }
       if (steps.pull.removedCount > checked.removedCount) {
