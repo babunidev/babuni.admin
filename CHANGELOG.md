@@ -1,4 +1,9 @@
 # Babuni Admin — Changelog
+## 2026-11-10 — Old Morkahja Overview profile retired
+
+- The operator ran **Remove unused Morkahja server profile** on the Connection page. The local profile list (`~/.config/babuni-admin/connections.json`) now holds only the Morkahja administrator, the Babuni Dev GitHub profile and the website publish profile. The retirement action also cleared the old profile's keyring credential. The private `~/.config/babuni-admin/morkahja-probe.json` server config was left on disk by design. No profile reads it any more: the administrator uses `morkahja-moderation.json`. It can be deleted by the operator, or kept as a record.
+- No code changes.
+
 ## 2026-11-10 — First real one-click publish
 
 - Verified on Nobara through the Overview's **Publish everything** (operator screenshots): document changes from babuni.admin and eldgrim pulled, snapshot commit `6f4f44a` pushed to babuni.dev, release `20261110-052014-6f4f44a-site` published and verified with 46 changed files. The previous release `20261110-051242-a215af6-site` stays for rollback. The follow-up check reported everything live; `https://www.babuni.dev/release.txt` was confirmed independently.

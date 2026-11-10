@@ -16,7 +16,7 @@ This is the one list of what is still open. The dated sections below stay as his
 
 ### Checks on the Nobara desktop
 
-- [ ] Retire the superseded `postgres-ssh` Overview profile with the Connection page's retirement action.
+- [x] Retire the superseded `postgres-ssh` Overview profile with the Connection page's retirement action (2026-11-10, operator click; `connections.json` now holds only the administrator, GitHub and website profiles).
 - [ ] Persistent image cache: first bulk sync, tab navigation, warm restart and an image replacement.
 - [ ] A disposable content edit, its backup and the game-side reload.
 - [ ] A moderation action (timeout, then unban) on a designated test account, only with explicit operator authorization.
@@ -27,7 +27,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [ ] Paused: live encounter publishing, until the game developer delivers the agreed runtime-content architecture.
 - [ ] Remote image upload with revision checks, backup and atomic replacement.
 - [ ] New Overview metrics: approve definitions, add SELECT-only views, verify, then add cards.
-- [ ] Remove unused legacy APIs and profile kinds once the live workflows above are confirmed.
+- [ ] Remove unused legacy APIs and profile kinds once the live workflows above are confirmed. Since 2026-11-10 no `postgres-ssh` profile exists, so the restricted Overview probe code (`remoteProbeConfig.mjs` as a standalone profile path) is a candidate.
 
 ### Security and maintenance
 
@@ -70,7 +70,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [x] Preserve automatic Morkahja Overview, Moderation, Content, and image cache behavior in the same app.
 - [x] Implement fixed-scope GitHub/HTTPS/SSH read-only checks, reusing the approved VPS host fingerprint and the already configured dedicated `babunideploy` identity/key without exposing a password or creating another UI profile.
 - [x] Add an explicitly triggered, narrowly scoped retirement action for the superseded `postgres-ssh` Morkahja server profile; keep the primary administrator and any credential untouched.
-- [x] Verify the three checks on the Nobara desktop (2026-11-08). Retiring the old profile is still open and listed in current open work.
+- [x] Verify the three checks on the Nobara desktop (2026-11-08). The old profile was retired on 2026-11-10.
 - [ ] Implement Babuni Dev document editing, reviewed GitHub updates, secure website deployment and rollback; verify actual site filesystem rights before enabling writes. *(Deployment and rollback: done through Documents (2026-11-09) and Repositories (2026-11-10). Editing: in current open work.)*
 - [ ] Keep Morkahja live encounter publishing paused until the game developer delivers the agreed runtime-content architecture.
 

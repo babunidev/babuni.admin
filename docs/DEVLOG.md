@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-10 — One server login fewer
+
+The game workspace had carried an old, limited server profile since before the single administrator connection replaced it. I removed it with the Connection page's retirement button, and AI confirmed from the local profile list that only the administrator and the two website profiles remain.
+
 ## 2026-11-10 — One button instead of three steps
 
 The first Repositories page worked, but using it meant clicking Check on every step and confirming each one. That is a lot of ceremony for a tool only I use. What I actually want is to open the workspace and see at a glance whether something is waiting, then publish with a single click. AI moved the checks onto the Babuni Dev Overview: it now asks the live site which version it runs, compares that with the website repository, and asks GitHub about every connected repository when the page opens. One **Publish everything** button does the rest. Removed documents still show in red before I click, and the publish stops by itself if the repository is not in a state it can safely push from. The first check found my admin's own new documents waiting, and listed six GitHub repositories that are not on the website yet.
