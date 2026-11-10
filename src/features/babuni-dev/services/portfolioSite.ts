@@ -10,6 +10,7 @@ export interface CheckoutState {
   aheadOnlySnapshot: boolean
   head: string
   originMain: string
+  otherDirty: number
 }
 export interface SourcesResponse { sources: string[]; state: CheckoutState; busy: string | null }
 
@@ -62,10 +63,38 @@ export const pushSnapshot = () => localConnectionApi<PushResult>('POST', '/portf
 export const checkSite = () => localConnectionApi<SiteResult>('POST', '/portfolio/site-check', {})
 export const publishSite = () => localConnectionApi<SiteResult>('POST', '/portfolio/site-publish', {})
 
+export interface LiveRelease { name: string; commit: string; kind: 'site' | 'doc' }
+export interface SiteStatus {
+  state: CheckoutState
+  live: LiveRelease | null
+  pendingCommits: { commit: string; subject: string }[] | null
+  snapshotWaiting: boolean
+  upToDate: boolean
+  busy: string | null
+}
+export interface RepositoryChanges extends PullResult {
+  checkedAt: string
+  cached: boolean
+  notOnWebsite: { repository: string; private: boolean }[] | null
+}
+export interface PublishAllResult {
+  ok: boolean
+  step?: 'pull' | 'push' | 'site'
+  error?: string
+  steps: { pull: PullResult | null; push: PushResult | null; site: SiteResult | null }
+}
+
+export const loadSiteStatus = () => localConnectionApi<SiteStatus>('GET', '/portfolio/site-status')
+export const loadChanges = (refresh: boolean) =>
+  localConnectionApi<RepositoryChanges>('POST', '/portfolio/changes', { refresh })
+export const publishEverything = (acceptRemovals: boolean) =>
+  localConnectionApi<PublishAllResult>('POST', '/portfolio/publish-all', { acceptRemovals })
+
 const MESSAGES: Record<string, string> = {
+  CHANGED_SINCE_CHECK: 'More documents would be removed than the check showed. Nothing was published; check again.',
   SOURCE_DENIED: 'That repository is not a connected source.',
   GITHUB_LOGIN_MISSING: 'The GitHub CLI is not logged in. Run gh auth login in a terminal, then retry.',
-  SNAPSHOT_DIRTY: 'The snapshot already has uncommitted changes. Commit and push them first (step 2).',
+  SNAPSHOT_DIRTY: 'The snapshot already has uncommitted changes. Commit and push them first (Repositories page, step 2).',
   PULL_FAILED: 'The pull script failed. The snapshot was not changed.',
   PULL_TIMEOUT: 'The pull script took too long and was stopped.',
   PULL_START_FAILED: 'The pull script could not be started.',
@@ -80,6 +109,7 @@ const MESSAGES: Record<string, string> = {
   PUSH_FAILED: 'The commit was made locally but could not be pushed. Retry, or push in a terminal.',
   ORIGIN_MOVED: 'origin/main changed since the dry run. Run the dry run again.',
   BUILD_FAILED: 'The website build failed. Nothing was published.',
+  VERIFY_FAILED: 'The new release did not verify on the live site, so it was switched back to the previous release.',
   PUBLISH_UNVERIFIED: 'The release was created but the live check did not confirm it. Check https://www.babuni.dev/release.txt before doing anything else.',
   PORTFOLIO_OPERATION_FAILED: 'The operation failed unexpectedly.',
 }

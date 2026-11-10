@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom'
 import { PageHeader } from '../../../shared/components/PageHeader'
+import { PublishPanel } from '../components/PublishPanel'
 
-// Static summary: this page reads nothing and changes nothing.
+// The publish panel checks automatically on open; the tool cards are static links.
 const tools = [
   {
     to: '/connections',
@@ -16,7 +17,7 @@ const tools = [
   {
     to: '/babuni-dev/repositories',
     title: 'Repositories',
-    text: 'Bring document changes from the other connected repositories to the website: pull, commit and push, then publish.',
+    text: 'The same publishing as above, one step at a time, or for a single repository.',
   },
 ]
 
@@ -27,7 +28,8 @@ export function OverviewPage() {
         title="Babuni Dev"
         description="Portfolio administration workspace for www.babuni.dev"
       />
-      <ul className="grid max-w-4xl gap-4 sm:grid-cols-3">
+      <PublishPanel />
+      <ul className="mt-6 grid max-w-4xl gap-4 sm:grid-cols-3">
         {tools.map(tool => (
           <li key={tool.to}>
             <Link to={tool.to}
@@ -42,8 +44,7 @@ export function OverviewPage() {
         <h2 className="text-base font-medium text-gold-bright">Not available yet</h2>
         <p className="mt-2 text-sm leading-relaxed text-fog">
           Documents are still edited and committed in their own repositories; there is no editor here yet.
-          Comparing a single document with the live site before pulling, and pruning old releases on the
-          server, are also still planned.
+          Pruning old releases on the server is also still planned.
         </p>
       </section>
     </div>
