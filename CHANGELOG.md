@@ -5,7 +5,8 @@
 - New `local-service/portfolioReleases.mjs` and routes `POST /portfolio/releases-check` (read-only) and `POST /portfolio/releases-cleanup`. One fixed Python program goes over the pinned website deployment login. The cleanup needs a check from the last ten minutes, and the server rechecks the live release before removing anything (`PLAN_STALE`). Shares the publish lock.
 - `babuniDevConnections.mjs`: the website SSH target (pinned host, deployment key check) is now `portfolioDeployTarget`, shared by the connection check and the cleanup. Behavior unchanged.
 - Added `tests/portfolio-releases.test.mjs` (9 tests; the real Python program runs against fake release folders with hard links). Suite 113/113; build and lint pass.
-- Read-only check against the live server: live `20261110-054329-8c8b747-site`, 5 releases kept, 10 removable (about 156 MB), 8 older folders with other names listed. Nothing removed yet.
+- Read-only check against the live server: live `20261110-054329-8c8b747-site`, 5 releases kept, 10 removable (about 156 MB), 8 older folders with other names listed.
+- First real cleanup on Nobara (operator): 11 releases removed, about 174.9 MB (one more than the earlier check, because a new publish had happened since). Verified afterwards: live site 200, `release.txt` unchanged at `20261110-092822-6b3b443-site`, 5 releases kept, nothing left to remove, the 8 older folders untouched.
 
 ## 2026-11-10 — Old Morkahja Overview profile retired
 

@@ -12,7 +12,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [ ] Compare one document from its own repository with the live site, then publish after confirmation.
 - [ ] Edit documents in the tool and commit them to their repository, with a conflict check.
 - [x] Prune old website releases on the server: **Old releases on the server** panel on the Overview (2026-11-10). Read-only check against the live server found 10 removable releases (about 156 MB).
-- [ ] Run the first real cleanup on Nobara and confirm the live site still answers.
+- [x] Run the first real cleanup on Nobara: 11 old releases removed, about 174.9 MB (2026-11-10, operator screenshot). Afterwards the live site answered 200 with `release.txt` `20261110-092822-6b3b443-site`, and a new check showed 5 releases kept (including the rollback target `20261110-054329-8c8b747-site`), nothing left to remove and the 8 older folders untouched.
 - [ ] Decide about the eight older release folders with other names (`-local`, `-content`, bare commits); the cleanup only lists them.
 - [ ] Later (Phase 3): Markdown preview, images, galleries and metadata; publication history and rollback in the UI; module creation and reordering.
 
