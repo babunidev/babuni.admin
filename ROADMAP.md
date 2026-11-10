@@ -6,7 +6,9 @@ This is the one list of what is still open. The dated sections below stay as his
 
 ### Babuni Dev (active priority)
 
-- [ ] Verify the first real snapshot write, push and site publish through the Repositories page on Nobara.
+- [x] One-click publishing: the Overview checks everything on open and **Publish everything** pulls, pushes and publishes (2026-11-10).
+- [ ] Verify the first real **Publish everything** on Nobara (babuni.admin's own documents are waiting as of 2026-11-10).
+- [ ] Decide whether the four public repositories not on the website (`ClearViewForever`, `eldgrim`, `wowforeveraddonsbabuni`, `wowforeverstuff`) should get projects there; that work happens in the babuni.dev repository.
 - [ ] Compare one document from its own repository with the live site, then publish after confirmation.
 - [ ] Edit documents in the tool and commit them to their repository, with a conflict check.
 - [ ] Prune old website releases on the server.

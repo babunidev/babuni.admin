@@ -12,6 +12,8 @@
 | `POST /portfolio/site-check` | `scripts/publish-site.sh` (dry run) | none (builds and compares only) |
 | `POST /portfolio/site-publish` | `scripts/publish-site.sh --apply` | a dry run within the hour of the same `origin/main` commit |
 
+**One-click path (same day):** `GET /portfolio/site-status` reads the live release name over HTTPS (`curl`, fixed URL) and lists `origin/main` commits after the live release's commit; only a `-site` release at `origin/main` counts as up to date. `POST /portfolio/changes` returns the all-repository pull check, cached for ten minutes, plus public and private repositories from `gh repo list babunidev` that are not connected. `POST /portfolio/publish-all` runs pull `--write`, snapshot commit/push and `publish-site.sh --apply` under one lock hold, gated by the all-repository check rather than a site dry run.
+
 `local-service/publishLock.mjs` is one lock shared with single-document publishing, so no two of these operations, and no document publish, can run at the same time (`PUBLISH_BUSY`). Script stderr is used only to classify failures (`GITHUB_LOGIN_MISSING`, `SNAPSHOT_DIRTY`, `SSH_KEY_NOT_LOADED`, `BUILD_FAILED`, `PUBLISH_UNVERIFIED`, …) and is never returned. Site-publish output is kept in full (rolling tail beyond 8 MB), returned as counts plus the first 400 paths, with a 20-minute timeout that stops the script's whole process group.
 
 ## Portfolio SSH check independent of Morkahja moderation (2026-11-07)

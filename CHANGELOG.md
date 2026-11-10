@@ -1,4 +1,13 @@
 # Babuni Admin — Changelog
+## 2026-11-10 — One-click publishing on the Babuni Dev Overview
+
+- The Babuni Dev Overview now opens with a publish panel (`src/features/babuni-dev/components/PublishPanel.tsx`). It checks automatically: the live release from `https://www.babuni.dev/release.txt`, commits on babuni.dev `origin/main` that are not live, a waiting snapshot, uncommitted files in the checkout, document changes in all connected repositories (cached for ten minutes; **Check again** refreshes), and GitHub repositories that are not on the website.
+- **Publish everything** runs pull, snapshot commit and push, and site publish in one call, with no second confirmation. Removed documents are listed in red before the click.
+- New local-service routes: `GET /portfolio/site-status`, `POST /portfolio/changes`, `POST /portfolio/publish-all`. Publish-all still needs the page's all-repository check from the last hour, stops before writing on a wrong branch or stale checkout, and restores the snapshot if the write would remove more documents than the check showed (`CHANGED_SINCE_CHECK`).
+- Mapped `publish-site.sh` exit code 5 (`VERIFY_FAILED`, automatic switch back to the previous release), which the babuni.dev checkout is adding.
+- Eight new tests (17 in `tests/portfolio-site.test.mjs`); suite 103/103, build and lint pass.
+- Verified read-only on Nobara: live release `20261110-004601-fd89891-site` read and matched to `origin/main`; 37 repositories checked (babuni.admin had document changes); six GitHub repositories listed as not on the website. No publish was run.
+
 ## 2026-11-10 — Agent instructions brought up to date
 
 - `AGENTS.md`: replaced the outdated `BABUNI_MORKAHJA_MODERATION_WRITES` requirement with the current single-administrator behavior (the switch was removed on 2026-11-06; the per-operation role check remains) and named `scripts/morkahja-admin-role.sql` in place of the removed read-role script.

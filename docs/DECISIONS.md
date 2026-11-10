@@ -1,4 +1,12 @@
 # Babuni Admin — Decisions and Alternatives
+## 2026-11-10 — Open, see what changed, publish with one click
+
+**Creative direction:** Checking each document or repository by hand is too much for a tool only I use (with AI). Opening the Babuni Dev workspace should show at once whether anything is waiting, from the website itself and from every connected repository, and one Publish click should put it live without a second confirmation. All repositories are meant to be on the website.
+
+**Decision:** The Overview runs the checks automatically on open and offers **Publish everything**, which pulls, commits and pushes the snapshot, and publishes the site in one call. This replaces the dry-run-then-confirm rule of the morning's design for this path; the step-by-step Repositories page keeps it. Kept safeguards, because they cost no clicks: the publish needs a check from the last hour, removed documents are shown in red before the click, a write that removes more than the check showed is undone, and the checkout must be on a current `main`. GitHub repositories not on the website are listed; adding them is babuni.dev catalog work.
+
+**Alternative not taken:** GitHub webhooks or notifications. The app runs only on the PC and has no public endpoint to receive them; asking GitHub when the page opens gives the same answer.
+
 ## 2026-11-10 — Documents from other repositories go through the site build
 
 **Creative direction:** Next on the roadmap is publishing documents from the other 36 connected repositories, following the briefing the babuni.dev repository provided for this admin tool.
