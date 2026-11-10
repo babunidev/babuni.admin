@@ -1,4 +1,9 @@
 # Babuni Admin — Changelog
+## 2026-11-10 — Agent instructions brought up to date
+
+- `AGENTS.md`: replaced the outdated `BABUNI_MORKAHJA_MODERATION_WRITES` requirement with the current single-administrator behavior (the switch was removed on 2026-11-06; the per-operation role check remains) and named `scripts/morkahja-admin-role.sql` in place of the removed read-role script.
+- `AGENTS.md`: recorded the decision that finished work is documented, committed and pushed to `main` without asking; live server and website changes still need confirmation.
+
 ## 2026-11-10 — Babuni Dev Repositories page
 
 - Added `local-service/portfolioSite.mjs` and six session-protected routes for documents from the other connected repositories: list sources and checkout state, pull check, pull write, commit-and-push of the snapshot file, site dry run and site publish. They run babuni.dev's `scripts/pull-repository.mjs` and `scripts/publish-site.sh` with fixed arguments; targets are limited to the connected repositories in the babuni.dev connection map.
