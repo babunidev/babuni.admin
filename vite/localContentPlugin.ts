@@ -128,7 +128,8 @@ function writeJsonFile(gameDir: string, kind: ContentKind, data: unknown): void 
 }
 
 function localContentApi(
-  gameDir: string,
+  dataDir: string,
+  imageDir: string,
 ): (req: IncomingMessage, res: ServerResponse, next: () => void) => void {
   const apiPrefix = '/local-content-api'
 
@@ -149,7 +150,8 @@ function localContentApi(
         if (req.method === 'GET' && segment === 'status') {
           sendJson(res, 200, {
             ok: true,
-            gameDir,
+            gameDir: dataDir,
+            imageDir,
             files: JSON_FILES,
           })
           return
@@ -157,7 +159,7 @@ function localContentApi(
 
         if (req.method === 'GET' && segment in JSON_FILES) {
           const kind = segment as ContentKind
-          sendJson(res, 200, readJsonFile(gameDir, kind))
+          sendJson(res, 200, readJsonFile(dataDir, kind))
           return
         }
 
@@ -176,9 +178,9 @@ function localContentApi(
               sendJson(res, 400, { error: 'INVALID_BODY' })
               return
             }
-            const file = readJsonFile<Record<string, unknown>>(gameDir, kind)
+            const file = readJsonFile<Record<string, unknown>>(dataDir, kind)
             file[key] = data
-            writeJsonFile(gameDir, kind, file)
+            writeJsonFile(dataDir, kind, file)
             sendJson(res, 201, { ok: true, key })
             return
           }
@@ -191,11 +193,11 @@ function localContentApi(
               return
             }
             const file = readJsonFile<{ expansions: Record<string, unknown> }>(
-              gameDir,
+              dataDir,
               kind,
             )
             file.expansions[key] = data
-            writeJsonFile(gameDir, kind, file)
+            writeJsonFile(dataDir, kind, file)
             sendJson(res, 201, { ok: true, key })
             return
           }
@@ -207,12 +209,12 @@ function localContentApi(
               return
             }
             const file = readJsonFile<{ Frames: Array<unknown | null> }>(
-              gameDir,
+              dataDir,
               kind,
             )
             const nextFrames = [...file.Frames]
             nextFrames[data.frameID] = body
-            writeJsonFile(gameDir, kind, { Frames: nextFrames })
+            writeJsonFile(dataDir, kind, { Frames: nextFrames })
             sendJson(res, 201, { ok: true, frameID: data.frameID })
             return
           }
@@ -224,12 +226,12 @@ function localContentApi(
               return
             }
             const file = readJsonFile<{ Avatar: Array<unknown | null> }>(
-              gameDir,
+              dataDir,
               kind,
             )
             const nextAvatars = [...file.Avatar]
             nextAvatars[data.avatarID] = body
-            writeJsonFile(gameDir, kind, { Avatar: nextAvatars })
+            writeJsonFile(dataDir, kind, { Avatar: nextAvatars })
             sendJson(res, 201, { ok: true, avatarID: data.avatarID })
             return
           }
@@ -249,7 +251,7 @@ function localContentApi(
             return
           }
 
-          const dir = join(gameDir, 'encounterimages')
+          const dir = join(imageDir, 'encounterimages')
           mkdirSync(dir, { recursive: true })
 
           let imageName: string
@@ -290,7 +292,7 @@ function localContentApi(
             return
           }
           const base = fileName.endsWith('.webp') ? fileName : `${fileName}.webp`
-          const dir = join(gameDir, 'solutionimages')
+          const dir = join(imageDir, 'solutionimages')
           mkdirSync(dir, { recursive: true })
           writeFileWithBackup(join(dir, base), imageBytes)
           sendJson(res, 201, { ok: true, path: `solutionimages/${base}` })
@@ -306,19 +308,46 @@ function localContentApi(
   }
 }
 
-export function morkahjaLocalContentPlugin(publicRoot: string): Plugin {
-  const gameDir = join(publicRoot, 'game')
+/**
+ * @param publicRoot MorkahjaWebApp `client/public` (images and UI assets).
+ * @param dataDir Folder holding the game JSON. Since Morkahja serves content
+ *   from its server, this is `MorkahjaWebApp/server/game`; older checkouts
+ *   kept the JSON in `client/public/game` (the default).
+ */
+export function morkahjaLocalContentPlugin(
+  publicRoot: string,
+  dataDir: string = join(publicRoot, 'game'),
+): Plugin {
+  const imageDir = join(publicRoot, 'game')
   const uiDir = join(publicRoot, 'UI')
 
   return {
     name: 'morkahja-local-content',
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use(localContentApi(gameDir))
-      server.middlewares.use(serveStatic(gameDir, '/game'))
+      server.middlewares.use(localContentApi(dataDir, imageDir))
+      server.middlewares.use(serveStatic(dataDir, '/game'))
+      if (dataDir !== imageDir) server.middlewares.use(serveStatic(imageDir, '/game'))
       server.middlewares.use(serveStatic(uiDir, '/UI'))
     },
   }
+}
+
+/**
+ * Where the game JSON lives: `MORKAHJA_GAME_DATA` if set, otherwise
+ * `server/game` next to the configured `client/public`, falling back to
+ * `client/public/game` for checkouts that still keep the JSON there.
+ */
+export function resolveMorkahjaGameDataDir(
+  env: Record<string, string>,
+  publicRoot: string,
+): string {
+  const configured = env.MORKAHJA_GAME_DATA?.trim()
+  if (configured) return resolve(configured)
+
+  const serverGame = resolve(publicRoot, '..', '..', 'server', 'game')
+  if (existsSync(join(serverGame, 'encountersdata.json'))) return serverGame
+  return join(publicRoot, 'game')
 }
 
 export function resolveMorkahjaPublicRoot(env: Record<string, string>): string {

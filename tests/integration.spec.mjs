@@ -365,3 +365,75 @@ test('legacy game data fields and metadata survive isolated updates', async () =
   assert.deepEqual(rewritten._meta,expansions._meta)
   assert.deepEqual(rewritten.expansions['1001'],expansions.expansions['1001'])
 })
+
+test('Morkahja game JSON is read and written in server/game, images stay in client/public', async () => {
+  const layout = await mkdtemp(join(tmpdir(), 'babuni-admin-layout-'))
+  try {
+    const publicRoot = join(layout, 'client', 'public')
+    const serverGame = join(layout, 'server', 'game')
+    await mkdir(join(publicRoot, 'game'), { recursive: true })
+    await mkdir(join(publicRoot, 'UI'), { recursive: true })
+    await mkdir(serverGame, { recursive: true })
+    for (const fileName of ['encountersdata.json','solutiondata.json','expansiondata.json',
+      'frames.json','portraits.json']) {
+      const original = await readFile(new URL('./fixtures/legacy/' + fileName, import.meta.url))
+      await writeFile(join(serverGame, fileName), original)
+    }
+
+    const plugin = await server.ssrLoadModule('/vite/localContentPlugin.ts')
+    assert.equal(plugin.resolveMorkahjaGameDataDir({}, publicRoot), serverGame)
+    assert.equal(
+      plugin.resolveMorkahjaGameDataDir({ MORKAHJA_GAME_DATA: '/elsewhere/game' }, publicRoot),
+      '/elsewhere/game',
+    )
+    assert.equal(
+      plugin.resolveMorkahjaGameDataDir({}, join(layout, 'old', 'checkout', 'client', 'public')),
+      join(layout, 'old', 'checkout', 'client', 'public', 'game'),
+      'older checkouts without server/game keep using client/public/game',
+    )
+
+    const handlers = []
+    plugin.morkahjaLocalContentPlugin(publicRoot, serverGame)
+      .configureServer({ middlewares: { use: handler => handlers.push(handler) } })
+    const local = createHttpServer((req, res) => {
+      let index = 0
+      const next = () => {
+        const handler = handlers[index++]
+        if (handler) handler(req, res, next)
+        else { res.statusCode = 404; res.end('{}') }
+      }
+      next()
+    })
+    await new Promise(resolve => local.listen(0, '127.0.0.1', resolve))
+    const localBase = 'http://127.0.0.1:' + local.address().port
+    const post = async (path, data) => {
+      const response = await fetch(localBase + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Origin: localBase },
+        body: JSON.stringify(data),
+      })
+      return { status: response.status, body: await response.json() }
+    }
+    try {
+      const entry = { mEncounterID: 3, mEncounterTitle: 'Server game data' }
+      assert.equal((await post('/local-content-api/encounters', { key: '00003', data: entry })).status, 201)
+      const saved = JSON.parse(await readFile(join(serverGame, 'encountersdata.json'), 'utf8'))
+      assert.deepEqual(saved['00003'], entry)
+      assert.deepEqual(await readdir(join(publicRoot, 'game')), [], 'no JSON copy in client/public/game')
+
+      const served = await fetch(localBase + '/game/encountersdata.json')
+      assert.deepEqual((await served.json())['00003'], entry)
+
+      const image = 'UklGRiIAAABXRUJQVlA4IBYAAAAwAQCdASoBAAEADsD+JaQAA3AAAAAA'
+      const upload = await post('/local-content-api/upload/encounter-image',
+        { fileName: 'layout_scene', dataBase64: image })
+      assert.equal(upload.status, 201)
+      const written = await readFile(join(publicRoot, 'game', 'encounterimages', 'layout_scene.webp'))
+      assert.equal(written.subarray(0, 4).toString(), 'RIFF')
+    } finally {
+      await new Promise(resolve => local.close(resolve))
+    }
+  } finally {
+    await rm(layout, { recursive: true, force: true })
+  }
+})

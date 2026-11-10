@@ -282,7 +282,7 @@ Vite dev server bound 127.0.0.1 (vite.config.ts)
   |      -> vite/postgresAdmin.ts -> PostgreSQL (optionally via SSH tunnel)
   |
   +-- /local-content-api -> vite/localContentPlugin.ts
-  |      -> MorkahjaWebApp/client/public/game/*.json and image folders
+  |      -> MorkahjaWebApp/server/game/*.json; images in client/public/game
   |
   +-- /game and /UI -> local asset-serving middleware
   |

@@ -370,7 +370,7 @@ export function ContentPage() {
   const dataSourceHint = contentProfileId
     ? 'Administrator catalog and images via SSH · /var/www/morkahja'
     : useLocalContent
-    ? `Local files: MorkahjaWebApp/client/public/game + /UI (saves go to disk)`
+    ? `Local files: MorkahjaWebApp/server/game (data) + client/public (images, UI); saves go to disk`
     : gameDataBaseUrl
       ? `Loading from ${gameDataBaseUrl}`
       : 'No content source configured'

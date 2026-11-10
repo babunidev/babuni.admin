@@ -7,6 +7,7 @@ import tailwindcss from '@tailwindcss/vite'
 import { morkahjaLocalAdminPlugin } from './vite/localAdminPlugin'
 import {
   morkahjaLocalContentPlugin,
+  resolveMorkahjaGameDataDir,
   resolveMorkahjaPublicRoot,
 } from './vite/localContentPlugin'
 
@@ -19,6 +20,7 @@ export default defineConfig(({ mode }) => {
   const proxyTarget = env.API_PROXY_TARGET?.trim()
   const adminApiKey = env.ADMIN_API_KEY?.trim()
   const morkahjaPublic = resolveMorkahjaPublicRoot(env)
+  const morkahjaGameData = resolveMorkahjaGameDataDir(env, morkahjaPublic)
   const databaseUrl = env.DATABASE_URL?.trim() ?? ''
   const enableLocalContent = env.VITE_USE_LOCAL_CONTENT === 'true' && env.LOCAL_CONTENT_WRITES === 'true'
   const devPort = Number(env.DEV_PORT) || Number(env.BABUNI_UI_PORT) || 5180
@@ -55,7 +57,7 @@ export default defineConfig(({ mode }) => {
       tailwindcss(),
       ...(env.BABUNI_LOCAL_SERVICE_TOKEN && env.BABUNI_UI_SESSION_TOKEN
         ? [localSessionGuard(env.BABUNI_UI_SESSION_TOKEN, devPort)] : []),
-      ...(enableLocalContent ? [morkahjaLocalContentPlugin(morkahjaPublic)] : []),
+      ...(enableLocalContent ? [morkahjaLocalContentPlugin(morkahjaPublic, morkahjaGameData)] : []),
       ...(databaseUrl ? [morkahjaLocalAdminPlugin(databaseUrl)] : []),
     ],
     server: {
