@@ -230,7 +230,7 @@ Browser tests default to `http://127.0.0.1:4180`. Override with `BROWSER_TEST_BA
 
 ### Where screenshots go
 
-Screenshots taken while developing or testing (for example a Playwright `page.screenshot` to see how a change looks) are saved in `~/Pictures/Development Screenshots/babuni-admin/`, named `YYYY-MM-DD-<what-it-shows>.png`, so they are easy to find and stay out of the repository and temporary folders. Take them from mock-mode previews; screenshots that show live player data or credentials do not belong there either, and never in the repository.
+Screenshots taken while developing or testing (for example a Playwright `page.screenshot` to see how a change looks) are saved in `~/Pictures/Development Screenshots/babuni-admin/`, named `YYYY-MM-DD-<what-it-shows>.png`, so they are easy to find and stay out of the repository and temporary folders. They are kept as a growing collection: never overwrite one (add `-2`, `-3`… to the name) and don't delete them after a check. Take them from mock-mode previews; screenshots that show live player data or credentials do not belong there either, and never in the repository.
 
 The source-level `npm test` command does not require Chromium and remains independent of the browser suite.
 
