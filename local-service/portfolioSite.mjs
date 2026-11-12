@@ -19,6 +19,7 @@ const ALL_CHECK_CACHE_MS = 10 * 60 * 1000
 let lastPullCheck = null
 let lastSiteCheck = null
 let lastAllCheck = null
+let allCheckInFlight = null
 /** The change the last all-repository check listed for one document, with the
  * commit prefix it was checked at; null when that check did not list it. */
 export function checkedChange(repository, path) {
@@ -316,8 +317,15 @@ export async function repositoryChanges(refresh = false, checkout = checkoutPath
     return { ...lastAllCheck.result, checkedAt: new Date(lastAllCheck.at).toISOString(), cached: true,
       notOnWebsite: await notOnWebsite(checkout) }
   }
-  const result = await runPull('all', false, false, checkout)
-  return { ...result, checkedAt: new Date().toISOString(), cached: false, notOnWebsite: await notOnWebsite(checkout) }
+  // A second request while a check is running shares that check instead of
+  // failing on the publish lock (React StrictMode mounts the page twice).
+  if (allCheckInFlight?.checkout === checkout) return await allCheckInFlight.promise
+  const promise = (async () => {
+    const result = await runPull('all', false, false, checkout)
+    return { ...result, checkedAt: new Date().toISOString(), cached: false, notOnWebsite: await notOnWebsite(checkout) }
+  })()
+  allCheckInFlight = { checkout, promise }
+  try { return await promise } finally { if (allCheckInFlight?.promise === promise) allCheckInFlight = null }
 }
 
 async function notOnWebsite(checkout) {

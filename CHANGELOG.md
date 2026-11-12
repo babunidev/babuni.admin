@@ -1,4 +1,10 @@
 # Babuni Admin — Changelog
+## 2026-11-12 — No false "Another publish is running" on opening the Overview
+
+- Opening the Babuni Dev Overview could show **Another publish is running** under *Connected repositories*, and the headline **The check did not finish**, even though nothing was publishing. In development, React StrictMode mounts the publish panel twice. Both mounts asked for a fresh all-repository check, the first took the publish lock, and the second (the one the page keeps) got `PUBLISH_BUSY`. It only showed once the ten-minute check cache had expired.
+- `repositoryChanges` in `local-service/portfolioSite.mjs` now hands a second request the result of the check that is already running, instead of starting a new one. A real publish, pull or release operation still blocks a new check with `PUBLISH_BUSY`.
+- Added a test to `tests/portfolio-site.test.mjs`; it fails without the fix. Suite 119/119; build and lint pass. The fix still needs to be seen working in the real app on Nobara.
+
 ## 2026-11-10 — See what changed in a document before publishing
 
 - In the publish panel, each changed document is now clickable and opens a line diff: the version on the website (the babuni.dev snapshot) against the current version in its repository, with added lines in gold, removed lines in red and three lines of context. It warns when the repository has new commits since the check. Images are listed without a diff.
@@ -9,7 +15,6 @@
 ## 2026-11-10 — Documentation readability
 
 - Replaced a long sequence of dated status notes with a clear guide to the Morkahja and Babuni Dev workspaces, local setup, permissions and security. This editorial change did not run privileged operations or deploy anything.
-
 
 ## 2026-11-10 — Remove old website releases
 
@@ -86,14 +91,12 @@
 - Added a one-time, capability-restricted retirement path for the superseded Morkahja Overview profile, removing its saved keyring entry only on the user's explicit action.
 - Added targeted tests for the integrated portfolio check. No production file, service, GitHub document or SSH credential was changed.
 
-
 ## 2026-11-07 — Babuni Dev checks in the existing administrator console
 
 - Added two manual Babuni Dev connection cards to the previously established single **Connection** screen, leaving Morkahja's own connection and workspace UI in place.
 - Added fixed outbound read-only probes through the existing local service: authenticated GitHub CLI repository metadata and canonical HTTPS website response.
 - Preserved Morkahja connection kinds, SSH/content/moderation capabilities and all existing game-side routes.
 - Added narrow scope/denial regression coverage and adjusted existing service capability checks. Website publishing, new admin accounts, production file writes and actual desktop verification are not included.
-
 
 ## 2026-11-06 — Persistent workspace artwork cache
 
@@ -103,7 +106,6 @@
 - Content previews now read files from the local service instead of opening SSH per image. A separate bounded browser memory layer makes repeated tab switches immediate, with visible sync progress and automatic refresh of changed images.
 - Added cache integrity/bounds, offline and persistence fixtures. Initial real-server bulk sync and performance require operator verification.
 
-
 ## 2026-11-06 — Read live Morkahja images through existing administrator SSH
 
 - Added an authenticated, bounded `content-image` request to the local service. It uses the same configured and pinned SSH identity as Content catalogs, not a new public domain or another password.
@@ -111,12 +113,10 @@
 - Integrated lazy image loading into encounters, solutions, expansions, frames, portraits and content detail views with two concurrent transfers and a bounded in-memory image cache.
 - Added tests covering request validation, worker invocation, fixed paths and the session-protected endpoint. Live asset delivery is pending Nobara acceptance.
 
-
 ## 2026-11-06 — Fix unified Content config import
 
 - Corrected missing `readMorkahjaModerationConfig` import in `local-service/morkahjaContentConfig.mjs`. Before this fix, a real Content request using the administrator profile threw a reference error that the runner reported as `REMOTE_CONTENT_FAILED`; Overview and Moderation were unaffected.
 - Added a regression assertion for the import. This is a source fix; live remote Content access needs a new operator test.
-
 
 ## 2026-11-06 — One Connection interface
 
@@ -155,14 +155,12 @@
 - Added unit, PostgreSQL recovery and browser display fixtures. Updated a legacy PostgreSQL Overview assertion for four additional nullable fields; all five CI jobs passed in [run 42079244053](https://github.com/babunidev/babuni.admin/actions/runs/42079244053). Operator-provided Nobara screenshot on 2026-11-06 confirms live rendering of all four new cards at 75/52/10/6 alongside original counters and player preview; live error-state exercises remain pending.
 - Recorded the operator's separately approved and committed live view, catalog match, aggregate results and permission checks.
 
-
 ## 2026-11-05 — Prepare the deployed expansion catalog audit
 
 - Added a standalone, operator-run read-only verifier for the live game-server `expansiondata.json`, comparing canonical IDs to the previously prepared Batch A SQL allowlist.
 - Added synthetic tests for expected and unexpected IDs, invalid catalog contents, duplicate JSON keys and symbolic-link rejection.
 - Documented an operator-only live verification procedure and the separate production SQL approval gate.
 - No remote access, production schema change, grant, game-data modification or new Overview counter was performed.
-
 
 ## 2026-11-05 — Prepare Batch A owner-controlled aggregate SQL
 
@@ -172,8 +170,6 @@
 - Added offline SQL-contract and isolated PostgreSQL fixture tests; included the new PostgreSQL test in `npm run test:postgres`.
 - The initial implementation CI passed all five jobs, including disposable PostgreSQL fixture and browser regression checks ([run 42047478095](https://github.com/babunidev/babuni.admin/actions/runs/42047478095)); deployed expansion catalog confirmation and separate explicit authorization remain required before any production DDL. No live database operation, dashboard change or new runtime adapter was performed.
 
-
-
 ## 2026-11-05 — Propose source-backed Overview statistics
 
 - Documented an exact candidate contract for presence, rooms, achievements, gems, expansion/dice unlock ownership and deferred purchase reporting.
@@ -181,14 +177,12 @@
 - Added data-validation requirements, explicit unavailable states, and a staged implementation/test sequence with protected aggregate-only database views.
 - Preserved creative approval and live JSONB/aggregate validation as pending gates. Documentation-only; no runtime code, new SQL views, database access or counters were changed.
 
-
 ## 2026-11-05 — Record live restricted-role verification
 
 - Recorded the operator's second read-only PostgreSQL audit: the dedicated `babuni_admin_probe` login has no elevated PostgreSQL role attributes, no role memberships and no CREATE privileges on the checked database or schemas.
 - Updated the statistics discovery document and roadmap with the evidence and clearly limited verification scope.
 - Kept metric definitions, aggregate-only views and dashboard counters unimplemented.
 - Documentation-only change; no production database configuration, application code or privileges changed.
-
 
 ## 2026-11-05 — Record the live Morkahja metadata audit
 
@@ -198,14 +192,12 @@
 - Kept role memberships, additional privileges, JSONB content shape, commerce location and metric semantics unverified; updated the roadmap only for the completed metadata-audit checkpoint.
 - Documentation-only change; no project code, live database, grants, game records or new counters were modified.
 
-
 ## 2026-11-05 — Roadmap and operator-verification reconciliation
 
 - Updated previously stale roadmap tasks for live player-preview pagination, gameplay-responsive session/event counters and the recovered remembered-profile combined Overview.
 - Recorded operator-reported SSH-agent readiness with the approved public-key fingerprint after the requested fresh-login check, preserving the distinction between command output and independently observed login behavior.
 - Clarified that controlled SSH read interruption, live database metadata auditing and new aggregate metrics remain pending.
 - Documentation only; no runtime code, database, server configuration or test suite was changed.
-
 
 ## 2026-11-05 — Read-only Morkahja metrics discovery
 
@@ -214,14 +206,12 @@
 - Added a regression test checking that the audit contains only read-only catalog inspection and no raw game-data retrieval or mutations.
 - No live database tables, permissions, views, remote connections or dashboard counters were changed.
 
-
 ## 2026-11-05 — Optional SSH identity loading at desktop login
 
 - Added operator-installable `scripts/ssh-agent-login.py` with install, run, status and uninstall modes.
 - The helper reads the existing secure identity configuration, detects the approved fingerprint in the current desktop agent, and uses graphical SSH askpass if loading is needed.
 - Added isolated home-directory tests; no key or passphrase is copied, no second agent or server connection is created, and no autostart is enabled by default.
 - Next-login verification on the real Nobara desktop remains pending.
-
 
 ## 2026-11-05 — Safe diagnostics for early SSH tunnel exits
 
@@ -230,13 +220,11 @@
 - Added UI explanations and synthetic SSH failure tests, without changing the SSH trust model, actual connection arguments, read-only database queries, or server configuration.
 - The operator's live root cause remains unverified; no live server was contacted in this change.
 
-
 ## 2026-11-05 — Consistent Babuni Admin branding
 
 - Replaced the outdated `Morkahja Admin` browser-tab title with **Babuni Admin** and set the HTML application name accordingly.
 - Reused the exact `public/favicon.webp` asset from the Babuni Dev website for the browser-tab icon and the shared sidebar brand.
 - Added browser regression checks for the title, favicon file and shared logo across Morkahja and Babuni Dev workspaces. No database or permissions changes.
-
 
 ## 2026-11-04 — Remembered Morkahja Overview and one-request refresh
 
@@ -246,13 +234,11 @@
 - Put connection settings below overview and player list; added a clearly marked session-based online-player estimate without claiming that sessions are game rooms.
 - Extended disposable database, single-flight SSH and browser denial/persistence tests. Additional counters (rooms, achievements, gems and unlock transactions) remain unimplemented until an owner-controlled aggregate-view contract is approved.
 
-
 ## 2026-11-04 — Live Morkahja read-only verification recorded
 
 - Recorded operator screenshot evidence of successful live `/read-only` overview and player-preview requests through the restricted PostgreSQL views: 62 players, 90 avatars, 0 active sessions and 0 events in the preceding 24 hours.
 - Confirmed that the UI displays only the approved player-preview fields and reports that its temporary SSH tunnel is disconnected after the snapshot.
 - Marked pagination navigation, activity-count reconciliation and failure-recovery scenarios as still requiring real-system verification. This is a documentation-only checkpoint; no application code, live schema, database privileges or game records were changed.
-
 
 ## 2026-11-04 — Read Morkahja through restricted database views
 
@@ -261,7 +247,6 @@
 - Enforced the required view privileges and rejected unexpected direct SELECT on underlying player, avatar, session or event tables.
 - Reworked disposable PostgreSQL tests to verify view-only access, missing grants, rejected raw-table access and no player/session mutations.
 - No database DDL was executed through GitHub or by AI. The operator reported successful live view creation; end-to-end application verification remains pending.
-
 
 ## 2026-11-04 — Safer Morkahja read-only failure diagnostics
 
@@ -276,7 +261,6 @@
 - Implemented fixed SELECT-only PostgreSQL queries in a separate adapter, strictly limited to display name, avatar count and last-played time; no player IDs, session secrets, identity keys, arbitrary SQL or mutation actions are returned.
 - Added Morkahja-only `ssh:read` endpoints, guarded by a second operator-owned opt-in and exact field allowlist; each read reuses the keyring and private temporary SSH tunnel, closing it afterward.
 - Added service, configuration, pagination, field-redaction and disposable PostgreSQL regression tests. The operator-reported SSH/database **health probe** worked on Nobara; live player-data reads remain unverified.
-
 
 ## 2026-11-04 — Fix OpenSSH tunnel startup
 
@@ -297,7 +281,6 @@
 - Require a dedicated operator-managed known-hosts file, exact hostname match, OpenSSH lookup and non-symlink/private file checks before showing a candidate pinned-key status.
 - Added tests with disposable generated SSH keys and protected local service routes. No SSH transport, tunnel, PostgreSQL access or write permission was enabled.
 
-
 ## 2026-11-04 — Keyring lock diagnostics and local asset containment
 
 - Added read-only default Secret Service collection lock detection; a confirmed locked state blocks storing, clearing and verifying credentials.
@@ -305,7 +288,6 @@
 - Added project-capability denial tests and regression coverage for legacy local request guards.
 - Hardened opt-in legacy Morkahja static file routes against symlink/realpath escapes and cross-site requests, with disposable asset tests.
 - Documented unresolved authentication, remote permission, live write and recovery gates; **no production access authorized**.
-
 
 - Tightened opt-in legacy content/moderation HTTP guards to require an exact HTTP origin for mutations and reject same-site cross-origin requests; fixture requests now supply an explicit origin.
 
@@ -318,14 +300,12 @@
 - Added an opt-in synthetic Linux keyring verification command, expanded fixture tests and a Chromium Connections workflow.
 - No real desktop keyring, remote adapter or live Morkahja mutation was exercised during implementation.
 
-
 ## 2026-11-04 — Keyring credential boundary and local connection diagnostics
 
 - Added terminal-only Linux Secret Service (`secret-tool`) profile credential storage, status and clearing without exposing secrets in browser configuration, command arguments or connection JSON.
 - Added authenticated loopback service/keyring health, per-profile timestamps and stable directory error codes.
 - Added complete/degraded/failed JSON inspection states and specific missing/unsafe/invalid file reasons; corrected portrait inspection to use the `Avatar` property.
 - Added isolated keyring command and local-service fixture tests. No real keyring, remote adapter or live project connection was exercised.
-
 
 ## 2026-11-04 — Read-only Morkahja content inspection
 

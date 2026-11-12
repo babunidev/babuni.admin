@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-12 — A publish that wasn't running
+
+When I opened the admin after a day away, the Overview said another publish was running, though I hadn't published anything. AI traced it to the page mounting twice in development: both copies started the same check, so the second was turned away by the first one's lock. Now a second request waits for the check that is already running and shares its result. A real publish still blocks a new check.
+
 ## 2026-11-10 — Reading the change before publishing it
 
 The publish panel told me which documents had changed, but not what had changed in them. Now each listed document opens a diff of the website's version against the repository's version, so I can read the actual change before clicking **Publish everything**. AI tied it to the documents the last check listed, so the page never fetches anything else. The first real comparison showed exactly the paragraph rewritten in my admin's journal and Eldgrim's new journal entries.

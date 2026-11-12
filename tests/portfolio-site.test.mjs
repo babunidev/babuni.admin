@@ -310,6 +310,19 @@ test('repository changes are cached and list GitHub repositories missing from th
   } finally { f.cleanup() }
 })
 
+test('two all-repository checks at once share one run instead of failing as busy', async () => {
+  resetSiteState()
+  const f = fakeCheckout({ pull: pullScript() })
+  try {
+    setStatusReaders({ repositories: async () => [] })
+    const [a, b] = await Promise.all([repositoryChanges(true, f.root), repositoryChanges(false, f.root)])
+    assert.deepEqual([a.ok, b.ok], [true, true])
+    assert.equal(a.checkedAt, b.checkedAt, 'same run')
+    await assert.rejects(withPublishLock('site', () => repositoryChanges(true, f.root)), /PUBLISH_BUSY/,
+      'a real publish still blocks a new check')
+  } finally { f.cleanup() }
+})
+
 test('publish everything pulls, commits only the snapshot, pushes and publishes in one call', async () => {
   resetSiteState()
   const f = fakeCheckout({ pull: pullScript(), site: SITE_SCRIPT })
