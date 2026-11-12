@@ -1,4 +1,8 @@
 # Babuni Admin — Changelog
+## 2026-11-12 — A fixed place for development screenshots
+
+- `docs/TESTING.md` now says where screenshots taken while developing or testing go: `~/Pictures/Development Screenshots/babuni-admin/`, named `YYYY-MM-DD-<what-it-shows>.png`. The working-animation screenshot was moved there. Documentation only.
+
 ## 2026-11-12 — Visible working state in Babuni Dev
 
 - New shared `src/shared/components/Working.tsx`: `Spinner` (a small turning gold ring) and `WorkingBar` (a thin light sweeping along a panel's top edge). The sweep keyframes are in `src/index.css`. With reduced motion on, both glow instead of moving.

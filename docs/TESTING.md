@@ -228,6 +228,10 @@ npm run test:browser
 
 Browser tests default to `http://127.0.0.1:4180`. Override with `BROWSER_TEST_BASE_URL` only when pointing to a controlled **mock-only** preview. Do not run this test suite against a live administration backend or an instance with privileged development middleware enabled.
 
+### Where screenshots go
+
+Screenshots taken while developing or testing (for example a Playwright `page.screenshot` to see how a change looks) are saved in `~/Pictures/Development Screenshots/babuni-admin/`, named `YYYY-MM-DD-<what-it-shows>.png`, so they are easy to find and stay out of the repository and temporary folders. Take them from mock-mode previews; screenshots that show live player data or credentials do not belong there either, and never in the repository.
+
 The source-level `npm test` command does not require Chromium and remains independent of the browser suite.
 
 ## Isolated game-content and moderation integration tests
