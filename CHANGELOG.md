@@ -1,4 +1,10 @@
 # Babuni Admin — Changelog
+## 2026-11-12 — Visible working state in Babuni Dev
+
+- New shared `src/shared/components/Working.tsx`: `Spinner` (a small turning gold ring) and `WorkingBar` (a thin light sweeping along a panel's top edge). The sweep keyframes are in `src/index.css`. With reduced motion on, both glow instead of moving.
+- Publish panel: the bar and a spinner in the headline while it checks or publishes, plus the buttons now read **Checking…** / **Publishing…** and *Connected repositories* shows a spinner (also for **Check again**). Old releases panel: the bar and a spinner in the **Checking…** / **Removing…** buttons. Repositories page, document rows and the document diff also show a spinner while they wait. Status text has `role="status"` and panels have `aria-busy`.
+- Lint, build and the suite (119/119) pass. Not yet seen in a browser: Playwright is not installed on this PC, so the look still needs to be checked in the real app.
+
 ## 2026-11-12 — No false "Another publish is running" on opening the Overview
 
 - Opening the Babuni Dev Overview could show **Another publish is running** under *Connected repositories*, and the headline **The check did not finish**, even though nothing was publishing. In development, React StrictMode mounts the publish panel twice. Both mounts asked for a fresh all-repository check, the first took the publish lock, and the second (the one the page keeps) got `PUBLISH_BUSY`. It only showed once the ten-minute check cache had expired.

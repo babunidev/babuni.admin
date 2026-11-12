@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Spinner } from '../../../shared/components/Working'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import {
   checkDocument, describeError, listDocuments, publishDocument, type PublishResult,
@@ -61,7 +62,9 @@ export function DocumentsPage() {
           return (
             <li key={path} className="flex flex-wrap items-center gap-3 px-4 py-3">
               <span className="w-72 truncate font-mono text-sm text-gold-bright">{path}</span>
-              <span className="flex-1 text-sm text-fog">{status(row)}</span>
+              <span className={`flex flex-1 items-center gap-2 text-sm ${row?.busy ? 'text-gold-bright' : 'text-fog'}`}>
+                {row?.busy && <Spinner />}{status(row)}
+              </span>
               <button type="button" disabled={row?.busy}
                 onClick={() => run(path, 'check')}
                 className="rounded border border-gold/30 px-3 py-1 text-sm text-fog disabled:opacity-50">

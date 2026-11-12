@@ -62,3 +62,21 @@ body {
   background: var(--color-mist);
   border-radius: 3px;
 }
+
+/* WorkingBar: a light sweeping along a panel's top edge while it works. */
+@keyframes working-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
+}
+.working-sweep {
+  animation: working-sweep 1.6s ease-in-out infinite;
+}
+@keyframes working-glow {
+  50% { opacity: 0.35; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .working-sweep {
+    width: 100%;
+    animation: working-glow 2s ease-in-out infinite;
+  }
+}

@@ -39,6 +39,10 @@ Connection banners and sample-data hints are essential in a hybrid console. A sc
 
 Game content editors expose underlying schema IDs and keys, image previews, encounter–solution relationships and export-like raw JSON details. This is appropriate for a creator/developer tool, but care is needed with invalid IDs and accidental overwrites.
 
+## Showing that something is working
+
+Some operations take minutes: asking GitHub about every connected repository, building and publishing the website, checking releases on the server. While one runs, its panel shows a thin gold light sweeping along the top edge, a small turning gold ring beside the text that says what is happening, and button labels that change to **Checking…**, **Publishing…** or **Removing…**. Both pieces live in `src/shared/components/Working.tsx` (`Spinner`, `WorkingBar`) for any workspace to reuse. They only animate while a request is actually waiting for an answer, never as decoration. With reduced motion turned on in the system, they glow softly instead of moving.
+
 ## Accessibility and design questions still open
 
 - Are modal dialogs keyboard-trapped and focus restored after closing?

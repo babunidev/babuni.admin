@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-12 — Seeing that it's working
+
+A repository check takes a minute or two and a publish several minutes, and the page barely changed while they ran. It was hard to tell a running check from a stuck one. I asked for a visible working state. AI added a thin gold light that sweeps along the top of the busy panel and a small turning ring beside the status text, in the admin's own colours, with button labels that say what is happening.
+
 ## 2026-11-12 — A publish that wasn't running
 
 When I opened the admin after a day away, the Overview said another publish was running, though I hadn't published anything. AI traced it to the page mounting twice in development: both copies started the same check, so the second was turned away by the first one's lock. Now a second request waits for the check that is already running and shares its result. A real publish still blocks a new check.

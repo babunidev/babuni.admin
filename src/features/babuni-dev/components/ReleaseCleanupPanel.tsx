@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   checkReleases, cleanupReleases, describeSiteError, type ReleaseCleanup, type ReleasePlan,
 } from '../services/portfolioSite'
+import { Spinner, WorkingBar } from '../../../shared/components/Working'
 
 const megabytes = (bytes: number) => `${(bytes / 1048576).toFixed(1)} MB`
 
@@ -27,17 +28,19 @@ export function ReleaseCleanupPanel() {
 
   const removable = plan?.remove.length ?? 0
   return (
-    <section className="mt-6 max-w-4xl rounded-lg border border-gold/15 bg-slate/50 p-5">
+    <section aria-busy={busy !== null}
+      className="relative mt-6 max-w-4xl overflow-hidden rounded-lg border border-gold/15 bg-slate/50 p-5">
+      <WorkingBar active={busy !== null} />
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="flex-1 text-base font-medium text-gold-bright">Old releases on the server</h2>
         <button type="button" disabled={busy !== null} onClick={() => void run('check')}
           className="rounded border border-gold/30 px-3 py-1 text-sm text-fog disabled:opacity-50">
-          {busy === 'check' ? 'Checking…' : 'Check'}
+          {busy === 'check' ? <><Spinner className="mr-1.5" />Checking…</> : 'Check'}
         </button>
         {removable > 0 && (
           <button type="button" disabled={busy !== null} onClick={() => void run('remove')}
             className="rounded border border-gold bg-gold/10 px-4 py-1 text-sm text-gold-bright disabled:opacity-40">
-            {busy === 'remove' ? 'Removing…' : `Remove ${removable} old release${removable === 1 ? '' : 's'}`}
+            {busy === 'remove' ? <><Spinner className="mr-1.5" />Removing…</> : `Remove ${removable} old release${removable === 1 ? '' : 's'}`}
           </button>
         )}
       </div>

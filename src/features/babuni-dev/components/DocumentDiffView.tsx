@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { describeSiteError, loadDocumentDiff, type DocumentDiff } from '../services/portfolioSite'
+import { Spinner } from '../../../shared/components/Working'
 
 const lineClass: Record<string, string> = {
   '+': 'bg-gold/10 text-gold-bright',
@@ -22,7 +23,7 @@ export function DocumentDiffView({ repository, path }: { repository: string; pat
   }, [repository, path])
 
   if (error) return <p className="my-1 text-red-300/90">{error}</p>
-  if (!diff) return <p className="my-1">Loading changes…</p>
+  if (!diff) return <p className="my-1 flex items-center gap-2 font-sans"><Spinner />Loading changes…</p>
   if (diff.binary) return <p className="my-1">An image; there is no text to compare.</p>
   return (
     <div className="my-2 rounded border border-gold/15 bg-black/20">

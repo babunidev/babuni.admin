@@ -4,6 +4,7 @@ import {
   type PublishAllResult, type RepositoryChanges, type SiteStatus,
 } from '../services/portfolioSite'
 import { DocumentDiffView } from './DocumentDiffView'
+import { Spinner, WorkingBar } from '../../../shared/components/Working'
 
 const kindClass = (kind: string) =>
   kind === 'REMOVED' ? 'text-red-300/90' : kind === 'NEW' ? 'text-gold-bright' : 'text-fog'
@@ -77,16 +78,20 @@ export function PublishPanel() {
   else if (!checking && (siteError || changesError)) headline = 'The check did not finish.'
 
   return (
-    <section className="max-w-4xl rounded-lg border border-gold/15 bg-slate/50 p-5">
+    <section aria-busy={checking || publishing}
+      className="relative max-w-4xl overflow-hidden rounded-lg border border-gold/15 bg-slate/50 p-5">
+      <WorkingBar active={checking || publishing} />
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="flex-1 text-base font-medium text-gold-bright">{headline}</h2>
+        <h2 role="status" className="flex flex-1 items-center gap-2 text-base font-medium text-gold-bright">
+          {(checking || publishing) && <Spinner />}{headline}
+        </h2>
         <button type="button" disabled={checking || publishing} onClick={() => void check(true)}
           className="rounded border border-gold/30 px-3 py-1 text-sm text-fog disabled:opacity-50">
-          Check again
+          {checking && !publishing ? 'Checking…' : 'Check again'}
         </button>
         <button type="button" disabled={!canPublish} onClick={() => void publish()}
           className="rounded border border-gold bg-gold/10 px-4 py-1 text-sm text-gold-bright disabled:opacity-40">
-          Publish everything
+          {publishing ? 'Publishing…' : 'Publish everything'}
         </button>
       </div>
 
@@ -136,7 +141,11 @@ export function PublishPanel() {
 
         <div>
           <h3 className="text-parchment">Connected repositories</h3>
-          {checking && !changes && <p>Asking GitHub about every connected repository… this takes a minute or two.</p>}
+          {checking && (
+            <p className="flex items-center gap-2"><Spinner />
+              {changes ? 'Checking again…' : 'Asking GitHub about every connected repository… this takes a minute or two.'}
+            </p>
+          )}
           {changesError && <p>{changesError}</p>}
           {changes?.ok && (
             <p>

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { Spinner } from '../../../shared/components/Working'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import {
   checkPull, checkSite, describeSiteError, loadSources, publishSite, pushSnapshot, writePull,
@@ -70,7 +71,7 @@ export function RepositoriesPage() {
         the site. Each step checks first and asks for confirmation. The previous release stays on the server.
       </p>
       {error && <p role="alert" className="max-w-3xl rounded border border-ember/30 bg-ember/10 px-3 py-2 text-sm text-red-300/90">{error}</p>}
-      {working && <p className="text-sm text-gold-bright">Working… a site build can take several minutes.</p>}
+      {working && <p role="status" className="flex items-center gap-2 text-sm text-gold-bright"><Spinner />Working… a site build can take several minutes.</p>}
 
       <Step number={1} title="Pull document changes">
         <div className="flex flex-wrap items-center gap-3">
