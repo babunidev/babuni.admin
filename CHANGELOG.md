@@ -3,7 +3,7 @@
 
 - New shared `src/shared/components/Working.tsx`: `Spinner` (a small turning gold ring) and `WorkingBar` (a thin light sweeping along a panel's top edge). The sweep keyframes are in `src/index.css`. With reduced motion on, both glow instead of moving.
 - Publish panel: the bar and a spinner in the headline while it checks or publishes, plus the buttons now read **Checking…** / **Publishing…** and *Connected repositories* shows a spinner (also for **Check again**). Old releases panel: the bar and a spinner in the **Checking…** / **Removing…** buttons. Repositories page, document rows and the document diff also show a spinner while they wait. Status text has `role="status"` and panels have `aria-busy`.
-- Lint, build and the suite (119/119) pass. Not yet seen in a browser: Playwright is not installed on this PC, so the look still needs to be checked in the real app.
+- Lint, build and the suite (119/119) pass. Seen in Chromium (Playwright 1.56.1, installed locally as `docs/TESTING.md` describes) against a mock-mode preview, with the repository check held open: the sweeping light, both spinners and the **Checking…** button showed as intended. Not yet seen against the real local service.
 
 ## 2026-11-12 — No false "Another publish is running" on opening the Overview
 
