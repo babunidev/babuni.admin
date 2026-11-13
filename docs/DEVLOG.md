@@ -403,3 +403,7 @@ Babuni.dev requested review of the actual private repository and its documentati
 Public source availability does not authorize public deployment of privileged development endpoints, production credentials or live player records.
 
 **AI contribution:** Recorded the author’s decision and clarification, separately from observed GitHub visibility. Earlier documentation-only publication was considered and is superseded as the intended long-term source. No root license was selected by this update; public visibility, open-source reuse permissions, media rights and production readiness are separate matters. No runtime testing or behavior change is claimed.
+
+## 2026-11-13 — Giving the repository clear permissions
+
+Public source alone did not explain what others could reuse, so I approved MIT for the local administrative software. AI assistance added the license and brought the project notes into agreement, without changing how the application runs. Other people's content retains its own terms.
