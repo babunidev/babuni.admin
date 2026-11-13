@@ -104,3 +104,7 @@ The code and its history include older Morkahja-specific paths, temporary develo
 | How to write and attribute changes | [Documentation standard](docs/DOCUMENTATION.md) · [AI collaboration](docs/AI_COLLABORATION.md) · [AGENTS.md](AGENTS.md) |
 
 Read [AGENTS.md](AGENTS.md) before changing the code or project record. The human creative sets direction and approves decisions; the documentation distinguishes that direction from AI-assisted implementation and from verification that has actually taken place.
+
+## License
+
+Original administration-tool code is licensed under [MIT](LICENSE). The software license grants no access to credentials, connected accounts, databases or production systems.
