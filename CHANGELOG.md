@@ -500,3 +500,8 @@ Recorded Babuni.dev’s direction to publish the actual project after review and
 ## 2026-10-31 — Changed: publication decision record
 
 - Recorded Babuni.dev’s open-development decision and verified current visibility in Decisions and Development journal; retained licensing, media-rights and deployment distinctions.
+
+## 2026-11-13 — License and rights
+
+- Established MIT for original administration software and updated repository documentation to explain the permission boundary.
+- Preserved third-party authorship and external assets' separate terms. No application behavior or runtime verification is claimed.
