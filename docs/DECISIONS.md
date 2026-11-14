@@ -1,4 +1,12 @@
 # Babuni Admin — Decisions and Alternatives
+## 2026-11-14 — Moderation on by default
+
+**Creative direction:** Moderation should always be on, without typing `BABUNI_MORKAHJA_REMOTE_MODERATION=enabled` before every `npm run dev`.
+
+**Decision:** The operator launcher (`scripts/devEnv.mjs`, used by `npm run dev`) sets the variable to `enabled` unless the shell already sets it. The gate check in `local-service/morkahjaModerationConfig.mjs` stays, so tests and other ways of starting the service still run without moderation. The SSH host pinning, keyring password, role check and transactions are unchanged. This replaces "disabled by default" for moderation only. The content gate (`BABUNI_MORKAHJA_REMOTE_CONTENT`) was not part of the request and stays opt-in.
+
+**Alternatives not taken:** Removing the gate from the service (it would also open moderation to every other way the service is started). A private `.env` file the launcher reads (another file to keep in sync, for one fixed value).
+
 ## 2026-11-10 — Which old releases to remove
 
 **Creative direction:** Every publish leaves a copy of the site on the server. I asked AI to build the cleanup that was next on the roadmap.

@@ -1,4 +1,9 @@
 # Babuni Admin — Changelog
+## 2026-11-14 — Morkahja moderation always on
+
+- `npm run dev` now sets `BABUNI_MORKAHJA_REMOTE_MODERATION=enabled` itself. Before, it had to be typed on every start, and a plain `npm run dev` left Moderation refusing every request with `REMOTE_MODERATION_DISABLED`. The launcher environment moved into `scripts/devEnv.mjs`. A value already set in the shell (for example `disabled`) still wins. The service keeps its own gate check, so starting it any other way leaves moderation off, and the content gate is unchanged.
+- Added `tests/dev-launcher.test.mjs` (4 tests). Suite 123/123; lint and build pass. Not yet seen in the real app started this way: the instance running on Nobara was already started with the variable by hand.
+
 ## 2026-11-12 — A fixed place for development screenshots
 
 - `docs/TESTING.md` now says where screenshots taken while developing or testing go: `~/Pictures/Development Screenshots/babuni-admin/`, named `YYYY-MM-DD-<what-it-shows>.png`. The working-animation screenshot was moved there. Documentation only.

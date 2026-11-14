@@ -38,7 +38,7 @@ npm install
 npm run dev
 ```
 
-The development command starts Vite at `127.0.0.1:5180` and the profile service at `127.0.0.1:5191`. Both are local to the operator's machine; stop them with Ctrl+C. `npm run dev:ui` runs only Vite and cannot manage connection profiles.
+The development command starts Vite at `127.0.0.1:5180` and the profile service at `127.0.0.1:5191`. Both are local to the operator's machine; stop them with Ctrl+C. `npm run dev:ui` runs only Vite and cannot manage connection profiles. `npm run dev` also switches on Morkahja moderation (`BABUNI_MORKAHJA_REMOTE_MODERATION=enabled`); set that variable to `disabled` in the shell to start without it.
 
 For test or demonstration data, use a gitignored `.env.local` with non-secret settings:
 

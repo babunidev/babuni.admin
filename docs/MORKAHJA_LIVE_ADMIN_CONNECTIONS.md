@@ -106,9 +106,10 @@ Exit SSH with `exit`. On Nobara:
 cd /home/babuni/Projects/babuni.admin
 python3 scripts/prepare-morkahja-moderation-config.py --create
 
-BABUNI_MORKAHJA_REMOTE_MODERATION=enabled \
 npm run dev
 ```
+
+Since 2026-11-14 `npm run dev` turns on `BABUNI_MORKAHJA_REMOTE_MODERATION` itself. To start a session without moderation, run `BABUNI_MORKAHJA_REMOTE_MODERATION=disabled npm run dev`.
 
 Open `http://127.0.0.1:5180/` → **Connections**, create exactly one `Morkahja administrator (Moderation + Content)` profile using the same host as the already trusted Overview connection, and store the `babuni_admin` database password in the Linux keyring. Select this profile in **Moderation**; Overview and Content share the selected profile automatically. No second credential or separate write-enable environment variable is needed.
 

@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-14 — Moderation that stays on
+
+Moderation stopped working whenever I started the admin with a plain `npm run dev`. AI found that it depended on a variable I had to type on every start, and nothing set it for me. Since this is my own tool on my own PC, I asked for moderation to always be on. AI made the launcher switch it on itself, while the service still checks for it, so other ways of starting the service stay closed.
+
 ## 2026-11-12 — Seeing that it's working
 
 A repository check takes a minute or two and a publish several minutes, and the page barely changed while they ran. It was hard to tell a running check from a stuck one. I asked for a visible working state. AI added a thin gold light that sweeps along the top of the busy panel and a small turning ring beside the status text, in the admin's own colours, with button labels that say what is happening.

@@ -1,16 +1,12 @@
 import { spawn } from 'node:child_process'
-import { randomBytes } from 'node:crypto'
+import { launcherEnv } from './devEnv.mjs'
 import { setTimeout as sleep } from 'node:timers/promises'
 const servicePort = 5191
 const args=process.argv.slice(2)
 const portIndex=args.findIndex(x=>x==='--port')
 const uiPort=portIndex>=0 ? Number(args[portIndex+1]) : 5180
 if (!Number.isInteger(uiPort)||uiPort<1024||uiPort>65535) throw Error('Invalid Vite port')
-const env={...process.env,BABUNI_LOCAL_SERVICE_PORT:String(servicePort),
-  BABUNI_UI_PORT:String(uiPort),
-  BABUNI_LOCAL_SERVICE_TOKEN:randomBytes(32).toString('hex'),
-  BABUNI_UI_SESSION_TOKEN:randomBytes(32).toString('hex'),
-}
+const env=launcherEnv(process.env,servicePort,uiPort)
 const service=spawn(process.execPath,['--experimental-strip-types','local-service/server.mjs'],{env,stdio:'inherit'})
 let stopped=false
 function stop(signal='SIGTERM') {
