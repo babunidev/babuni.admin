@@ -77,6 +77,15 @@ test('read, backed-up write and stale revision conflict preserve catalog integri
       data:{mEncounterID:3,mEncounterTitle:'Untrusted'},
       expectedRevision:written.revision})
     assert.equal(rejected.code,'CONTENT_INVALID_REQUEST')
+    const liveId=worker(dir,{action:'write',kind:'encounters',key:'20193',
+      data:{mEncounterID:20193,mEncounterTitle:'Live range',mEncounterText:'Edited story'},
+      expectedRevision:written.revision})
+    assert.equal(liveId.ok,true)
+    assert.equal(JSON.parse(readFileSync(catalog,'utf8'))['20193'].mEncounterText,'Edited story')
+    const tooHigh=worker(dir,{action:'write',kind:'encounters',key:'100000',
+      data:{mEncounterID:100000,mEncounterTitle:'Too high'},
+      expectedRevision:liveId.revision})
+    assert.equal(tooHigh.code,'CONTENT_INVALID_RECORD')
   } finally {rmSync(dir,{recursive:true,force:true})}
 })
 test('runner refuses disabled content configuration without spawning SSH',async()=>{

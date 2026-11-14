@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-14 — A save that reaches GitHub
+
+Saving an encounter updated the live game and stopped there. The older admin commits, titled `Admin: update encounter …`, used to land in the Morkahja project on this PC. Every content save needed to become a commit on GitHub as well. AI (Cursor, Grok 4.7) wired that onto the save that already reaches the live catalog. The commit uses a second checkout of `babunidev/Morkahja` that stays on main, because the working folder is on another branch with unfinished changes.
+
 ## 2026-11-14 — Moderation that stays on
 
 Moderation stopped working whenever I started the admin with a plain `npm run dev`. AI found that it depended on a variable I had to type on every start, and nothing set it for me. Since this is my own tool on my own PC, I asked for moderation to always be on. AI made the launcher switch it on itself, while the service still checks for it, so other ways of starting the service stay closed.

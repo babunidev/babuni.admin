@@ -27,7 +27,9 @@ export async function localConnectionApi<T>(method='GET',path='/',data?:unknown)
   catch {throw new Error('INVALID_SERVICE_RESPONSE')}
   if (!result.ok) {
     if (result.status===403) uiSession=null
-    throw new Error(value.error||value.status?.code||'LOCAL_SERVICE_FAILURE')
+    const error = new Error(value.error||value.status?.code||'LOCAL_SERVICE_FAILURE')
+    ;(error as Error & { detail?: unknown }).detail = value
+    throw error
   }
   return value as unknown as T
 }

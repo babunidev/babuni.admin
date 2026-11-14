@@ -106,6 +106,7 @@ interface EncounterEditorPanelProps {
   onSave: () => void
   onClose: () => void
   isSaving: boolean
+  saveError?: string | null
   onUploadImage?: (file: File) => Promise<string | void>
 }
 
@@ -117,6 +118,7 @@ export function EncounterEditorPanel({
   onSave,
   onClose,
   isSaving,
+  saveError,
   onUploadImage,
 }: EncounterEditorPanelProps) {
   const previewSrc = encounterImageUrl(draft.mEncounterImageName)
@@ -359,6 +361,11 @@ export function EncounterEditorPanel({
         </div>
 
         <footer className="shrink-0 border-t border-gold/15 px-5 py-4">
+          {saveError && (
+            <p role="alert" className="mb-3 text-sm text-red-300">
+              Save failed: {saveError}
+            </p>
+          )}
           <button
             type="button"
             disabled={isSaving}

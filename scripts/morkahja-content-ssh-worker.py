@@ -13,9 +13,15 @@ import re
 import stat
 import tempfile
 import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
-GAME_ROOT = Path("/var/www/morkahja/game")
+# The running API loads this directory (PM2 cwd is the server package).
+# /var/www/morkahja/game is an older static copy and is not what players receive.
+GAME_ROOT = Path("/home/morkahja/arcanitebrothers/server/game")
+ENV_FILE = Path("/home/morkahja/arcanitebrothers/.env")
+LIVE_API = "http://127.0.0.1:3000"
 FILES = {
     "encounters": "encountersdata.json",
     "solutions": "solutiondata.json",
@@ -27,6 +33,8 @@ MAX_FILE = 8 * 1024 * 1024
 MAX_RECORD = 64 * 1024
 KEY = re.compile(r"^[A-Za-z0-9_-]{1,100}$")
 SHA = re.compile(r"^[0-9a-f]{64}$")
+# Encounter and solution ids in the live catalog are above 10000 (encounters reach 20193).
+MAX_ID = 99999
 
 
 class ContentError(Exception):
@@ -89,7 +97,7 @@ def validate_record(kind, record):
         "expansions": "mExtensioID", "frames": "frameID", "portraits": "avatarID",
     }
     id_value = record.get(numeric[kind])
-    if not isinstance(id_value, int) or isinstance(id_value, bool) or not 0 <= id_value <= 10000:
+    if not isinstance(id_value, int) or isinstance(id_value, bool) or not 0 <= id_value <= MAX_ID:
         fail("CONTENT_INVALID_RECORD")
     name_field = {
         "encounters": "mEncounterTitle", "solutions": "mSolutionName",
@@ -175,6 +183,102 @@ def replace_with_backup(root, target, source_info, old_raw, new_raw):
                 pass
 
 
+def admin_api_key(env_file=ENV_FILE):
+    try:
+        lines = env_file.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        fail("CONTENT_SOURCE_UNAVAILABLE")
+    for line in lines:
+        if not line.startswith("ADMIN_API_KEY="):
+            continue
+        value = line.split("=", 1)[1].strip()
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
+            value = value[1:-1]
+        if value:
+            return value
+    fail("CONTENT_SOURCE_UNAVAILABLE")
+
+
+def publish_through_game(kind, key, record, env_file=ENV_FILE, opener=None):
+    """Ask the game process to write. It owns the catalog and drops its cache."""
+    token = admin_api_key(env_file)
+    if kind in ("frames", "portraits"):
+        payload = record
+    else:
+        payload = {"key": key, "data": record}
+    body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = urllib.request.Request(
+        LIVE_API + "/game-data/admin/content/" + kind,
+        data=body,
+        method="POST",
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + token,
+        },
+    )
+    open_url = opener or urllib.request.urlopen
+    try:
+        with open_url(request, timeout=8) as response:
+            status = getattr(response, "status", None) or response.getcode()
+            response.read(4096)
+    except urllib.error.HTTPError as error:
+        if error.code in (401, 403, 503):
+            fail("CONTENT_PERMISSION_DENIED")
+        fail("CONTENT_OPERATION_FAILED")
+    except OSError:
+        fail("CONTENT_OPERATION_FAILED")
+    if status not in (200, 201):
+        fail("CONTENT_OPERATION_FAILED")
+
+
+def stored_record(kind, key, data):
+    if kind in ("encounters", "solutions"):
+        return data.get(key)
+    if kind == "expansions":
+        return data["expansions"].get(key)
+    field = "Frames" if kind == "frames" else "Avatar"
+    number = key if isinstance(key, int) else None
+    entries = data[field]
+    if number is None or number >= len(entries):
+        return None
+    return entries[number]
+
+
+def reject_id_change(kind, key, number, data):
+    if kind in ("encounters", "solutions"):
+        id_field = "mEncounterID" if kind == "encounters" else "mSolutionID"
+        if key in data and data[key].get(id_field) != number:
+            fail("CONTENT_INVALID_RECORD")
+    elif kind == "expansions":
+        current = data["expansions"].get(key)
+        if current is not None and current.get("mExtensioID") != number:
+            fail("CONTENT_INVALID_RECORD")
+    elif number > 10000:
+        fail("CONTENT_INVALID_RECORD")
+
+
+def assign_record(kind, key, number, record, data):
+    if kind in ("encounters", "solutions"):
+        data[key] = record
+        return
+    if kind == "expansions":
+        data["expansions"][key] = record
+        return
+    field = "Frames" if kind == "frames" else "Avatar"
+    entries = data[field]
+    while len(entries) <= number:
+        entries.append(None)
+    entries[number] = record
+
+
+def can_write_catalog(root, target):
+    try:
+        info = os.stat(target)
+    except OSError:
+        return False
+    return os.access(root, os.W_OK) and info.st_uid == os.geteuid()
+
+
 def process(request, root=GAME_ROOT):
     if not isinstance(request, dict) or set(request) - {
         "action", "kind", "key", "data", "expectedRevision"
@@ -205,27 +309,25 @@ def process(request, root=GAME_ROOT):
             fail("CONTENT_INVALID_REQUEST")
     elif not isinstance(key, str) or not KEY.fullmatch(key):
         fail("CONTENT_INVALID_REQUEST")
+    target, info, raw, data = read_file(root, kind)
+    if hashlib.sha256(raw).hexdigest() != expected:
+        fail("CONTENT_CONFLICT")
+    reject_id_change(kind, key, number, data)
+    if not can_write_catalog(root, target):
+        # The SSH login can read the live catalog but the game user owns it.
+        # The game process writes the file and drops its in-memory copy.
+        publish_through_game(kind, key, record)
+        _, _, written, updated = read_file(root, kind)
+        if stored_record(kind, key, updated) != record:
+            fail("CONTENT_WRITE_VERIFY_FAILED")
+        return {"ok": True, "revision": hashlib.sha256(written).hexdigest()}
     lock = lock_root(root)
     try:
         target, info, raw, data = read_file(root, kind)
         if hashlib.sha256(raw).hexdigest() != expected:
             fail("CONTENT_CONFLICT")
-        if kind in ("encounters", "solutions"):
-            if key in data and data[key].get("mEncounterID" if kind == "encounters" else "mSolutionID") != number:
-                fail("CONTENT_INVALID_RECORD")
-            data[key] = record
-        elif kind == "expansions":
-            if key in data["expansions"] and data["expansions"][key].get("mExtensioID") != number:
-                fail("CONTENT_INVALID_RECORD")
-            data["expansions"][key] = record
-        else:
-            field = "Frames" if kind == "frames" else "Avatar"
-            entries = data[field]
-            if number > 10000:
-                fail("CONTENT_INVALID_RECORD")
-            while len(entries) <= number:
-                entries.append(None)
-            entries[number] = record
+        reject_id_change(kind, key, number, data)
+        assign_record(kind, key, number, record, data)
         output = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         replace_with_backup(root, target, info, raw, output)
         return {"ok": True, "revision": hashlib.sha256(output).hexdigest()}

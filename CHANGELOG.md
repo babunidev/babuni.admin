@@ -1,4 +1,11 @@
 # Babuni Admin — Changelog
+## 2026-11-14 — Morkahja content saves commit to GitHub
+
+- Saving an encounter, solution, expansion, frame, or portrait still updates the live game catalog. After that write succeeds, the same record is committed and pushed to `babunidev/Morkahja` `main`, with the message form `Admin: update encounter <id> (<title>)` (and the matching form for the other catalog kinds).
+- The commit is made from a checkout of that repository kept on main (`/home/babuni/Projects/Morkahja-content-commits` by default), so the open working branch is left alone. An unchanged record does not create an empty commit. If the GitHub step fails, the live revision is kept and the editor says the commit failed.
+- The content worker now publishes through the running game at `127.0.0.1:3000` into `/home/morkahja/arcanitebrothers/server/game`, and accepts catalog ids up to 99999. A failed save is shown inside the encounter editor.
+- Checked with `tests/morkahja-content-git.test.mjs` against a temporary repository, and with the content SSH fixture for an id above 10000. Lint and `tsc -b` passed. No live encounter was edited, and no content commit was pushed to GitHub during that check.
+
 ## 2026-11-14 — Morkahja moderation always on
 
 - `npm run dev` now sets `BABUNI_MORKAHJA_REMOTE_MODERATION=enabled` itself. Before, it had to be typed on every start, and a plain `npm run dev` left Moderation refusing every request with `REMOTE_MODERATION_DISABLED`. The launcher environment moved into `scripts/devEnv.mjs`. A value already set in the shell (for example `disabled`) still wins. The service keeps its own gate check, so starting it any other way leaves moderation off, and the content gate is unchanged.

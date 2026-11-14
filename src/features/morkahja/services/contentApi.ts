@@ -27,14 +27,24 @@ async function remoteRead<T>(kind: string): Promise<T> {
   return response.data
 }
 
-async function remoteWrite(kind: string, key: string | number, data: unknown): Promise<void> {
+export type ContentGitResult = { ok?: boolean; commit?: string; message?: string; skipped?: boolean }
+
+async function remoteWrite(kind: string, key: string | number, data: unknown): Promise<ContentGitResult> {
   const id = getContentProfileId()
   if (!id) throw new Error('CONTENT_PROFILE_REQUIRED')
   const expectedRevision = contentRevisions.get(id + ':' + kind)
   if (!expectedRevision) throw new Error('CONTENT_REVISION_REQUIRED')
-  const response = await localConnectionApi<{ok:true;revision:string}>(
-    'POST','/' + id + '/content-write',{kind,key,data,expectedRevision})
-  contentRevisions.set(id + ':' + kind, response.revision)
+  const revisionKey = id + ':' + kind
+  try {
+    const response = await localConnectionApi<{ok:true;revision:string;git?:ContentGitResult}>(
+      'POST','/' + id + '/content-write',{kind,key,data,expectedRevision})
+    contentRevisions.set(revisionKey, response.revision)
+    return response.git ?? {}
+  } catch (error) {
+    const revision = (error as { detail?: { revision?: string } }).detail?.revision
+    if (revision) contentRevisions.set(revisionKey, revision)
+    throw error
+  }
 }
 
 const LOCAL_API = '/local-content-api'
@@ -117,59 +127,64 @@ export async function fetchPortraits(): Promise<PortraitsDataFile> {
 export async function createEncounter(
   key: string,
   data: EncounterMap[string],
-): Promise<void> {
+): Promise<ContentGitResult> {
   if (getContentProfileId()) return remoteWrite('encounters', key, data)
   if (useLocalContent) {
     await localPost('/encounters', { key, data })
-    return
+    return {}
   }
   await confirmedRemotePost('/content/encounters', { key, data })
+  return {}
 }
 
 export async function createSolution(
   key: string,
   data: SolutionMap[string],
-): Promise<void> {
+): Promise<ContentGitResult> {
   if (getContentProfileId()) return remoteWrite('solutions', key, data)
   if (useLocalContent) {
     await localPost('/solutions', { key, data })
-    return
+    return {}
   }
   await confirmedRemotePost('/content/solutions', { key, data })
+  return {}
 }
 
 export async function createExpansion(
   key: string,
   data: ExpansionData,
-): Promise<void> {
+): Promise<ContentGitResult> {
   if (getContentProfileId()) return remoteWrite('expansions', key, data)
   if (useLocalContent) {
     await localPost('/expansions', { key, data })
-    return
+    return {}
   }
   await confirmedRemotePost('/content/expansions', { key, data })
+  return {}
 }
 
 export async function createFrame(
   data: NonNullable<FramesDataFile['Frames'][number]>,
-): Promise<void> {
+): Promise<ContentGitResult> {
   if (getContentProfileId()) return remoteWrite('frames', data.frameID, data)
   if (useLocalContent) {
     await localPost('/frames', data)
-    return
+    return {}
   }
   await confirmedRemotePost('/content/frames', data)
+  return {}
 }
 
 export async function createPortrait(
   data: NonNullable<PortraitsDataFile['Avatar'][number]>,
-): Promise<void> {
+): Promise<ContentGitResult> {
   if (getContentProfileId()) return remoteWrite('portraits', data.avatarID, data)
   if (useLocalContent) {
     await localPost('/portraits', data)
-    return
+    return {}
   }
   await confirmedRemotePost('/content/portraits', data)
+  return {}
 }
 
 export async function uploadEncounterImage(

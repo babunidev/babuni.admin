@@ -34,6 +34,7 @@ import {
 } from '../../../config/constants'
 import {
   createEncounter,
+  type ContentGitResult,
   createExpansion,
   createFrame,
   createPortrait,
@@ -47,6 +48,25 @@ import {
   uploadSolutionImage,
   getContentProfileId,
 } from '../services/contentApi'
+
+function catalogSaved(kind: string, wasEdit: boolean, git?: ContentGitResult): string {
+  if (git?.commit) return `${kind} committed to GitHub (${git.commit}).`
+  if (git?.skipped) return `${kind} saved. GitHub already had this version.`
+  return wasEdit ? `${kind} updated in the live game.` : `${kind} saved to the live game.`
+}
+
+function saveFailure(error: Error): string {
+  if (error.message === 'CONTENT_GIT_FAILED' || error.message === 'CONTENT_GIT_PUSH_FAILED') {
+    return 'Saved to the live game, but the GitHub commit failed. Save again to retry the commit.'
+  }
+  if (error.message === 'CONTENT_GIT_DIVERGED') {
+    return 'Saved to the live game, but GitHub main has other commits. This edit was not pushed.'
+  }
+  if (error.message === 'CONTENT_GIT_DIRTY') {
+    return 'Saved to the live game, but the content checkout has other edits, so this one was not committed.'
+  }
+  return error.message
+}
 import type {
   EncounterData,
   ExpansionData,
@@ -332,23 +352,21 @@ export function ContentPage() {
       const isEdit = Boolean(encounterEditKey)
       const key =
         encounterEditKey ?? String(encounterDraft.mEncounterID).padStart(5, '0')
-      await createEncounter(key, encounterDraft)
-      return { isEdit }
+      const git = await createEncounter(key, encounterDraft)
+      return { isEdit, git }
     },
-    onSuccess: ({ isEdit: wasEdit }) => {
+    onSuccess: ({ isEdit: wasEdit, git }) => {
       closeEncounterEditor()
       setStatus(
-        wasEdit
-          ? contentProfileId ? 'Encounter updated in deployed game catalog via SSH.' : useLocalContent
-            ? 'Encounter updated in encountersdata.json.'
-            : 'Encounter updated on VPS.'
-          : contentProfileId ? 'Encounter saved to deployed game catalog via SSH.' : useLocalContent
-            ? 'Encounter saved to encountersdata.json on disk.'
-            : 'Encounter saved on VPS.',
+        contentProfileId
+          ? catalogSaved('Encounter', wasEdit, git)
+          : wasEdit
+            ? useLocalContent ? 'Encounter updated in encountersdata.json.' : 'Encounter updated on VPS.'
+            : useLocalContent ? 'Encounter saved to encountersdata.json on disk.' : 'Encounter saved on VPS.',
       )
       void queryClient.invalidateQueries({ queryKey: ['content', 'encounters'] })
     },
-    onError: (err: Error) => setStatus(err.message),
+    onError: (err: Error) => setStatus(saveFailure(err)),
   })
 
   const saveSolution = useMutation({
@@ -356,15 +374,15 @@ export function ContentPage() {
       const key = String(solutionDraft.mSolutionID)
       return createSolution(key, solutionDraft)
     },
-    onSuccess: () => {
+    onSuccess: (git) => {
       setStatus(
-        contentProfileId ? 'Solution saved to deployed game catalog via SSH.' : useLocalContent
+        contentProfileId ? catalogSaved('Solution', true, git) : useLocalContent
           ? 'Solution saved to solutiondata.json on disk.'
           : 'Solution saved on VPS.',
       )
       void queryClient.invalidateQueries({ queryKey: ['content', 'solutions'] })
     },
-    onError: (err: Error) => setStatus(err.message),
+    onError: (err: Error) => setStatus(saveFailure(err)),
   })
 
   const dataSourceHint = contentProfileId
@@ -487,6 +505,9 @@ export function ContentPage() {
               onSave={() => saveEncounter.mutate()}
               onClose={closeEncounterEditor}
               isSaving={saveEncounter.isPending}
+              saveError={
+                saveEncounter.error instanceof Error ? saveFailure(saveEncounter.error) : null
+              }
               onUploadImage={
                 useLocalContent && !contentProfileId
                   ? (file) =>
@@ -747,8 +768,8 @@ function ExpansionPanel({
 
   const save = useMutation({
     mutationFn: () => createExpansion(String(draft.mExtensioID), draft),
-    onSuccess: () => onStatus('Expansion saved.'),
-    onError: (err: Error) => onStatus(err.message),
+    onSuccess: (git) => onStatus(profileId ? catalogSaved('Expansion', true, git) : 'Expansion saved.'),
+    onError: (err: Error) => onStatus(saveFailure(err)),
   })
 
   return (
@@ -890,8 +911,8 @@ function FramesPanel({
 
   const save = useMutation({
     mutationFn: () => createFrame(draft),
-    onSuccess: () => onStatus('Frame saved.'),
-    onError: (err: Error) => onStatus(err.message),
+    onSuccess: (git) => onStatus(profileId ? catalogSaved('Frame', true, git) : 'Frame saved.'),
+    onError: (err: Error) => onStatus(saveFailure(err)),
   })
 
   return (
@@ -1019,8 +1040,8 @@ function PortraitsPanel({
 
   const save = useMutation({
     mutationFn: () => createPortrait(draft),
-    onSuccess: () => onStatus('Portrait saved.'),
-    onError: (err: Error) => onStatus(err.message),
+    onSuccess: (git) => onStatus(profileId ? catalogSaved('Portrait', true, git) : 'Portrait saved.'),
+    onError: (err: Error) => onStatus(saveFailure(err)),
   })
 
   return (

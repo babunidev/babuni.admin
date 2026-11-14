@@ -18,6 +18,7 @@ import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { parsePlayerPage } from './morkahjaReadOnly.mjs'
 import { performMorkahjaModeration, isModerationActive } from './morkahjaModerationRunner.mjs'
 import { performMorkahjaContent, isContentActive, stopAllContentSsh } from './morkahjaContentRunner.mjs'
+import { commitMorkahjaContent } from './morkahjaContentGit.mjs'
 import { morkahjaImageCache } from './morkahjaImageCache.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
@@ -314,6 +315,13 @@ const server=createServer(async(req,res)=>{
           ['CONTENT_INVALID_REQUEST','CONTENT_TOO_LARGE'].includes(report.code)?400:
           report.code==='CONTENT_CONFLICT'?409:422
         return send(res,status,{error:report.code})
+      }
+      if(request.action==='write') {
+        const gitResult=await commitMorkahjaContent({
+          kind:request.kind, key:request.key, data:request.data,
+        })
+        if(!gitResult.ok) return send(res,422,{error:gitResult.code, revision:report.revision})
+        report.git=gitResult
       }
       states.set(id,{
         state:'disconnected',code:'REMOTE_CONTENT_COMPLETED',
