@@ -234,8 +234,8 @@ export function ContentPage() {
           String(row.mEncounterID).includes(q)
         )
       })
-      .slice(0, 100)
   }, [encountersQuery.data, search])
+  const encounterTotal = Object.keys(encountersQuery.data ?? {}).length
 
   const solutionGridItems = useMemo((): ContentGridItem[] => {
     const map = solutionsQuery.data ?? {}
@@ -517,6 +517,10 @@ export function ContentPage() {
           <p className="text-xs text-fog/80">
             Click a row for details, Edit (or double-click) to change text, image, and
             fields. Use Add encounter for new content.
+            {encounterTotal > 0 &&
+              (search
+                ? ` ${encounterRows.length} of ${encounterTotal} encounters match.`
+                : ` All ${encounterTotal} encounters are listed.`)}
           </p>
           <Table
             columns={encounterColumns}

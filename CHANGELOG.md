@@ -1,4 +1,8 @@
 # Babuni Admin — Changelog
+## 2026-11-16 — Every encounter in the Content list
+
+- Content → Encounters showed only the first 100 encounters, without a way to see the rest, although the live catalog has more than 200. The list now shows every encounter on one page; the images in it still load only when their row scrolls into view. A line above the table says how many encounters are listed, or how many match the search. Asked for by Babuni; change made with Claude Code (Claude Opus 5.5). Suite 132/132, lint and `tsc -b` pass.
+
 ## 2026-11-16 — Image uploads go where players get images
 
 - The server check (`scripts/morkahja-live-check.py`, run by Babuni on the server) showed: the backend has all five admin content routes, `ADMIN_API_KEY` is set, and the game answers 401 without it and 200 with it (203 encounters). Nginx serves `/Morkahja/` from `/var/www/morkahja-subpath/web/Morkahja`, a link to the root-owned release `20261115-060951`, which the `babuni` login cannot write. `/var/www/morkahja` is an older copy that players never receive.
