@@ -10,9 +10,13 @@ import json
 import os
 import re
 
-# The live frontend that Nginx serves under /Morkahja/. Keep it equal to ROOT in
-# morkahja-image-cache-sync.py and root in local-service/morkahjaImages.mjs.
-ROOT = "/var/www/morkahja"
+# Nginx serves /Morkahja/game/ and /Morkahja/UI/ from UPLOADS first, then from
+# the current release (RELEASE, a root-owned folder replaced on every release).
+# Uploads land in UPLOADS, which the administrator login owns; the same file is
+# committed to the game repository so later releases carry it themselves.
+# Keep both in step with morkahja-image-cache-sync.py and morkahjaImages.mjs.
+UPLOADS = "/var/www/morkahja-subpath/uploads/Morkahja"
+RELEASE = "/var/www/morkahja-subpath/web/Morkahja"
 FOLDERS = {
     "encounter": "game/encounterimages",
     "solution": "game/solutionimages",
@@ -36,18 +40,27 @@ def exists(name, dir_fd):
         return False
 
 
-def pick_name(base, mode, dir_fd):
+def in_release(name, release_dir):
+    try:
+        os.stat(os.path.join(release_dir, name), follow_symlinks=False)
+        return True
+    except OSError:
+        return False
+
+
+def pick_name(base, mode, dir_fd, release_dir):
     name = base + ".webp"
-    if mode == "exact" or not exists(name, dir_fd):
+    taken = lambda n: exists(n, dir_fd) or in_release(n, release_dir)  # noqa: E731
+    if mode == "exact" or not taken(name):
         return name
     for prefix in range(2, 10000):
         candidate = "%d_%s.webp" % (prefix, base)
-        if not exists(candidate, dir_fd):
+        if not taken(candidate):
             return candidate
     raise ImageError("IMAGE_NAME_EXHAUSTED")
 
 
-def write(request, root=ROOT):
+def write(request, root=UPLOADS, release=RELEASE):
     kind, mode, base = request.get("kind"), request.get("mode"), request.get("base")
     if kind not in FOLDERS or mode not in ("exact", "unique") or not isinstance(base, str) \
             or not BASE.fullmatch(base):
@@ -56,19 +69,21 @@ def write(request, root=ROOT):
     if not (12 <= len(data) <= MAX_IMAGE) or data[:4] != b"RIFF" or data[8:12] != b"WEBP":
         raise ImageError("IMAGE_NOT_WEBP")
     try:
-        dir_fd = os.open(os.path.join(root, FOLDERS[kind]), os.O_RDONLY | os.O_DIRECTORY)
+        dir_fd = os.open(os.path.join(root, FOLDERS[kind]),
+                         os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
     except OSError:
         raise ImageError("IMAGE_FOLDER_UNAVAILABLE")
     temp = None
     try:
-        name = pick_name(base, mode, dir_fd)
+        release_dir = os.path.join(release, FOLDERS[kind])
+        name = pick_name(base, mode, dir_fd, release_dir)
         try:
             info = os.stat(name, dir_fd=dir_fd, follow_symlinks=False)
-            replaced = True
             if not (info.st_mode & 0o170000 == 0o100000):
                 raise ImageError("IMAGE_TARGET_UNSAFE")
+            replaced = True
         except FileNotFoundError:
-            replaced = False
+            replaced = in_release(name, release_dir)
         temp = ".babuni-image-%d.tmp" % os.getpid()
         try:
             fd = os.open(temp, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o644, dir_fd=dir_fd)

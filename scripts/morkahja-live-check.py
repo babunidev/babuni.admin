@@ -56,9 +56,10 @@ section("Login")
 print(run(["id"]))
 
 section("Backend checkout " + APP)
-print("branch:", run(["git", "rev-parse", "--abbrev-ref", "HEAD"], APP))
-print("commit:", run(["git", "log", "-1", "--format=%h %cd %s", "--date=iso"], APP))
-print("uncommitted:", run(["git", "status", "--porcelain", "--", "server/game"], APP) or "none")
+GIT = ["git", "-c", "safe.directory=" + APP]
+print("branch:", run(GIT + ["rev-parse", "--abbrev-ref", "HEAD"], APP))
+print("commit:", run(GIT + ["log", "-1", "--format=%h %cd %s", "--date=iso"], APP))
+print("uncommitted:", run(GIT + ["status", "--porcelain", "--", "server/game"], APP) or "none")
 for name in ("encountersdata.json", "solutiondata.json", "expansiondata.json", "frames.json", "portraits.json"):
     path = os.path.join(APP, "server/game", name)
     print("  %-22s owner=%s writable-by-me=%s" % (name, owner(path), os.access(path, os.W_OK)))
@@ -111,7 +112,11 @@ for root in sorted(roots):
     for folder in IMAGE_FOLDERS:
         describe_folder(os.path.join(os.path.realpath(live), folder))
 
-section("Older static copy " + OLD_STATIC + " (what the admin image reader uses today)")
+section("Admin uploads /var/www/morkahja-subpath/uploads/Morkahja (served before the release)")
+for folder in IMAGE_FOLDERS:
+    describe_folder(os.path.join("/var/www/morkahja-subpath/uploads/Morkahja", folder))
+
+section("Older static copy " + OLD_STATIC + " (no longer used by Babuni Admin)")
 print("  realpath:", os.path.realpath(OLD_STATIC))
 for folder in IMAGE_FOLDERS:
     describe_folder(os.path.join(OLD_STATIC, folder))

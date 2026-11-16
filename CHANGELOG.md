@@ -1,4 +1,13 @@
 # Babuni Admin — Changelog
+## 2026-11-16 — Image uploads go where players get images
+
+- The server check (`scripts/morkahja-live-check.py`, run by Babuni on the server) showed: the backend has all five admin content routes, `ADMIN_API_KEY` is set, and the game answers 401 without it and 200 with it (203 encounters). Nginx serves `/Morkahja/` from `/var/www/morkahja-subpath/web/Morkahja`, a link to the root-owned release `20261115-060951`, which the `babuni` login cannot write. `/var/www/morkahja` is an older copy that players never receive.
+- Uploads now go to `/var/www/morkahja-subpath/uploads/Morkahja/<folder>`, owned by the administrator login. Nginx will serve `/Morkahja/game/` and `/Morkahja/UI/` from that folder first and from the current release otherwise, so an upload survives a release. Each upload is also committed to the game repository, so the following release carries it as well. A new encounter image name avoids names the release already uses.
+- The image reader and the image cache sync read the same two folders in the same order, instead of `/var/www/morkahja`.
+- New `scripts/morkahja-image-uploads-setup.py`, which Babuni runs once with sudo. It creates the upload folders, changes only the `/Morkahja/(UI|game)/` Nginx block to `try_files /uploads$uri /web$uri =404;`, backs the file up, and reloads only when `nginx -t` passes (otherwise it restores the backup). It stops without changes if the block on the server is not the expected one. Checked against the game repository's Nginx template; it has not run on the server yet.
+- The server check now reads the backend Git state despite the folder owner (`safe.directory`) and lists the upload folders.
+- Tests: two new cases (an upload overrides a release image; a new name skips release names), and the single-image reader was run against temporary folders. Suite 132/132, lint and build pass.
+
 ## 2026-11-16 — Save results, live image uploads, full content editors
 
 - Every save from Content (encounter, solution, expansion, frame, portrait) now opens a popup in the middle of the screen with each step on its own line. **Live game** says whether the running game wrote the catalog and the record read back unchanged. **GitHub** gives the pushed commit, its message and a link, or says why it was not committed. Clicking beside the popup, Escape or **Close** dismisses it. A failed save opens the same popup with a plain explanation of the error code (`src/features/morkahja/components/SaveResultDialog.tsx`, `src/features/morkahja/utils/saveResults.ts`).

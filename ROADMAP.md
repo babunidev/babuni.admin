@@ -28,7 +28,8 @@ This is the one list of what is still open. The dated sections below stay as his
 
 - [ ] Paused: live encounter publishing, until the game developer delivers the agreed runtime-content architecture.
 - [x] Remote image upload with atomic replacement, read-back, a public-address check and a GitHub commit (2026-11-16, source and fixtures; no server backup by decision).
-- [ ] Run `scripts/morkahja-live-check.py` on the server and confirm the image folder players get and that the SSH login may write it; then the first real upload.
+- [x] Run `scripts/morkahja-live-check.py` on the server (2026-11-16): content routes and key present; players get images from a root-owned release folder.
+- [ ] Run `scripts/morkahja-image-uploads-setup.py` on the server with sudo, then make the first real upload and check the popup's three steps.
 - [ ] New Overview metrics: approve definitions, add SELECT-only views, verify, then add cards.
 - [ ] Remove unused legacy APIs and profile kinds once the live workflows above are confirmed. Since 2026-11-10 no `postgres-ssh` profile exists, so the restricted Overview probe code (`remoteProbeConfig.mjs` as a standalone profile path) is a candidate.
 

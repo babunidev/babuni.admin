@@ -39,22 +39,33 @@ try:
   name=request["name"]
   if kind not in folders or not isinstance(name,str) or not name.endswith(".webp") or not name.replace("_","").replace("-","").replace(".","").isalnum() or len(name)>125:
     raise ValueError("INVALID_IMAGE_REQUEST")
-  root="/var/www/morkahja"
-  directory=os.path.join(root,folders[kind])
-  dfd=os.open(directory,os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
-  try:
-    fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW,dir_fd=dfd)
+  # Uploaded images override the current release, as in Nginx.
+  roots=["/var/www/morkahja-subpath/uploads/Morkahja","/var/www/morkahja-subpath/web/Morkahja"]
+  data=None
+  for root in roots:
     try:
-      st=os.fstat(fd)
-      if not stat.S_ISREG(st.st_mode) or st.st_size<=0 or st.st_size>2097152:
-        raise ValueError("IMAGE_UNAVAILABLE")
-      data=os.read(fd,2097153)
-      if len(data)!=st.st_size:
-        raise ValueError("IMAGE_UNAVAILABLE")
+      dfd=os.open(os.path.join(root,folders[kind]),os.O_RDONLY|os.O_DIRECTORY|os.O_NOFOLLOW)
+    except OSError:
+      continue
+    try:
+      try:
+        fd=os.open(name,os.O_RDONLY|os.O_NOFOLLOW,dir_fd=dfd)
+      except FileNotFoundError:
+        continue
+      try:
+        st=os.fstat(fd)
+        if not stat.S_ISREG(st.st_mode) or st.st_size<=0 or st.st_size>2097152:
+          raise ValueError("IMAGE_UNAVAILABLE")
+        data=os.read(fd,2097153)
+        if len(data)!=st.st_size:
+          raise ValueError("IMAGE_UNAVAILABLE")
+      finally:
+        os.close(fd)
     finally:
-      os.close(fd)
-  finally:
-    os.close(dfd)
+      os.close(dfd)
+    break
+  if data is None:
+    raise ValueError("IMAGE_UNAVAILABLE")
   if not data.startswith(b"RIFF") or data[8:12]!=b"WEBP":
     raise ValueError("IMAGE_UNAVAILABLE")
   print(json.dumps({"ok":True,"base64":base64.b64encode(data).decode("ascii")}))

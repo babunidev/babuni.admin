@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-16 — Where the pictures really live
+
+I ran the server check and pasted the result. Saving content was fine: the game has the admin routes and the key. Pictures were not. Players get them from a release folder that is replaced on every release and that my login cannot write, and the folder the admin was reading was an old copy. AI (Claude Code, Claude Opus 5.5) proposed a separate uploads folder that I own, which Nginx looks in before the release, and wrote a one-time setup I run with sudo. It changes one Nginx block, keeps a backup and only reloads if the configuration test passes.
+
 ## 2026-11-16 — Seeing what a save did
 
 A save in Content gave me one short line at the bottom of the page, and I could never tell what had actually happened: whether the game had the change, whether it was on GitHub. I asked for a popup in the middle of the screen that tells me, as the person making the content, what was done, and that I can click away. I also wanted full control over the content: new encounters with their own pictures, replacing pictures, and the same for solutions and the rest. AI (Claude Code, Claude Opus 5.5) built the popup and made pictures upload through the same administrator connection. After each upload it downloads the picture from the public game address to prove players get it, then commits it to the game repository. It also opened up the expansion, frame and portrait editors. I decided against a backup copy on the server for every save. This is my own tool, we are early in development, and GitHub already keeps every version.

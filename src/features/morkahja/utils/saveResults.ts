@@ -42,7 +42,8 @@ export function describeSaveError(code: string): string {
     SSH_AUTH_REJECTED: 'The server rejected the SSH key. Is the key loaded in your SSH agent?',
     LOCAL_SERVICE_UNAVAILABLE: 'The local Babuni Admin service is not running.',
     IMAGE_PERMISSION_DENIED: 'Your SSH login may not write into this image folder on the server.',
-    IMAGE_FOLDER_UNAVAILABLE: 'The image folder does not exist on the server.',
+    IMAGE_FOLDER_UNAVAILABLE:
+      'The upload folder is missing on the server. Run scripts/morkahja-image-uploads-setup.py there once.',
     IMAGE_NOT_WEBP: 'The file could not be turned into a WebP image.',
     IMAGE_TOO_LARGE: 'The image is larger than 2 MB after conversion.',
     INVALID_IMAGE_NAME: 'Use only letters, numbers, _ and - in the image name.',

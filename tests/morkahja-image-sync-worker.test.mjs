@@ -7,10 +7,10 @@ import {join} from 'node:path'
 
 const file='scripts/morkahja-image-cache-sync.py'
 
-async function runWorker(root,cached={}) {
+async function runWorker(root,cached={},uploads=join(root,'..','no-uploads')) {
   const source=await readFile(file,'utf8')
   const content='CACHED_JSON='+JSON.stringify(JSON.stringify(cached))+'\n'+
-    source.replace('ROOT = "/var/www/morkahja"', 'ROOT = '+JSON.stringify(root))
+    source.replace(/^ROOTS = .*$/m, 'ROOTS = '+JSON.stringify([uploads,root]))
   const proc=spawnSync('python3',['-'],{
     input:content,encoding:'utf8',maxBuffer:4*1024*1024,timeout:5000,
   })
@@ -44,4 +44,19 @@ test('deployed SSH Python worker sends WebP once and metadata only after cache m
     assert.equal(third.filter(record=>record.type==='file').length,1)
     assert.equal(third.at(-1).type,'complete')
   }finally {await rm(root,{recursive:true,force:true})}
+})
+
+test('uploaded images override the release copy of the same name',async()=>{
+  const base=await mkdtemp(join(tmpdir(),'babuni-image-overlay-'))
+  try {
+    const release=join(base,'release'),uploads=join(base,'uploads')
+    await mkdir(join(release,'game','encounterimages'),{recursive:true})
+    await mkdir(join(uploads,'game','encounterimages'),{recursive:true})
+    await writeFile(join(release,'game','encounterimages','a.webp'),Buffer.from('RIFF\0\0\0\0WEBPold'))
+    await writeFile(join(release,'game','encounterimages','b.webp'),Buffer.from('RIFF\0\0\0\0WEBPkept'))
+    await writeFile(join(uploads,'game','encounterimages','a.webp'),Buffer.from('RIFF\0\0\0\0WEBPnew'))
+    const records=(await runWorker(release,{},uploads)).filter(r=>r.type==='file')
+    assert.deepEqual(records.map(r=>[r.name,Buffer.from(r.base64,'base64').toString().slice(12)]),
+      [['a.webp','new'],['b.webp','kept']])
+  }finally {await rm(base,{recursive:true,force:true})}
 })

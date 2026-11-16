@@ -9,13 +9,14 @@ import {imageWriteRequest,writeMorkahjaImage,checkPublicImage} from '../local-se
 
 const webp=text=>Buffer.concat([Buffer.from('RIFF\0\0\0\0WEBP'),Buffer.from(text)])
 
-async function runWorker(root,request) {
+async function runWorker(root,request,release=join(root,'..','no-release')) {
   const source=await readFile('scripts/morkahja-image-write-worker.py','utf8')
-  assert.match(source,/^ROOT = "\/var\/www\/morkahja"$/m)
+  assert.match(source,/^UPLOADS = "\/var\/www\/morkahja-subpath\/uploads\/Morkahja"$/m)
   const payload=Buffer.from(JSON.stringify(request)).toString('base64')
   const proc=spawnSync('python3',['-'],{
     input:"REQUEST_BASE64 = '"+payload+"'\n"+
-      source.replace('ROOT = "/var/www/morkahja"','ROOT = '+JSON.stringify(root)),
+      source.replace(/^UPLOADS = .*$/m,'UPLOADS = '+JSON.stringify(root))
+        .replace(/^RELEASE = .*$/m,'RELEASE = '+JSON.stringify(release)),
     encoding:'utf8',timeout:5000,
   })
   assert.equal(proc.status,0,proc.stderr)
@@ -99,4 +100,19 @@ test('the public check compares the downloaded bytes',async()=>{
   assert.equal((await checkPublicImage('encounter','a.webp',sha,{fetchImpl:serve(webp('old'))})).ok,false)
   const missing=await checkPublicImage('encounter','a.webp',sha,{fetchImpl:async()=>new Response('',{status:404})})
   assert.deepEqual({ok:missing.ok,status:missing.status},{ok:false,status:404})
+})
+
+test('a new upload does not take a name the release already uses',async()=>{
+  const base=await mkdtemp(join(tmpdir(),'babuni-image-names-'))
+  try {
+    const uploads=join(base,'uploads'),release=join(base,'release')
+    await mkdir(join(uploads,'game','encounterimages'),{recursive:true})
+    await mkdir(join(release,'game','encounterimages'),{recursive:true})
+    await writeFile(join(release,'game','encounterimages','glade.webp'),webp('release'))
+    const unique=await runWorker(uploads,{kind:'encounter',mode:'unique',base:'glade',data:webp('n').toString('base64')},release)
+    assert.equal(unique.name,'2_glade.webp')
+    const override=await runWorker(uploads,{kind:'encounter',mode:'exact',base:'glade',data:webp('o').toString('base64')},release)
+    assert.deepEqual([override.name,override.replaced],['glade.webp',true])
+    assert.match((await readFile(join(release,'game','encounterimages','glade.webp'))).toString(),/release$/)
+  }finally {await rm(base,{recursive:true,force:true})}
 })
