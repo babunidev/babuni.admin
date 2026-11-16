@@ -27,7 +27,8 @@ This is the one list of what is still open. The dated sections below stay as his
 ### Morkahja (paused or waiting on decisions)
 
 - [ ] Paused: live encounter publishing, until the game developer delivers the agreed runtime-content architecture.
-- [ ] Remote image upload with revision checks, backup and atomic replacement.
+- [x] Remote image upload with atomic replacement, read-back, a public-address check and a GitHub commit (2026-11-16, source and fixtures; no server backup by decision).
+- [ ] Run `scripts/morkahja-live-check.py` on the server and confirm the image folder players get and that the SSH login may write it; then the first real upload.
 - [ ] New Overview metrics: approve definitions, add SELECT-only views, verify, then add cards.
 - [ ] Remove unused legacy APIs and profile kinds once the live workflows above are confirmed. Since 2026-11-10 no `postgres-ssh` profile exists, so the restricted Overview probe code (`remoteProbeConfig.mjs` as a standalone profile path) is a candidate.
 
@@ -97,7 +98,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [x] Refresh visible thumbnails when the sync reports changed files and expose simple cache progress.
 - [x] Test first sync, unchanged sync, changed-image replacement, process restart and offline cache use with synthetic fixtures.
 - [ ] Verify the first bulk sync, tab navigation, warm restart, and replacement behavior on the real Nobara/Ubuntu environment.
-- [ ] Implement verified image upload and deployment separately from this read-only cache.
+- [x] Implement verified image upload separately from this read-only cache (2026-11-16; live verification pending, see above).
 
 
 ## Morkahja remote image delivery — 2026-11-06

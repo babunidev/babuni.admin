@@ -7,6 +7,7 @@ import {
   SOLUTION_TYPE_GROUPS,
 } from '../utils/gameDataReference'
 import { ImageUploadField } from './ImageUploadField'
+import { RemoteContentImage } from './RemoteContentImage'
 
 const inputClass =
   'w-full rounded border border-gold/20 bg-ash px-3 py-2 text-sm text-parchment'
@@ -108,6 +109,8 @@ interface EncounterEditorPanelProps {
   isSaving: boolean
   saveError?: string | null
   onUploadImage?: (file: File) => Promise<string | void>
+  /** Administrator connection: preview comes from the live server's images. */
+  profileId?: string
 }
 
 export function EncounterEditorPanel({
@@ -120,6 +123,7 @@ export function EncounterEditorPanel({
   isSaving,
   saveError,
   onUploadImage,
+  profileId,
 }: EncounterEditorPanelProps) {
   const previewSrc = encounterImageUrl(draft.mEncounterImageName)
   const jsonKey =
@@ -256,7 +260,9 @@ export function EncounterEditorPanel({
             <EditorSection
               title="Image"
               description={
-                useLocalContent && onUploadImage
+                profileId && onUploadImage
+                  ? 'Choosing a file uploads it to encounterimages/ on the live server as WebP and commits it to GitHub. The name comes from the encounter title (2_title, 3_title, … if that name is taken), so the old picture stays until you save.'
+                  : useLocalContent && onUploadImage
                   ? 'Choosing a file copies it into encounterimages/ as WebP. The name is generated from the encounter title (2_title, 3_title, … if that name already exists).'
                   : undefined
               }
@@ -273,14 +279,21 @@ export function EncounterEditorPanel({
                   }
                 />
               </Field>
-              {previewSrc && (
+              {profileId && draft.mEncounterImageName ? (
+                <RemoteContentImage
+                  profileId={profileId}
+                  kind="encounter"
+                  name={draft.mEncounterImageName}
+                  className="block max-h-40 w-full overflow-hidden rounded-lg border border-gold/15 object-cover"
+                />
+              ) : previewSrc && (
                 <img
                   src={previewSrc}
                   alt=""
                   className="max-h-40 w-full rounded-lg border border-gold/15 object-cover"
                 />
               )}
-              {useLocalContent && onUploadImage && (
+              {onUploadImage && (
                 <ImageUploadField
                   label="Choose encounter image"
                   fileName={draft.mEncounterImageName}

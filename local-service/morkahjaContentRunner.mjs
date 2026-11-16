@@ -119,7 +119,8 @@ export async function runContentSsh(config,request,deps={}) {
       if(request.action==='read' && (!parsed.data ||
         typeof parsed.data!=='object'||Array.isArray(parsed.data)))
         return settle({ok:false,code:'REMOTE_CONTENT_INVALID_RESPONSE'})
-      return settle({ok:true,data:parsed.data,revision:parsed.revision})
+      return settle({ok:true,data:parsed.data,revision:parsed.revision,
+        ...(['game','file'].includes(parsed.via)?{via:parsed.via}:{})})
     })
     child.stdin?.on('error',()=>{})
     try {child.stdin?.end(code)}
@@ -137,6 +138,7 @@ export async function performMorkahjaContent(profile,request,deps={}) {
     if(!approved.ok)return {ok:false,code:approved.code}
     const result=await (deps.run||runContentSsh)(approved.config,request)
     return result.ok?{ok:true,data:result.data,revision:result.revision,
+      ...(result.via?{via:result.via}:{}),
       checkedAt:new Date().toISOString()}:{ok:false,code:result.code}
   } catch{return {ok:false,code:'REMOTE_CONTENT_FAILED'}}
   finally{active=false}

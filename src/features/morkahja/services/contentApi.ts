@@ -13,6 +13,37 @@ import { localConnectionApi } from '../../../shared/services/localConnectionClie
 
 import { MODERATION_PROFILE_KEY, getModerationProfileId } from './adminApi'
 
+/**
+ * Writes one image into its live folder on the game server and commits it to
+ * GitHub. `exact` writes or replaces `name`; `unique` keeps existing files and
+ * picks 2_name, 3_name… when the name is taken.
+ */
+export async function uploadContentImage(
+  kind: RemoteImageKind,
+  name: string,
+  file: File,
+  mode: 'exact' | 'unique',
+): Promise<ImageUploadReport> {
+  const id = getContentProfileId()
+  if (!id) throw new Error('CONTENT_PROFILE_REQUIRED')
+  const base64 = await imageFileToWebpBase64(file)
+  return localConnectionApi<ImageUploadReport>('POST', '/' + id + '/content-image-upload', {
+    kind, name: name.replace(/\.webp$/i, ''), mode, base64,
+  })
+}
+
+/** Lowercase snake_case file name from a title, as the game's encounter images use. */
+export function imageBaseFromTitle(title: string, fallback = 'encounter'): string {
+  const slug = title
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 80)
+  return slug || fallback
+}
+
 // One selected administrator profile is shared across Moderation and Content.
 export const CONTENT_PROFILE_KEY = MODERATION_PROFILE_KEY
 const contentRevisions = new Map<string, string>()
@@ -27,19 +58,47 @@ async function remoteRead<T>(kind: string): Promise<T> {
   return response.data
 }
 
-export type ContentGitResult = { ok?: boolean; commit?: string; message?: string; skipped?: boolean }
+export type ContentGitResult = {
+  ok?: boolean
+  commit?: string
+  message?: string
+  skipped?: boolean
+  code?: string
+  url?: string
+}
 
-async function remoteWrite(kind: string, key: string | number, data: unknown): Promise<ContentGitResult> {
+/** What the live save reported. `undefined` when saving to local files instead. */
+export type CatalogSaveReport = {
+  revision: string
+  via?: 'game' | 'file'
+  checkedAt?: string
+  git?: ContentGitResult
+}
+
+export type RemoteImageKind = 'encounter' | 'solution' | 'expansion' | 'frame' | 'portrait'
+
+export type ImageUploadReport = {
+  kind: RemoteImageKind
+  name: string
+  sha256: string
+  size: number
+  replaced: boolean
+  publicCheck: { url: string; ok: boolean; status: number }
+  git: ContentGitResult
+  checkedAt: string
+}
+
+async function remoteWrite(kind: string, key: string | number, data: unknown): Promise<CatalogSaveReport> {
   const id = getContentProfileId()
   if (!id) throw new Error('CONTENT_PROFILE_REQUIRED')
   const expectedRevision = contentRevisions.get(id + ':' + kind)
   if (!expectedRevision) throw new Error('CONTENT_REVISION_REQUIRED')
   const revisionKey = id + ':' + kind
   try {
-    const response = await localConnectionApi<{ok:true;revision:string;git?:ContentGitResult}>(
+    const response = await localConnectionApi<{ok:true} & CatalogSaveReport>(
       'POST','/' + id + '/content-write',{kind,key,data,expectedRevision})
     contentRevisions.set(revisionKey, response.revision)
-    return response.git ?? {}
+    return response
   } catch (error) {
     const revision = (error as { detail?: { revision?: string } }).detail?.revision
     if (revision) contentRevisions.set(revisionKey, revision)
@@ -127,64 +186,64 @@ export async function fetchPortraits(): Promise<PortraitsDataFile> {
 export async function createEncounter(
   key: string,
   data: EncounterMap[string],
-): Promise<ContentGitResult> {
+): Promise<CatalogSaveReport | undefined> {
   if (getContentProfileId()) return remoteWrite('encounters', key, data)
   if (useLocalContent) {
     await localPost('/encounters', { key, data })
-    return {}
+    return undefined
   }
   await confirmedRemotePost('/content/encounters', { key, data })
-  return {}
+  return undefined
 }
 
 export async function createSolution(
   key: string,
   data: SolutionMap[string],
-): Promise<ContentGitResult> {
+): Promise<CatalogSaveReport | undefined> {
   if (getContentProfileId()) return remoteWrite('solutions', key, data)
   if (useLocalContent) {
     await localPost('/solutions', { key, data })
-    return {}
+    return undefined
   }
   await confirmedRemotePost('/content/solutions', { key, data })
-  return {}
+  return undefined
 }
 
 export async function createExpansion(
   key: string,
   data: ExpansionData,
-): Promise<ContentGitResult> {
+): Promise<CatalogSaveReport | undefined> {
   if (getContentProfileId()) return remoteWrite('expansions', key, data)
   if (useLocalContent) {
     await localPost('/expansions', { key, data })
-    return {}
+    return undefined
   }
   await confirmedRemotePost('/content/expansions', { key, data })
-  return {}
+  return undefined
 }
 
 export async function createFrame(
   data: NonNullable<FramesDataFile['Frames'][number]>,
-): Promise<ContentGitResult> {
+): Promise<CatalogSaveReport | undefined> {
   if (getContentProfileId()) return remoteWrite('frames', data.frameID, data)
   if (useLocalContent) {
     await localPost('/frames', data)
-    return {}
+    return undefined
   }
   await confirmedRemotePost('/content/frames', data)
-  return {}
+  return undefined
 }
 
 export async function createPortrait(
   data: NonNullable<PortraitsDataFile['Avatar'][number]>,
-): Promise<ContentGitResult> {
+): Promise<CatalogSaveReport | undefined> {
   if (getContentProfileId()) return remoteWrite('portraits', data.avatarID, data)
   if (useLocalContent) {
     await localPost('/portraits', data)
-    return {}
+    return undefined
   }
   await confirmedRemotePost('/content/portraits', data)
-  return {}
+  return undefined
 }
 
 export async function uploadEncounterImage(

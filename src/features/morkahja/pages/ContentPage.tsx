@@ -23,6 +23,14 @@ import {
   formatRoleId,
 } from '../utils/contentLabels'
 import { ImageUploadField } from '../components/ImageUploadField'
+import { SaveResultDialog, type SaveResult } from '../components/SaveResultDialog'
+import {
+  catalogFailureResult,
+  catalogSaveResult,
+  describeSaveError,
+  imageFailureResult,
+  imageUploadResult,
+} from '../utils/saveResults'
 import {
   encounterImageUrl,
   expansionImageUrl,
@@ -34,7 +42,10 @@ import {
 } from '../../../config/constants'
 import {
   createEncounter,
-  type ContentGitResult,
+  type CatalogSaveReport,
+  type RemoteImageKind,
+  imageBaseFromTitle,
+  uploadContentImage,
   createExpansion,
   createFrame,
   createPortrait,
@@ -49,24 +60,31 @@ import {
   getContentProfileId,
 } from '../services/contentApi'
 
-function catalogSaved(kind: string, wasEdit: boolean, git?: ContentGitResult): string {
-  if (git?.commit) return `${kind} committed to GitHub (${git.commit}).`
-  if (git?.skipped) return `${kind} saved. GitHub already had this version.`
-  return wasEdit ? `${kind} updated in the live game.` : `${kind} saved to the live game.`
+type ShowResult = (result: SaveResult) => void
+
+/** An upload handler that writes to the live server and shows the result popup. */
+function liveImageUploader(
+  show: ShowResult,
+  onUploaded: () => void,
+  kind: RemoteImageKind,
+  name: string,
+  mode: 'exact' | 'unique',
+  notes: string[] = [],
+) {
+  return async (file: File): Promise<string> => {
+    try {
+      const report = await uploadContentImage(kind, name, file, mode)
+      show(imageUploadResult(report, notes))
+      onUploaded()
+      return report.name.replace(/\.webp$/i, '')
+    } catch (error) {
+      const failure = error instanceof Error ? error : new Error('IMAGE_WRITE_FAILED')
+      show(imageFailureResult(kind, failure))
+      throw new Error(describeSaveError(failure.message), { cause: error })
+    }
+  }
 }
 
-function saveFailure(error: Error): string {
-  if (error.message === 'CONTENT_GIT_FAILED' || error.message === 'CONTENT_GIT_PUSH_FAILED') {
-    return 'Saved to the live game, but the GitHub commit failed. Save again to retry the commit.'
-  }
-  if (error.message === 'CONTENT_GIT_DIVERGED') {
-    return 'Saved to the live game, but GitHub main has other commits. This edit was not pushed.'
-  }
-  if (error.message === 'CONTENT_GIT_DIRTY') {
-    return 'Saved to the live game, but the content checkout has other edits, so this one was not committed.'
-  }
-  return error.message
-}
 import type {
   EncounterData,
   ExpansionData,
@@ -116,6 +134,7 @@ export function ContentPage() {
   )
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<string | null>(null)
+  const [saveResult, setSaveResult] = useState<SaveResult | null>(null)
   const queryClient = useQueryClient()
   const imageCache=useMorkahjaImageCacheStatus()
   const [contentProfileId, setContentProfileId] = useState(() => getContentProfileId() || '')
@@ -132,7 +151,7 @@ export function ContentPage() {
       setContentProfileId(active?.id || '')
       setConnectionReady(true)
       setContentProfileStatus(active
-        ? 'Using your administrator connection. Catalog revisions and backups protect edits.'
+        ? 'Using your administrator connection. Saves go to the live game and are committed to GitHub.'
         : 'Administrator connection unavailable. Configure it in Connection.')
     }).catch(() => {
       if (mounted) {
@@ -352,41 +371,53 @@ export function ContentPage() {
       const isEdit = Boolean(encounterEditKey)
       const key =
         encounterEditKey ?? String(encounterDraft.mEncounterID).padStart(5, '0')
-      const git = await createEncounter(key, encounterDraft)
-      return { isEdit, git }
+      const report = await createEncounter(key, encounterDraft)
+      return { isEdit, report, title: encounterDraft.mEncounterTitle || key }
     },
-    onSuccess: ({ isEdit: wasEdit, git }) => {
+    onSuccess: ({ isEdit: wasEdit, report, title }) => {
       closeEncounterEditor()
-      setStatus(
-        contentProfileId
-          ? catalogSaved('Encounter', wasEdit, git)
-          : wasEdit
+      if (report) setSaveResult(catalogSaveResult('Encounter', title, wasEdit, report))
+      else setStatus(
+        wasEdit
             ? useLocalContent ? 'Encounter updated in encountersdata.json.' : 'Encounter updated on VPS.'
             : useLocalContent ? 'Encounter saved to encountersdata.json on disk.' : 'Encounter saved on VPS.',
       )
       void queryClient.invalidateQueries({ queryKey: ['content', 'encounters'] })
     },
-    onError: (err: Error) => setStatus(saveFailure(err)),
+    onError: (err: Error) => {
+      if (contentProfileId) {
+        setSaveResult(catalogFailureResult('Encounter', encounterDraft.mEncounterTitle, err))
+      } else setStatus(err.message)
+    },
   })
 
   const saveSolution = useMutation({
-    mutationFn: () => {
+    mutationFn: async () => {
       const key = String(solutionDraft.mSolutionID)
-      return createSolution(key, solutionDraft)
+      const wasEdit = Boolean(solutionsQuery.data?.[key])
+      const report = await createSolution(key, solutionDraft)
+      return { report, wasEdit }
     },
-    onSuccess: (git) => {
-      setStatus(
-        contentProfileId ? catalogSaved('Solution', true, git) : useLocalContent
-          ? 'Solution saved to solutiondata.json on disk.'
-          : 'Solution saved on VPS.',
-      )
+    onSuccess: ({ report, wasEdit }) => {
+      if (report) {
+        setSaveResult(catalogSaveResult('Solution', solutionDraft.mSolutionName, wasEdit, report))
+      } else setStatus(useLocalContent
+        ? 'Solution saved to solutiondata.json on disk.'
+        : 'Solution saved on VPS.')
       void queryClient.invalidateQueries({ queryKey: ['content', 'solutions'] })
     },
-    onError: (err: Error) => setStatus(saveFailure(err)),
+    onError: (err: Error) => {
+      if (contentProfileId) {
+        setSaveResult(catalogFailureResult('Solution', solutionDraft.mSolutionName, err))
+      } else setStatus(err.message)
+    },
   })
+  const refreshImages = () => {
+    void queryClient.invalidateQueries({ queryKey: ['content'] })
+  }
 
   const dataSourceHint = contentProfileId
-    ? 'Administrator catalog and images via SSH · /var/www/morkahja'
+    ? 'Live game catalog and images via your administrator connection · saves are committed to GitHub'
     : useLocalContent
     ? `Local files: MorkahjaWebApp/server/game (data) + client/public (images, UI); saves go to disk`
     : gameDataBaseUrl
@@ -505,11 +536,27 @@ export function ContentPage() {
               onSave={() => saveEncounter.mutate()}
               onClose={closeEncounterEditor}
               isSaving={saveEncounter.isPending}
+              profileId={contentProfileId || undefined}
               saveError={
-                saveEncounter.error instanceof Error ? saveFailure(saveEncounter.error) : null
+                saveEncounter.error instanceof Error
+                  ? describeSaveError(saveEncounter.error.message)
+                  : null
               }
               onUploadImage={
-                useLocalContent && !contentProfileId
+                contentProfileId
+                  ? (file) =>
+                      liveImageUploader(
+                        setSaveResult,
+                        refreshImages,
+                        'encounter',
+                        imageBaseFromTitle(
+                          encounterDraft.mEncounterTitle.trim() ||
+                            `encounter_${encounterDraft.mEncounterID}`,
+                        ),
+                        'unique',
+                        ['The editor now points at this image. Click Save encounter so the game uses it.'],
+                      )(file)
+                  : useLocalContent
                   ? (file) =>
                       uploadEncounterImageFromTitle(
                         encounterDraft.mEncounterTitle.trim() ||
@@ -573,12 +620,24 @@ export function ContentPage() {
               </p>
             )}
           <section className="rounded-lg border border-gold/15 bg-slate/50 p-5">
-            <h2 className="text-sm uppercase tracking-widest text-gold-bright">
-              Add solution
-            </h2>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-sm uppercase tracking-widest text-gold-bright">
+                Add or edit solution
+              </h2>
+              {selectedSolution && (
+                <button
+                  type="button"
+                  onClick={() => setSolutionDraft({ ...selectedSolution.solution })}
+                  className="rounded border border-gold/25 px-3 py-1 text-xs text-gold-bright hover:bg-gold/15"
+                >
+                  Edit “{selectedSolution.solution.mSolutionName}”
+                </button>
+              )}
+            </div>
             <p className="mt-1 text-xs text-fog">
-              Saves to <code className="text-gold-bright">solutiondata.json</code> and{' '}
-              <code className="text-gold-bright">solutionimages/</code> on disk.
+              {contentProfileId
+                ? 'Saving with an existing ID replaces that solution in the live game. The icon goes to solutionimages/ on the server.'
+                : 'Saves to solutiondata.json and solutionimages/ on disk.'}
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               <Field label="ID">
@@ -618,7 +677,19 @@ export function ContentPage() {
                   }
                 />
               </Field>
-              {useLocalContent && !contentProfileId && (
+              {contentProfileId ? (
+                <ImageUploadField
+                  label="Upload solution icon (saved under the icon name)"
+                  fileName={solutionDraft.mSolutionIconName}
+                  onUpload={liveImageUploader(
+                    setSaveResult,
+                    refreshImages,
+                    'solution',
+                    solutionDraft.mSolutionIconName,
+                    'exact',
+                  )}
+                />
+              ) : useLocalContent && (
                 <ImageUploadField
                   label="Upload solution icon (.webp)"
                   fileName={solutionDraft.mSolutionIconName}
@@ -676,6 +747,7 @@ export function ContentPage() {
           onCloseDetail={closeDetail}
           detailKey={detailKind === 'expansions' ? itemKey : undefined}
           onStatus={setStatus}
+          onResult={setSaveResult}
         />
       )}
 
@@ -689,6 +761,7 @@ export function ContentPage() {
           onCloseDetail={closeDetail}
           detailKey={detailKind === 'frames' ? itemKey : undefined}
           onStatus={setStatus}
+          onResult={setSaveResult}
         />
       )}
 
@@ -702,6 +775,7 @@ export function ContentPage() {
           onCloseDetail={closeDetail}
           detailKey={detailKind === 'portraits' ? itemKey : undefined}
           onStatus={setStatus}
+          onResult={setSaveResult}
         />
       )}
 
@@ -710,8 +784,131 @@ export function ContentPage() {
           {status}
         </p>
       )}
+      <SaveResultDialog result={saveResult} onClose={() => setSaveResult(null)} />
     </div>
   )
+}
+
+/** Save handling shared by the expansion, frame and portrait editors. */
+function usePanelSave<T>({
+  kind,
+  queryName,
+  profileId,
+  onStatus,
+  onResult,
+  save,
+  nameOf,
+  exists,
+}: {
+  kind: 'Expansion' | 'Frame' | 'Portrait'
+  queryName: string
+  profileId?: string
+  onStatus: (msg: string) => void
+  onResult: ShowResult
+  save: (draft: T) => Promise<CatalogSaveReport | undefined>
+  nameOf: (draft: T) => string
+  exists: (draft: T) => boolean
+}) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: async (draft: T) => ({ draft, wasEdit: exists(draft), report: await save(draft) }),
+    onSuccess: ({ draft, wasEdit, report }) => {
+      if (report) onResult(catalogSaveResult(kind, nameOf(draft), wasEdit, report))
+      else onStatus(`${kind} saved.`)
+      void queryClient.invalidateQueries({ queryKey: ['content', queryName] })
+    },
+    onError: (err: Error, draft) => {
+      if (profileId) onResult(catalogFailureResult(kind, nameOf(draft), err))
+      else onStatus(err.message)
+    },
+  })
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: number
+  onChange: (value: number) => void
+}) {
+  return (
+    <Field label={label}>
+      <input
+        type="number"
+        className={inputClass}
+        value={Number.isFinite(value) ? value : 0}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </Field>
+  )
+}
+
+function TextField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+}) {
+  return (
+    <Field label={label}>
+      <input className={inputClass} value={value} onChange={(e) => onChange(e.target.value)} />
+    </Field>
+  )
+}
+
+function EditorHeader({
+  title,
+  loadLabel,
+  onLoad,
+  hint,
+}: {
+  title: string
+  loadLabel?: string
+  onLoad?: () => void
+  hint: string
+}) {
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm uppercase tracking-widest text-gold-bright">{title}</h2>
+        {onLoad && loadLabel && (
+          <button
+            type="button"
+            onClick={onLoad}
+            className="rounded border border-gold/25 px-3 py-1 text-xs text-gold-bright hover:bg-gold/15"
+          >
+            Edit “{loadLabel}”
+          </button>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-fog">{hint}</p>
+    </>
+  )
+}
+
+const saveButtonClass =
+  'mt-4 rounded border border-gold/30 bg-gold/15 px-4 py-2 text-sm text-gold-bright disabled:opacity-50'
+
+interface PanelProps<Row> {
+  profileId?: string
+  data: Row
+  search: string
+  selectedKey?: string
+  onSelect: (key: string) => void
+  onCloseDetail: () => void
+  detailKey?: string
+  onStatus: (msg: string) => void
+  onResult: ShowResult
+}
+
+function useImageRefresh() {
+  const queryClient = useQueryClient()
+  return () => void queryClient.invalidateQueries({ queryKey: ['content'] })
 }
 
 function ExpansionPanel({
@@ -723,16 +920,8 @@ function ExpansionPanel({
   onCloseDetail,
   detailKey,
   onStatus,
-}: {
-  profileId?: string
-  data: Record<string, ExpansionData>
-  search: string
-  selectedKey?: string
-  onSelect: (key: string) => void
-  onCloseDetail: () => void
-  detailKey?: string
-  onStatus: (msg: string) => void
-}) {
+  onResult,
+}: PanelProps<Record<string, ExpansionData>>) {
   const q = search.toLowerCase()
   const entries = Object.entries(data).filter(([key, row]) => {
     if (!q) return true
@@ -765,12 +954,32 @@ function ExpansionPanel({
     mExtensioText: '',
     mExtensioUnlockButton: 'im_unlock_expansion_new',
   })
+  const patch = (next: Partial<ExpansionData>) => setDraft((d) => ({ ...d, ...next }))
+  const refreshImages = useImageRefresh()
 
-  const save = useMutation({
-    mutationFn: () => createExpansion(String(draft.mExtensioID), draft),
-    onSuccess: (git) => onStatus(profileId ? catalogSaved('Expansion', true, git) : 'Expansion saved.'),
-    onError: (err: Error) => onStatus(saveFailure(err)),
+  const save = usePanelSave<ExpansionData>({
+    kind: 'Expansion',
+    queryName: 'expansions',
+    profileId,
+    onStatus,
+    onResult,
+    save: (d) => createExpansion(String(d.mExtensioID), d),
+    nameOf: (d) => d.mExtensioName,
+    exists: (d) => Object.hasOwn(data, String(d.mExtensioID)),
   })
+
+  const imageField = (label: string, field: 'mExtensioCollectionImage' | 'mExtensioHeaderImage' | 'mExtensioUnlockButton') => (
+    <div className="space-y-2">
+      <TextField label={`${label} (no .webp)`} value={draft[field]} onChange={(v) => patch({ [field]: v })} />
+      {profileId && (
+        <ImageUploadField
+          label={`Upload ${label.toLowerCase()}`}
+          fileName={draft[field]}
+          onUpload={liveImageUploader(onResult, refreshImages, 'expansion', draft[field], 'exact')}
+        />
+      )}
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -823,35 +1032,47 @@ function ExpansionPanel({
         />
       )}
       <section className="rounded-lg border border-gold/15 bg-slate/50 p-5">
-        <h2 className="text-sm uppercase tracking-widest text-gold-bright">
-          Add expansion
-        </h2>
+        <EditorHeader
+          title="Add or edit expansion"
+          loadLabel={selected?.mExtensioName}
+          onLoad={selected ? () => setDraft({ ...selected }) : undefined}
+          hint="The ID is also the JSON key. Saving with an existing ID replaces that expansion."
+        />
         <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Field label="Name">
+          <TextField label="Name" value={draft.mExtensioName} onChange={(v) => patch({ mExtensioName: v })} />
+          <NumberField label="ID" value={draft.mExtensioID} onChange={(v) => patch({ mExtensioID: v })} />
+          <NumberField label="Gem cost" value={draft.mExtensioCost} onChange={(v) => patch({ mExtensioCost: v })} />
+          <NumberField label="Reward ID" value={draft.mExtensioReward} onChange={(v) => patch({ mExtensioReward: v })} />
+          <TextField label="Summary" value={draft.mExtensioSummaryText} onChange={(v) => patch({ mExtensioSummaryText: v })} />
+          <label className="flex items-center gap-2 self-end text-sm text-fog">
             <input
-              className={inputClass}
-              value={draft.mExtensioName}
-              onChange={(e) => setDraft((d) => ({ ...d, mExtensioName: e.target.value }))}
+              type="checkbox"
+              checked={draft.mExtensioActive}
+              onChange={(e) => patch({ mExtensioActive: e.target.checked })}
             />
-          </Field>
-          <Field label="ID">
-            <input
-              type="number"
-              className={inputClass}
-              value={draft.mExtensioID}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, mExtensioID: Number(e.target.value) }))
-              }
-            />
-          </Field>
+            Active in shop
+          </label>
+          <div className="md:col-span-2">
+            <Field label="Description">
+              <textarea
+                className={inputClass}
+                rows={4}
+                value={draft.mExtensioText}
+                onChange={(e) => patch({ mExtensioText: e.target.value })}
+              />
+            </Field>
+          </div>
+          {imageField('Collection image', 'mExtensioCollectionImage')}
+          {imageField('Header image', 'mExtensioHeaderImage')}
+          {imageField('Unlock button', 'mExtensioUnlockButton')}
         </div>
         <button
           type="button"
           disabled={save.isPending}
-          onClick={() => save.mutate()}
-          className="mt-4 rounded border border-gold/30 bg-gold/15 px-4 py-2 text-sm text-gold-bright disabled:opacity-50"
+          onClick={() => save.mutate(draft)}
+          className={saveButtonClass}
         >
-          Save expansion
+          {save.isPending ? 'Saving…' : 'Save expansion'}
         </button>
       </section>
     </div>
@@ -867,16 +1088,8 @@ function FramesPanel({
   onCloseDetail,
   detailKey,
   onStatus,
-}: {
-  profileId?: string
-  data: Array<FrameData | null>
-  search: string
-  selectedKey?: string
-  onSelect: (key: string) => void
-  onCloseDetail: () => void
-  detailKey?: string
-  onStatus: (msg: string) => void
-}) {
+  onResult,
+}: PanelProps<Array<FrameData | null>>) {
   const q = search.toLowerCase()
   const frames = data.filter((row): row is FrameData => row !== null)
 
@@ -908,11 +1121,18 @@ function FramesPanel({
     frameRole: 0,
     frameType: 1,
   })
+  const patch = (next: Partial<FrameData>) => setDraft((d) => ({ ...d, ...next }))
+  const refreshImages = useImageRefresh()
 
-  const save = useMutation({
-    mutationFn: () => createFrame(draft),
-    onSuccess: (git) => onStatus(profileId ? catalogSaved('Frame', true, git) : 'Frame saved.'),
-    onError: (err: Error) => onStatus(saveFailure(err)),
+  const save = usePanelSave<FrameData>({
+    kind: 'Frame',
+    queryName: 'frames',
+    profileId,
+    onStatus,
+    onResult,
+    save: (d) => createFrame(d),
+    nameOf: (d) => `#${d.frameID}`,
+    exists: (d) => Boolean(data[d.frameID]),
   })
 
   return (
@@ -956,29 +1176,34 @@ function FramesPanel({
         />
       )}
       <section className="rounded-lg border border-gold/15 bg-slate/50 p-5">
-        <h2 className="text-sm uppercase tracking-widest text-gold-bright">
-          Add frame
-        </h2>
-        <div className="mt-4 flex flex-wrap items-end gap-4">
-          <Field label="Frame ID">
-            <input
-              type="number"
-              className={`${inputClass} max-w-xs`}
-              value={draft.frameID}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, frameID: Number(e.target.value) }))
-              }
+        <EditorHeader
+          title="Add or edit frame"
+          loadLabel={selected ? `Frame ${selected.frameID}` : undefined}
+          onLoad={selected ? () => setDraft({ ...selected }) : undefined}
+          hint="Saving with an existing ID replaces that frame. Its picture is always frame_<ID>.webp."
+        />
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <NumberField label="Frame ID" value={draft.frameID} onChange={(v) => patch({ frameID: v })} />
+          <NumberField label="Gem cost" value={draft.frameGem} onChange={(v) => patch({ frameGem: v })} />
+          <NumberField label="Type" value={draft.frameType} onChange={(v) => patch({ frameType: v })} />
+          <NumberField label={`Race (${formatRaceId(draft.frameRace)})`} value={draft.frameRace} onChange={(v) => patch({ frameRace: v })} />
+          <NumberField label={`Role (${formatRoleId(draft.frameRole)})`} value={draft.frameRole} onChange={(v) => patch({ frameRole: v })} />
+          {profileId && (
+            <ImageUploadField
+              label={`Upload frame_${draft.frameID}.webp`}
+              fileName={`frame_${draft.frameID}`}
+              onUpload={liveImageUploader(onResult, refreshImages, 'frame', `frame_${draft.frameID}`, 'exact')}
             />
-          </Field>
-          <button
-            type="button"
-            disabled={save.isPending}
-            onClick={() => save.mutate()}
-            className="rounded border border-gold/30 bg-gold/15 px-4 py-2 text-sm text-gold-bright disabled:opacity-50"
-          >
-            Save frame #{draft.frameID}
-          </button>
+          )}
         </div>
+        <button
+          type="button"
+          disabled={save.isPending}
+          onClick={() => save.mutate(draft)}
+          className={saveButtonClass}
+        >
+          {save.isPending ? 'Saving…' : `Save frame #${draft.frameID}`}
+        </button>
       </section>
     </div>
   )
@@ -993,16 +1218,8 @@ function PortraitsPanel({
   onCloseDetail,
   detailKey,
   onStatus,
-}: {
-  profileId?: string
-  data: Array<PortraitData | null>
-  search: string
-  selectedKey?: string
-  onSelect: (key: string) => void
-  onCloseDetail: () => void
-  detailKey?: string
-  onStatus: (msg: string) => void
-}) {
+  onResult,
+}: PanelProps<Array<PortraitData | null>>) {
   const q = search.toLowerCase()
   const portraits = data.filter((row): row is PortraitData => row !== null)
 
@@ -1037,11 +1254,18 @@ function PortraitsPanel({
     avatarRole: 1,
     avatarType: 0,
   })
+  const patch = (next: Partial<PortraitData>) => setDraft((d) => ({ ...d, ...next }))
+  const refreshImages = useImageRefresh()
 
-  const save = useMutation({
-    mutationFn: () => createPortrait(draft),
-    onSuccess: (git) => onStatus(profileId ? catalogSaved('Portrait', true, git) : 'Portrait saved.'),
-    onError: (err: Error) => onStatus(saveFailure(err)),
+  const save = usePanelSave<PortraitData>({
+    kind: 'Portrait',
+    queryName: 'portraits',
+    profileId,
+    onStatus,
+    onResult,
+    save: (d) => createPortrait(d),
+    nameOf: (d) => d.avatarName,
+    exists: (d) => Boolean(data[d.avatarID]),
   })
 
   return (
@@ -1081,37 +1305,35 @@ function PortraitsPanel({
         />
       )}
       <section className="rounded-lg border border-gold/15 bg-slate/50 p-5">
-        <h2 className="text-sm uppercase tracking-widest text-gold-bright">
-          Add portrait
-        </h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <Field label="Avatar name">
-            <input
-              className={inputClass}
-              value={draft.avatarName}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, avatarName: e.target.value }))
-              }
+        <EditorHeader
+          title="Add or edit portrait"
+          loadLabel={selected?.avatarName}
+          onLoad={selected ? () => setDraft({ ...selected }) : undefined}
+          hint="Saving with an existing ID replaces that portrait. Its picture is always avatar_<ID>.webp."
+        />
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <TextField label="Avatar name" value={draft.avatarName} onChange={(v) => patch({ avatarName: v })} />
+          <NumberField label="Avatar ID" value={draft.avatarID} onChange={(v) => patch({ avatarID: v })} />
+          <NumberField label="Gem cost" value={draft.avatarGems} onChange={(v) => patch({ avatarGems: v })} />
+          <NumberField label={`Race (${formatRaceId(draft.avatarRace)})`} value={draft.avatarRace} onChange={(v) => patch({ avatarRace: v })} />
+          <NumberField label={`Role (${formatRoleId(draft.avatarRole)})`} value={draft.avatarRole} onChange={(v) => patch({ avatarRole: v })} />
+          <NumberField label={`Gender (${formatGenderId(draft.avatarGenderID)})`} value={draft.avatarGenderID} onChange={(v) => patch({ avatarGenderID: v })} />
+          <NumberField label="Type" value={draft.avatarType} onChange={(v) => patch({ avatarType: v })} />
+          {profileId && (
+            <ImageUploadField
+              label={`Upload avatar_${draft.avatarID}.webp`}
+              fileName={`avatar_${draft.avatarID}`}
+              onUpload={liveImageUploader(onResult, refreshImages, 'portrait', `avatar_${draft.avatarID}`, 'exact')}
             />
-          </Field>
-          <Field label="Avatar ID">
-            <input
-              type="number"
-              className={inputClass}
-              value={draft.avatarID}
-              onChange={(e) =>
-                setDraft((d) => ({ ...d, avatarID: Number(e.target.value) }))
-              }
-            />
-          </Field>
+          )}
         </div>
         <button
           type="button"
           disabled={save.isPending}
-          onClick={() => save.mutate()}
-          className="mt-4 rounded border border-gold/30 bg-gold/15 px-4 py-2 text-sm text-gold-bright disabled:opacity-50"
+          onClick={() => save.mutate(draft)}
+          className={saveButtonClass}
         >
-          Save portrait
+          {save.isPending ? 'Saving…' : 'Save portrait'}
         </button>
       </section>
     </div>

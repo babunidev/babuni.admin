@@ -266,12 +266,21 @@ export function createMorkahjaImageCache({
     const status=stateFor(profile)
     return {ok:false,code:status.phase==='syncing'?'IMAGE_CACHE_PENDING':'IMAGE_UNAVAILABLE'}
   }
+  /** Puts an image the operator just uploaded into the disk cache and refreshes viewers. */
+  async function store(profile,kind,name,bytes) {
+    imageRequest({kind,name})
+    if(!webp(bytes))throw new Error('IMAGE_INVALID_RESPONSE')
+    const subdir=join(folderFor(root,profile),kind)
+    await mkdir(subdir,{recursive:true,mode:0o700})
+    await atomicWrite(join(subdir,name),bytes)
+    stateFor(profile).generation++
+  }
   function status(profile) {return publicStatus(stateFor(profile))}
   async function stop() {
     for(const child of children)child.kill('SIGKILL')
     await Promise.allSettled([...states.values()].map(state=>state.promise).filter(Boolean))
   }
-  return {ensureSync,readCached,status,stop}
+  return {ensureSync,readCached,status,stop,store}
 }
 
 export const morkahjaImageCache=createMorkahjaImageCache()

@@ -320,7 +320,7 @@ def process(request, root=GAME_ROOT):
         _, _, written, updated = read_file(root, kind)
         if stored_record(kind, key, updated) != record:
             fail("CONTENT_WRITE_VERIFY_FAILED")
-        return {"ok": True, "revision": hashlib.sha256(written).hexdigest()}
+        return {"ok": True, "revision": hashlib.sha256(written).hexdigest(), "via": "game"}
     lock = lock_root(root)
     try:
         target, info, raw, data = read_file(root, kind)
@@ -330,7 +330,7 @@ def process(request, root=GAME_ROOT):
         assign_record(kind, key, number, record, data)
         output = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
         replace_with_backup(root, target, info, raw, output)
-        return {"ok": True, "revision": hashlib.sha256(output).hexdigest()}
+        return {"ok": True, "revision": hashlib.sha256(output).hexdigest(), "via": "file"}
     finally:
         fcntl.flock(lock, fcntl.LOCK_UN)
         os.close(lock)

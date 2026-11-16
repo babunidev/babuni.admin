@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-16 — Seeing what a save did
+
+A save in Content gave me one short line at the bottom of the page, and I could never tell what had actually happened: whether the game had the change, whether it was on GitHub. I asked for a popup in the middle of the screen that tells me, as the person making the content, what was done, and that I can click away. I also wanted full control over the content: new encounters with their own pictures, replacing pictures, and the same for solutions and the rest. AI (Claude Code, Claude Opus 5.5) built the popup and made pictures upload through the same administrator connection. After each upload it downloads the picture from the public game address to prove players get it, then commits it to the game repository. It also opened up the expansion, frame and portrait editors. I decided against a backup copy on the server for every save. This is my own tool, we are early in development, and GitHub already keeps every version.
+
 ## 2026-11-14 — A save that reaches GitHub
 
 Saving an encounter updated the live game and stopped there. The older admin commits, titled `Admin: update encounter …`, used to land in the Morkahja project on this PC. Every content save needed to become a commit on GitHub as well. AI (Cursor, Grok 4.7) wired that onto the save that already reaches the live catalog. The commit uses a second checkout of `babunidev/Morkahja` that stays on main, because the working folder is on another branch with unfinished changes.

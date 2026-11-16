@@ -404,3 +404,11 @@ Public source availability does not authorize public deployment of privileged de
 ## 2026-11-13 — Licensing decision
 
 To make the reuse terms explicit, I approved MIT for original administration software, without granting data or server access. This applies only to material for which the relevant rights can be granted; third-party contributors keep their own credits and licenses. AI assistance committed the license notice and updated project-facing documentation. This was a legal/documentation change, not a runtime feature or test.
+
+## 2026-11-16 — GitHub history is the content backup
+
+**Decision (Babuni):** Content saves and image uploads from Babuni Admin write straight to the live game. They make no extra backup copy on the server. Every save and upload is committed and pushed to `babunidev/Morkahja` `main`, and that history is how an earlier version comes back. Babuni Admin is my own tool and I am its only operator; no one else changes game content or deploys without me. The single administrator connection covers everything this tool does on the server.
+
+**Consequence:** The rule in AGENTS.md to back up before any mutation does not apply to Morkahja content saves and image uploads made by the operator in Babuni Admin; the GitHub commit takes that place. A save whose GitHub step fails says so in the result popup, so a live change without history is visible right away.
+
+**AI contribution:** Claude Code (Claude Opus 5.5) recorded the decision and removed the Content page wording that claimed backups protect edits. No server behaviour changed for this decision.

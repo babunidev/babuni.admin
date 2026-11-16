@@ -18,7 +18,8 @@ import { stopAllSshTunnels } from './sshTunnel.mjs'
 import { parsePlayerPage } from './morkahjaReadOnly.mjs'
 import { performMorkahjaModeration, isModerationActive } from './morkahjaModerationRunner.mjs'
 import { performMorkahjaContent, isContentActive, stopAllContentSsh } from './morkahjaContentRunner.mjs'
-import { commitMorkahjaContent } from './morkahjaContentGit.mjs'
+import { commitMorkahjaContent, commitMorkahjaImage } from './morkahjaContentGit.mjs'
+import { writeMorkahjaImage } from './morkahjaImageWrite.mjs'
 import { morkahjaImageCache } from './morkahjaImageCache.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
@@ -217,7 +218,7 @@ const server=createServer(async(req,res)=>{
       const profile=registry.add(await body(req))
       return send(res,201,{profile})
     }
-    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban|content-read|content-write|content-image|content-image-sync|content-image-status))?$/i.exec(path)
+    const match=/^\/([0-9a-f-]{36})(?:\/(test|inspect|connect|disconnect|reconnect|probe|read-overview|read-players|read-dashboard|moderation-players|moderation-detail|moderation-timeout|moderation-ban|moderation-unban|content-read|content-write|content-image-upload|content-image|content-image-sync|content-image-status))?$/i.exec(path)
     if (!match) return send(res,404,{error:'NOT_FOUND'})
     const id=match[1]
     const action=match[2]
@@ -320,7 +321,7 @@ const server=createServer(async(req,res)=>{
         const gitResult=await commitMorkahjaContent({
           kind:request.kind, key:request.key, data:request.data,
         })
-        if(!gitResult.ok) return send(res,422,{error:gitResult.code, revision:report.revision})
+        // The live game already has the edit; report the GitHub step on its own.
         report.git=gitResult
       }
       states.set(id,{
@@ -329,6 +330,21 @@ const server=createServer(async(req,res)=>{
         checkedAt:report.checkedAt,lastSuccessAt:report.checkedAt,
       })
       return send(res,200,report)
+    }
+    if (req.method==='POST' && action==='content-image-upload') {
+      if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
+      let payload
+      try {payload=await body(req,3*1024*1024+4096)}
+      catch {return send(res,413,{error:'IMAGE_TOO_LARGE'})}
+      const report=await writeMorkahjaImage(profile,payload)
+      if(!report.ok) return send(res,
+        report.code==='IMAGE_WRITE_BUSY'?409:
+        ['REMOTE_MODERATION_DISABLED','REMOTE_CONTENT_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:
+        /^(INVALID_IMAGE_|IMAGE_NOT_WEBP)/.test(report.code)?400:422,{error:report.code})
+      await morkahjaImageCache.store(profile,report.kind,report.name,report.bytes).catch(()=>{})
+      const git=await commitMorkahjaImage({kind:report.kind,name:report.name,bytes:report.bytes})
+      const {bytes:_bytes,...result}=report
+      return send(res,200,{...result,git,checkedAt:new Date().toISOString()})
     }
     if(req.method==='POST' && action==='content-image-sync') {
       if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})

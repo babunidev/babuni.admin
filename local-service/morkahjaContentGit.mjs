@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process'
-import { readFile, writeFile, access } from 'node:fs/promises'
-import { join } from 'node:path'
+import { readFile, writeFile, access, mkdir } from 'node:fs/promises'
+import { join, dirname } from 'node:path'
 
 const FILES = {
   encounters: 'encountersdata.json',
@@ -10,6 +10,18 @@ const FILES = {
   portraits: 'portraits.json',
 }
 const BRANCH = 'morkahja-content-edits'
+// Same folders as the live server, inside the game repository's client/public.
+const IMAGE_FOLDERS = {
+  encounter: 'game/encounterimages',
+  solution: 'game/solutionimages',
+  expansion: 'UI/03_DASHBOARD/expansions',
+  frame: 'UI/02_AvatarCreation/Frames',
+  portrait: 'UI/02_AvatarCreation/Avatare',
+}
+const IMAGE_LABELS = {
+  encounter: 'encounter image', solution: 'solution icon', expansion: 'expansion image',
+  frame: 'frame image', portrait: 'portrait image',
+}
 
 const git = (args, cwd, timeout = 30000) => new Promise((resolve, reject) => {
   execFile('git', args, {
@@ -28,10 +40,40 @@ const git = (args, cwd, timeout = 30000) => new Promise((resolve, reject) => {
 
 let queue = Promise.resolve()
 
-export function commitMorkahjaContent(edit, options = {}) {
-  const run = queue.then(() => commitUnlocked(edit, options))
+function enqueue(task) {
+  const run = queue.then(task)
   queue = run.then(() => {}, () => {})
   return run
+}
+
+export function commitMorkahjaContent(edit, options = {}) {
+  let relative
+  try { relative = catalogPath(edit.kind) } catch { return Promise.resolve({ ok: false, code: 'CONTENT_INVALID_REQUEST' }) }
+  return enqueue(() => commitFile(options, relative, async (file) => {
+    const current = JSON.parse(await readFile(file, 'utf8'))
+    const before = JSON.stringify(current)
+    const added = applyRecord(edit.kind, String(edit.key), edit.data, current)
+    const next = `${JSON.stringify(current, null, 2)}\n`
+    if (before === JSON.stringify(JSON.parse(next))) return null
+    await writeFile(file, next)
+    return commitMessage(edit.kind, edit.key, edit.data, added)
+  }))
+}
+
+/** Commits one uploaded WebP into client/public so the next frontend release keeps it. */
+export function commitMorkahjaImage(image, options = {}) {
+  const folder = IMAGE_FOLDERS[image.kind]
+  if (!folder || !/^[A-Za-z0-9][A-Za-z0-9_-]{0,119}\.webp$/.test(image.name) || !Buffer.isBuffer(image.bytes)) {
+    return Promise.resolve({ ok: false, code: 'CONTENT_INVALID_REQUEST' })
+  }
+  return enqueue(() => commitFile(options, join('client', 'public', folder, image.name), async (file) => {
+    let previous = null
+    try { previous = await readFile(file) } catch { /* new image */ }
+    if (previous && previous.equals(image.bytes)) return null
+    await mkdir(dirname(file), { recursive: true })
+    await writeFile(file, image.bytes)
+    return `Admin: ${previous ? 'replace' : 'add'} ${IMAGE_LABELS[image.kind]} ${image.name}`
+  }))
 }
 
 function catalogPath(kind) {
@@ -129,10 +171,9 @@ async function pushMain(worktree) {
   }
 }
 
-async function commitUnlocked(edit, options) {
+async function commitFile(options, relative, update) {
   const repo = options.repo || process.env.MORKAHJA_CONTENT_REPO || '/home/babuni/Projects/MorkahjaWebApp'
   const worktree = options.worktree || process.env.MORKAHJA_CONTENT_WORKTREE || '/home/babuni/Projects/Morkahja-content-commits'
-  const relative = catalogPath(edit.kind)
   const file = join(worktree, relative)
   try {
     await ensureWorktree(repo, worktree)
@@ -148,18 +189,16 @@ async function commitUnlocked(edit, options) {
         return { ok: false, code: 'CONTENT_GIT_DIVERGED' }
       }
     }
-    const current = JSON.parse(await readFile(file, 'utf8'))
-    const before = JSON.stringify(current)
-    const added = applyRecord(edit.kind, String(edit.key), edit.data, current)
-    const next = `${JSON.stringify(current, null, 2)}\n`
-    if (before === JSON.stringify(JSON.parse(next))) return { ok: true, skipped: true }
-    await writeFile(file, next)
+    const message = await update(file)
+    if (!message) return { ok: true, skipped: true }
     await git(['add', '--', relative], worktree)
-    const message = commitMessage(edit.kind, edit.key, edit.data, added)
     await git(['commit', '-q', '-m', message, '--only', '--', relative], worktree)
     if (options.push !== false) await pushMain(worktree)
     const commit = await git(['rev-parse', '--short', 'HEAD'], worktree)
-    return { ok: true, commit, message }
+    const full = await git(['rev-parse', 'HEAD'], worktree)
+    const remote = await git(['remote', 'get-url', 'origin'], worktree).catch(() => '')
+    const web = /github\.com[:/]([\w.-]+\/[\w.-]+?)(?:\.git)?$/.exec(remote)
+    return { ok: true, commit, message, ...(web ? { url: `https://github.com/${web[1]}/commit/${full}` } : {}) }
   } catch (error) {
     const stderr = error?.stderr || ''
     if (/non-fast-forward|rejected|fetch first/i.test(stderr)) return { ok: false, code: 'CONTENT_GIT_PUSH_FAILED' }

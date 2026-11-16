@@ -1,0 +1,158 @@
+import type { SaveResult, SaveStep } from '../components/SaveResultDialog'
+import type {
+  CatalogSaveReport,
+  ContentGitResult,
+  ImageUploadReport,
+  RemoteImageKind,
+} from '../services/contentApi'
+
+const catalogFiles: Record<string, string> = {
+  Encounter: 'encountersdata.json',
+  Solution: 'solutiondata.json',
+  Expansion: 'expansiondata.json',
+  Frame: 'frames.json',
+  Portrait: 'portraits.json',
+}
+
+const imageLabels: Record<RemoteImageKind, string> = {
+  encounter: 'Encounter image',
+  solution: 'Solution icon',
+  expansion: 'Expansion image',
+  frame: 'Frame image',
+  portrait: 'Portrait image',
+}
+
+/** Plain words for the error codes a content creator can run into. */
+export function describeSaveError(code: string): string {
+  const known: Record<string, string> = {
+    CONTENT_CONFLICT:
+      'The live catalog changed after you opened it. Reload the page and make the edit again.',
+    CONTENT_REVISION_REQUIRED: 'The catalog was not loaded from the server yet. Reload the page.',
+    CONTENT_PROFILE_REQUIRED: 'The administrator connection is not set up. Open Connection.',
+    CONTENT_PERMISSION_DENIED:
+      'The game server refused the write. Check ADMIN_API_KEY on the server and the file owner.',
+    CONTENT_OPERATION_FAILED: 'The game server did not accept the save (is the game running?).',
+    CONTENT_WRITE_VERIFY_FAILED:
+      'The save was sent, but reading the catalog back did not show it. Reload and check.',
+    CONTENT_INVALID_RECORD: 'The record is missing a required field or has an id that is out of range.',
+    CONTENT_INVALID_REQUEST: 'The key or id is not valid for this catalog.',
+    REMOTE_CONTENT_BUSY: 'Another save is still running. Try again in a moment.',
+    REMOTE_CONTENT_TIMEOUT: 'The server did not answer in time.',
+    REMOTE_MODERATION_DISABLED: 'The administrator connection is turned off in this session.',
+    SSH_AUTH_REJECTED: 'The server rejected the SSH key. Is the key loaded in your SSH agent?',
+    LOCAL_SERVICE_UNAVAILABLE: 'The local Babuni Admin service is not running.',
+    IMAGE_PERMISSION_DENIED: 'Your SSH login may not write into this image folder on the server.',
+    IMAGE_FOLDER_UNAVAILABLE: 'The image folder does not exist on the server.',
+    IMAGE_NOT_WEBP: 'The file could not be turned into a WebP image.',
+    IMAGE_TOO_LARGE: 'The image is larger than 2 MB after conversion.',
+    INVALID_IMAGE_NAME: 'Use only letters, numbers, _ and - in the image name.',
+    IMAGE_TARGET_UNSAFE: 'Something other than a normal file already has that name on the server.',
+    IMAGE_WRITE_VERIFY_FAILED: 'The server copy differs from the file you chose.',
+    IMAGE_WRITE_BUSY: 'Another image upload is still running.',
+    CONTENT_GIT_FAILED: 'The commit or push failed. Save again to retry.',
+    CONTENT_GIT_PUSH_FAILED: 'GitHub refused the push. Save again to retry.',
+    CONTENT_GIT_DIVERGED:
+      'GitHub main has commits that clash with this one, so it was not pushed.',
+    CONTENT_GIT_DIRTY:
+      'The commit checkout (Morkahja-content-commits) has other uncommitted edits.',
+  }
+  return known[code] ? `${known[code]} (${code})` : code
+}
+
+function gitStep(git: ContentGitResult | undefined): SaveStep {
+  if (git?.ok && git.skipped) {
+    return { label: 'GitHub', state: 'skipped', detail: 'GitHub main already had exactly this version.' }
+  }
+  if (git?.ok && git.commit) {
+    return {
+      label: 'GitHub',
+      state: 'ok',
+      detail: `Committed and pushed to main as ${git.commit}: “${git.message ?? ''}”.`,
+      href: git.url,
+      hrefLabel: git.url ? 'Open the commit on GitHub' : undefined,
+    }
+  }
+  return {
+    label: 'GitHub',
+    state: 'failed',
+    detail: `Not committed. ${describeSaveError(git?.code ?? 'CONTENT_GIT_FAILED')} The live game keeps the change.`,
+  }
+}
+
+export function catalogSaveResult(
+  kind: keyof typeof catalogFiles,
+  name: string,
+  wasEdit: boolean,
+  report: CatalogSaveReport,
+): SaveResult {
+  const file = catalogFiles[kind]
+  return {
+    title: `${kind} ${wasEdit ? 'updated' : 'added'}: ${name}`,
+    subtitle: report.checkedAt ? `Saved ${new Date(report.checkedAt).toLocaleString()}` : undefined,
+    steps: [
+      {
+        label: 'Live game',
+        state: 'ok',
+        detail:
+          report.via === 'file'
+            ? `Written to ${file} on the server and read back unchanged.`
+            : `The running game wrote ${file}, dropped its cached copy, and the record read back unchanged. Players get it the next time the game loads content.`,
+      },
+      gitStep(report.git),
+    ],
+  }
+}
+
+export function catalogFailureResult(kind: string, name: string, error: Error): SaveResult {
+  return {
+    title: `${kind} not saved: ${name}`,
+    steps: [{ label: 'Live game', state: 'failed', detail: describeSaveError(error.message) }],
+    notes: ['Nothing was committed to GitHub. Your edit is still in the form.'],
+  }
+}
+
+export function imageUploadResult(report: ImageUploadReport, notes: string[] = []): SaveResult {
+  const kb = Math.max(1, Math.round(report.size / 1024))
+  return {
+    title: `${imageLabels[report.kind]} ${report.replaced ? 'replaced' : 'added'}: ${report.name}`,
+    subtitle: `${kb} KB WebP`,
+    steps: [
+      {
+        label: 'Live server',
+        state: 'ok',
+        detail: report.replaced
+          ? `Replaced ${report.name} in the game's image folder and read it back.`
+          : `Added ${report.name} to the game's image folder and read it back.`,
+      },
+      report.publicCheck.ok
+        ? {
+            label: 'Visible to players',
+            state: 'ok',
+            detail: 'Downloaded from the public game address; the bytes match your file.',
+            href: report.publicCheck.url,
+          }
+        : {
+            label: 'Visible to players',
+            state: 'failed',
+            detail:
+              report.publicCheck.status === 200
+                ? 'The public address still serves a different (older) file. It may be cached; check again in a minute.'
+                : `The public address answered ${report.publicCheck.status || 'nothing'}. The server folder may not be the one players get images from.`,
+            href: report.publicCheck.url,
+          },
+      gitStep(report.git),
+    ],
+    notes: [
+      ...notes,
+      'The GitHub copy lives in client/public, so the next game release keeps this image.',
+    ],
+  }
+}
+
+export function imageFailureResult(kind: RemoteImageKind, error: Error): SaveResult {
+  return {
+    title: `${imageLabels[kind]} not uploaded`,
+    steps: [{ label: 'Live server', state: 'failed', detail: describeSaveError(error.message) }],
+    notes: ['Nothing was committed to GitHub.'],
+  }
+}

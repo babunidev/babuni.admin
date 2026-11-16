@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { commitMorkahjaContent } from '../local-service/morkahjaContentGit.mjs'
+import { commitMorkahjaContent, commitMorkahjaImage } from '../local-service/morkahjaContentGit.mjs'
 
 const git = (args, cwd) => new Promise((resolve, reject) => {
   execFile('git', args, { cwd, env: { ...process.env, GIT_TERMINAL_PROMPT: '0' } }, (error, stdout, stderr) => {
@@ -85,6 +85,29 @@ test('a dirty worktree is not committed', async () => {
     const published = JSON.parse(await git(['show', 'HEAD:server/game/encountersdata.json'], bare))
     assert.equal(published['19001'].mEncounterText, 'New story')
     assert.equal(await readFile(join(worktree, 'server', 'game', 'encountersdata.json'), 'utf8').then(text => text.includes('Another story')), false)
+  } finally {
+    await git(['worktree', 'remove', '--force', worktree], repo).catch(() => {})
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('an uploaded image is committed into client/public and pushed', async () => {
+  const { root, bare, repo, worktree } = await fixture()
+  try {
+    const bytes = Buffer.from('RIFF\0\0\0\0WEBPpicture')
+    const saved = await commitMorkahjaImage({ kind: 'encounter', name: 'moonlit_oasis.webp', bytes }, { repo, worktree })
+    assert.equal(saved.ok, true)
+    assert.equal(saved.message, 'Admin: add encounter image moonlit_oasis.webp')
+    const files = await git(['diff-tree', '--no-commit-id', '--name-only', '-r', 'HEAD'], bare)
+    assert.equal(files, 'client/public/game/encounterimages/moonlit_oasis.webp')
+    const same = await commitMorkahjaImage({ kind: 'encounter', name: 'moonlit_oasis.webp', bytes }, { repo, worktree })
+    assert.equal(same.skipped, true)
+    const replaced = await commitMorkahjaImage({
+      kind: 'encounter', name: 'moonlit_oasis.webp', bytes: Buffer.from('RIFF\0\0\0\0WEBPnewer'),
+    }, { repo, worktree })
+    assert.equal(replaced.message, 'Admin: replace encounter image moonlit_oasis.webp')
+    const rejected = await commitMorkahjaImage({ kind: 'encounter', name: '../x.webp', bytes }, { repo, worktree })
+    assert.equal(rejected.code, 'CONTENT_INVALID_REQUEST')
   } finally {
     await git(['worktree', 'remove', '--force', worktree], repo).catch(() => {})
     await rm(root, { recursive: true, force: true })
