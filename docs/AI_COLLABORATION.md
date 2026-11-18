@@ -4,14 +4,11 @@ Follow [the documentation standard](DOCUMENTATION.md) for first-person author vo
 
 ## 2026-11-05 — Operator deployment and AI integration
 
-Babuni approved and executed the production view installation and supplied the catalog, aggregate and permission outputs. AI did not execute live PostgreSQL commands. At Babuni's request, AI implemented the local fixed aggregate query, authorization list, Overview cards, fixtures and documentation. The unavailable execution environment prevents local test execution; repository CI and operator desktop verification are recorded separately from implementation.
-
-
-**Human project creator / creative director:** Babuni.dev.
+For production, I approved and executed the production view installation and supplied the catalog, aggregate and permission outputs. AI did not execute live PostgreSQL commands. At my request, AI implemented the local fixed aggregate query, authorization list, Overview cards, fixtures and documentation. The unavailable execution environment prevents local test execution; repository CI and operator desktop verification are recorded separately from implementation.
 
 ## Evidence and creative ownership
 
-This repository records an original dark-atmospheric admin-console direction, a Morkahja-specific content model, and a series of Git commits. The creator's authorship of the project is respected. The code itself and dated commits do **not** provide a complete private design transcript attributing every TypeScript function, API shape, text string or layout decision to an individual human or AI agent.
+This repository records an original dark-atmospheric admin-console direction, a Morkahja-specific content model, and a series of Git commits. The original interface and content direction were mine. The code itself and dated commits do **not** provide a complete private design transcript attributing every TypeScript function, API shape, text string or layout decision to an individual human or AI agent.
 
 The `.cursor/rules/morkahja-admin.mdc` rules demonstrate the project's working constraints and should remain part of the history. They do not prove an AI originated those goals.
 
@@ -30,10 +27,10 @@ That is an **editorial and technical analysis contribution**. It does not establ
 
 For every consequential decision or implementation, record:
 
-1. **Creator direction:** Desired player/operator experience and rationale.
+1. **Creative direction:** Desired player/operator experience and rationale.
 2. **AI interpretation/proposal:** Suggested technical choices, assumptions and tradeoffs.
 3. **Iteration:** Alternatives, mistakes, objections, discoveries and rejected experiments.
-4. **Creator decision:** Explicitly accepted, rejected or deferred.
+4. **Creative decision:** Explicitly accepted, rejected or deferred.
 5. **Implementation:** Exact code/doc/game-content paths, linked commit or PR.
 6. **Verification:** Commands/tests actually run, environment, output and remaining uncertainty.
 
@@ -43,4 +40,8 @@ No code, secrets or real account data were changed or retrieved in the October 2
 
 ## Audit #38 — 28 October 2026
 
-**Creator request:** Continue to the next repository while following the established documentation-audit method. **AI action:** Revisit Morkahja Admin's previous detailed record, check selected current source and add a narrow evidence-based checkpoint. **Creative history:** The May scaffold-to-content-workbench transition and the dark, practical interface are preserved as previously documented; no old conversations or approvals are invented. **Changes:** Markdown documentation only. **Verification:** Repository configuration inspected; no frontend tests, backend requests, moderation actions, database access or game-content writes occurred.
+**Creative request:** Continue to the next repository while following the established documentation-audit method. **AI action:** Revisit Morkahja Admin's previous detailed record, check selected current source and add a narrow evidence-based checkpoint. **Creative history:** The May scaffold-to-content-workbench transition and the dark, practical interface are preserved as previously documented; no old conversations or approvals are invented. **Changes:** Markdown documentation only. **Verification:** Repository configuration inspected; no frontend tests, backend requests, moderation actions, database access or game-content writes occurred.
+
+## 18 November 2026 — Collaboration record review
+
+At my request, Codex (GPT-6) revised this record for first-person voice and checked the attribution against the available repository documentation. Where an earlier AI tool or model is missing from the record, its identity remains unconfirmed.
