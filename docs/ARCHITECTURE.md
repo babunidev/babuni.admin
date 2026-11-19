@@ -1,6 +1,10 @@
 # Babuni Admin — Architecture
 
-## Projects overview (2026-11-19)
+## Sidebar and top bars (2026-11-19)
+
+`src/app/Sidebar.tsx` lists the places: Project Manager and the workspaces from `src/app/navigation.ts`, then Connection. A workspace is current when `workspaceForPath` names it and the path is not a page above the workspaces (`isMetaPath`: `/projects`, `/connections`). `AdminLayout` picks the top bar: `MetaTopBar` for those pages, otherwise the workspace's own bar, which renders that workspace's `navItems` as tabs through `WorkspaceTabs`.
+
+## Project Manager (2026-11-19)
 
 `/projects` (`src/features/projects/`) is outside both workspaces. `local-service/projectOverview.mjs` serves three read-only, session-protected routes. `/projects/list` reads the project ids, repositories and branches from the babuni.dev checkout's `src/content/project-repositories.json`, and names and tints from `src/lib/demo-projects.ts`. It then sends one GitHub GraphQL query through `gh` for the last five commits and the `CHANGELOG.md` of every connected repository, and keeps the result for ten minutes. `/projects/documents` lists the Markdown files of one project's branch from the GitHub tree API. `/projects/document` returns one of those files (raw, at most 1 MB). The browser sends only a project id and a listed path. Nothing is written, and no checkout is fetched or changed.
 

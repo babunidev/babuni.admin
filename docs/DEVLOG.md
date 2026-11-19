@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-19 — Tabs on top, places on the left
+
+The Project Manager button at the bottom of the sidebar felt right, so I wanted every workspace reached the same way. Now the left side holds Project Manager, babuni.dev and Morkahja as buttons, so I can jump between them in one click, and the pages of a workspace (Overview, Moderation, Content, Settings) are tabs across the top, where the "Realm Console" title used to be. Claude Code (Claude Opus 5.5) made the change, kept Morkahja's connection badges and clock in the top bar, and moved the browser tests from the old dropdown to the new buttons.
+
 ## 2026-11-19 — One place for all my projects
 
 With more than forty projects on the website, I sometimes lose track of which one needs me. I wanted a place above the workspaces, reachable from the bottom of the sidebar, that lists every project on the website, shows the recent commits and the latest changelog entry of each, and lets me open the roadmap, devlog and other documents right there. I also wanted the project that has waited longest to stand out and ask for a revision. Claude Code (Claude Opus 5.5) built the Projects page. It reads the website's own project list and asks GitHub for every repository in one request. While building it, AI noticed that a documentation commit on 2026-11-18 had touched many repositories at once, which would have made almost every project look freshly worked on. So the waiting time comes from each project's latest dated changelog entry, and the last commit only counts when there is no changelog. On the first real read, WorkThatGodBod came up as the project asking for revision, last worked on 2026-10-26.

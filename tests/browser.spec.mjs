@@ -33,11 +33,11 @@ test('Babuni Dev overview renders its own navigation and no Morkahja server head
   try {
     assert.equal(await page.title().then(t => typeof t), 'string')
     await page.getByRole('heading', { name: 'Babuni Dev', exact: true }).waitFor()
-    assert.equal(await page.getByRole('combobox', { name: 'Select workspace' }).inputValue(), 'babuni-dev')
-    assert.equal(await page.getByRole('navigation', { name: 'Babuni Dev navigation' }).getByRole('link').count(), 3)
+    assert.equal(await page.getByRole('navigation', { name: 'Workspaces' }).getByRole('link', { name: 'babuni.dev' }).getAttribute('aria-current'), 'page')
+    assert.equal(await page.getByRole('navigation', { name: 'babuni.dev navigation' }).getByRole('link').count(), 3)
     await page.getByRole('heading', { name: 'Not available yet' }).waitFor()
-    assert.equal(await page.getByText('Portfolio workspace · www.babuni.dev').isVisible(), true)
-    assert.equal(await page.getByText('Realm Console').count(), 0)
+    assert.equal(await page.getByText('www.babuni.dev', { exact: true }).isVisible(), true)
+    assert.equal(await page.getByRole('navigation', { name: 'Morkahja navigation' }).count(), 0)
     assert.deepEqual(unexpectedErrors, [])
   } finally {
     await context.close()
@@ -47,30 +47,30 @@ test('Babuni Dev overview renders its own navigation and no Morkahja server head
 test('switching workspaces updates rendered header, links, URL, and browser history', async () => {
   const { page, context, unexpectedErrors } = await openPage('/babuni-dev')
   try {
-    const chooser = page.getByRole('combobox', { name: 'Select workspace' })
-    await chooser.selectOption('morkahja')
+    const places = page.getByRole('navigation', { name: 'Workspaces' })
+    const current = async () => (await places.locator('[aria-current="page"]').textContent())?.trim()
+    await places.getByRole('link', { name: 'Morkahja' }).click()
     await page.waitForURL(origin + '/')
     await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link', { name: 'Moderation' }).waitFor()
-    assert.equal(await chooser.inputValue(), 'morkahja')
-    await page.getByText('Realm Console').waitFor()
+    assert.match(await current(), /Morkahja/)
 
     await page.getByRole('navigation', { name: 'Morkahja navigation' })
       .getByRole('link', { name: 'Moderation' }).click()
     await page.waitForURL(origin + '/players')
     await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link', { name: 'Content' }).waitFor()
-    assert.equal(await chooser.inputValue(), 'morkahja')
+    assert.match(await current(), /Morkahja/)
 
-    await chooser.selectOption('babuni-dev')
+    await places.getByRole('link', { name: 'babuni.dev' }).click()
     await page.waitForURL(origin + '/babuni-dev')
     await page.getByRole('heading', { name: 'Not available yet' }).waitFor()
-    assert.equal(await page.getByRole('navigation', { name: 'Babuni Dev navigation' }).getByRole('link').count(), 3)
+    assert.equal(await page.getByRole('navigation', { name: 'babuni.dev navigation' }).getByRole('link').count(), 3)
 
     await page.goBack()
     await page.waitForURL(origin + '/players')
-    assert.equal(await chooser.inputValue(), 'morkahja')
+    assert.match(await current(), /Morkahja/)
     await page.goForward()
     await page.waitForURL(origin + '/babuni-dev')
-    assert.equal(await chooser.inputValue(), 'babuni-dev')
+    assert.match(await current(), /babuni\.dev/)
     assert.deepEqual(unexpectedErrors, [])
   } finally {
     await context.close()
@@ -82,7 +82,7 @@ test('legacy Morkahja routes render directly with their original navigation', as
     const { page, context, unexpectedErrors } = await openPage(route)
     try {
       await page.getByRole('navigation', { name: 'Morkahja navigation' }).waitFor()
-      assert.equal(await page.getByRole('combobox', { name: 'Select workspace' }).inputValue(), 'morkahja')
+      assert.equal(await page.getByRole('navigation', { name: 'Workspaces' }).getByRole('link', { name: 'Morkahja' }).getAttribute('aria-current'), 'page')
       assert.equal(await page.getByRole('navigation', { name: 'Morkahja navigation' }).getByRole('link').count(), 4)
       assert.deepEqual(unexpectedErrors, [], 'uncaught browser errors on ' + route)
     } finally {
@@ -95,9 +95,9 @@ test('mobile sidebar opens and closes using accessible controls', async () => {
   const { page, context, unexpectedErrors } = await openPage('/babuni-dev', { width: 390, height: 844 })
   try {
     await page.getByRole('button', { name: 'Toggle navigation' }).click()
-    await page.getByRole('combobox', { name: 'Select workspace' }).waitFor({ state: 'visible' })
+    await page.getByRole('navigation', { name: 'Workspaces' }).waitFor({ state: 'visible' })
     await page.getByRole('button', { name: 'Close navigation' }).click()
-    await page.getByRole('combobox', { name: 'Select workspace' }).waitFor({ state: 'hidden' })
+    await page.getByRole('navigation', { name: 'Workspaces' }).waitFor({ state: 'hidden' })
     assert.deepEqual(unexpectedErrors, [])
   } finally {
     await context.close()

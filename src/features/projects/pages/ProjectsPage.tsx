@@ -47,7 +47,7 @@ export function ProjectsPage() {
   return (
     <div>
       <PageHeader
-        title="Projects"
+        title="Project Manager"
         description="Every project on www.babuni.dev, with its latest work read live from GitHub. Read-only."
         action={
           <button type="button" onClick={() => { setLoading(true); void load(true) }} disabled={loading}

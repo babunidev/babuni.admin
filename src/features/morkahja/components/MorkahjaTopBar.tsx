@@ -7,6 +7,8 @@ import { useUiStore } from '../../../app/uiStore'
 import { StatusBadge } from '../../../shared/components/StatusBadge'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
+import { WorkspaceTabs } from '../../../app/WorkspaceTabs'
+import { workspaceById } from '../../../app/navigation'
 
 export function TopBar() {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar)
@@ -71,22 +73,19 @@ export function TopBar() {
         : 'reviewing'
 
   return (
-    <header className="flex h-14 shrink-0 items-center justify-between gap-4 border-b border-gold/15 bg-ash/80 px-4 backdrop-blur-sm lg:px-6">
-      <div className="flex items-center gap-3">
+    <header className="flex h-14 shrink-0 items-stretch justify-between gap-4 border-b border-gold/15 bg-ash/80 px-4 backdrop-blur-sm lg:px-6">
+      <div className="flex min-w-0 items-stretch gap-3">
         <button
           type="button"
           onClick={toggleSidebar}
-          className="rounded border border-gold/20 px-2.5 py-1.5 text-sm text-fog transition hover:border-gold/40 hover:text-parchment lg:hidden"
+          className="my-auto rounded border border-gold/20 px-2.5 py-1.5 text-sm text-fog transition hover:border-gold/40 hover:text-parchment lg:hidden"
           aria-label="Toggle navigation"
         >
           ☰
         </button>
-        <div className="hidden sm:block">
-          <p className="text-xs uppercase tracking-widest text-fog">Realm Console</p>
-          <p className="text-sm text-parchment">{server?.label ?? '—'}</p>
-        </div>
+        <WorkspaceTabs workspace={workspaceById('morkahja')} />
       </div>
-      <div className="flex flex-wrap items-center justify-end gap-3 text-xs sm:gap-4">
+      <div className="hidden shrink-0 items-center justify-end gap-3 text-xs sm:flex sm:gap-4">
         <span
           className="hidden max-w-[14rem] truncate text-fog lg:inline"
           title={adminConfigured ? 'Morkahja administrator (configured)' : getApiDisplayLabel()}

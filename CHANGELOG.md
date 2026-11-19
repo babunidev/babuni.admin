@@ -1,4 +1,13 @@
 # Babuni Admin — Changelog
+## 2026-11-19 — Workspace pages as tabs, workspaces in the sidebar
+
+- The sidebar no longer has a workspace dropdown and a page menu. It now lists three places: **Project Manager** (`/projects`, renamed from Projects), **babuni.dev** and **Morkahja**, with **Connection** at the bottom. The current workspace is marked, and so is a Morkahja subpage such as `/players`.
+- Each workspace's pages are tabs in its top bar (`src/app/WorkspaceTabs.tsx`): Overview, Moderation, Content and Settings for Morkahja, and Overview, Documents and Repositories for babuni.dev. On a phone the tabs scroll sideways.
+- The Morkahja top bar loses the "Realm Console" heading and server name, which the tabs replace. Its connection badges, version and clock stay on the right from tablet width up. The babuni.dev top bar shows `www.babuni.dev` on the right.
+- Project Manager and Connection share a top bar for pages above the workspaces (`src/app/MetaTopBar.tsx`, which replaces `ProjectsTopBar.tsx`). Connection no longer shows Morkahja's top bar.
+- The workspace label "Babuni Dev" is now "babuni.dev".
+- Tests: regression and browser tests updated from the dropdown to the sidebar buttons and tabs. Suite 137/137, browser suite 6/6 against a mock-data preview, lint and `tsc -b` pass. Screenshots were taken from sample data.
+
 ## 2026-11-19 — Projects overview above the workspaces
 
 - New **◇ Projects** link at the bottom of the sidebar, above **Connection**, opening `/projects`. It belongs to no workspace and has its own top bar (`src/app/ProjectsTopBar.tsx`).

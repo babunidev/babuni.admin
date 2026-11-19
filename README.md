@@ -8,7 +8,7 @@ Babuni Admin is a **private, local control room** for Babuni's projects. One app
 
 ## The workspaces
 
-Above the workspaces, **Projects** (bottom of the sidebar) lists every project on www.babuni.dev with its latest changelog entry, recent commits and documents, read live from GitHub. The project that has waited longest is marked for revision.
+Above the workspaces, **Project Manager** (first button in the sidebar) lists every project on www.babuni.dev with its latest changelog entry, recent commits and documents, read live from GitHub. The project that has waited longest is marked for revision.
 
 ### Morkahja
 

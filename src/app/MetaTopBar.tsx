@@ -1,6 +1,7 @@
 import { useUiStore } from './uiStore'
 
-export function ProjectsTopBar() {
+/** Top bar for pages above the workspaces (Project Manager, Connection). */
+export function MetaTopBar({ title, subtitle }: { title: string; subtitle: string }) {
   const toggleSidebar = useUiStore((s) => s.toggleSidebar)
 
   return (
@@ -14,8 +15,8 @@ export function ProjectsTopBar() {
         ☰
       </button>
       <div>
-        <p className="text-xs uppercase tracking-widest text-fog">Babuni Admin</p>
-        <p className="text-sm text-parchment">All projects · above the workspaces</p>
+        <p className="text-xs uppercase tracking-widest text-fog">{title}</p>
+        <p className="text-sm text-parchment">{subtitle}</p>
       </div>
     </header>
   )
