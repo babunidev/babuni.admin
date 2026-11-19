@@ -16,6 +16,11 @@ This is the one list of what is still open. The dated sections below stay as his
 - [ ] Decide about the eight older release folders with other names (`-local`, `-content`, bare commits); the cleanup only lists them.
 - [ ] Later (Phase 3): Markdown preview, images, galleries and metadata; publication history and rollback in the UI; module creation and reordering.
 
+### Projects overview
+
+- [x] One overview of every website project above the workspaces: latest changelog entry, last five commits, documents readable in place, and the project waiting longest marked for revision (2026-11-19, source, fixtures and a read against the real repositories).
+- [ ] Seen in the running app on Nobara.
+
 ### Checks on the Nobara desktop
 
 - [x] Retire the superseded `postgres-ssh` Overview profile with the Connection page's retirement action (2026-11-10, operator click; `connections.json` now holds only the administrator, GitHub and website profiles).

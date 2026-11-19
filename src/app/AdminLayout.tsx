@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar'
 import { MorkahjaImageCacheController } from './MorkahjaImageCacheController'
 import { TopBar as MorkahjaTopBar } from '../features/morkahja/components/MorkahjaTopBar'
 import { BabuniDevTopBar } from './BabuniDevTopBar'
+import { ProjectsTopBar } from './ProjectsTopBar'
 import { LocalServiceBanner } from './LocalServiceBanner'
 import { workspaceForPath } from './navigation'
 import { useUiStore } from './uiStore'
@@ -12,6 +13,7 @@ export function AdminLayout() {
   const setSidebarOpen = useUiStore((s) => s.setSidebarOpen)
   const { pathname } = useLocation()
   const isBabuniDev = workspaceForPath(pathname).id === 'babuni-dev'
+  const isProjects = pathname === '/projects' || pathname.startsWith('/projects/')
 
   return (
     <div className="app-grain flex h-full min-h-0 flex-col bg-void">
@@ -34,7 +36,7 @@ export function AdminLayout() {
           <Sidebar />
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          {isBabuniDev ? <BabuniDevTopBar /> : <MorkahjaTopBar />}
+          {isProjects ? <ProjectsTopBar /> : isBabuniDev ? <BabuniDevTopBar /> : <MorkahjaTopBar />}
           <main className="scrollbar-thin flex-1 overflow-y-auto p-4 lg:p-6">
             <Outlet />
           </main>

@@ -8,6 +8,7 @@ import { DashboardPage } from './features/morkahja/pages/DashboardPage'
 import { ReadOnlyDashboardPage } from './features/morkahja/pages/ReadOnlyDashboardPage'
 import { PlayersPage } from './features/morkahja/pages/PlayersPage'
 import { ConnectionsPage } from './pages/ConnectionsPage'
+import { ProjectsPage } from './features/projects/pages/ProjectsPage'
 import { SettingsPage } from './pages/SettingsPage'
 
 export default function App() {
@@ -23,6 +24,8 @@ export default function App() {
           <Route path="content" element={<ContentPage />} />
           <Route path="content/:kind/:itemKey" element={<ContentPage />} />
           <Route path="connections" element={<ConnectionsPage />} />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/:projectId" element={<ProjectsPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="babuni-dev" element={<OverviewPage />} />
           <Route path="babuni-dev/documents" element={<DocumentsPage />} />

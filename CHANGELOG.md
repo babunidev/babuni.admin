@@ -1,4 +1,14 @@
 # Babuni Admin — Changelog
+## 2026-11-19 — Projects overview above the workspaces
+
+- New **◇ Projects** link at the bottom of the sidebar, above **Connection**, opening `/projects`. It belongs to no workspace and has its own top bar (`src/app/ProjectsTopBar.tsx`).
+- The page lists every project on www.babuni.dev in one column, read from the babuni.dev checkout (`src/content/project-repositories.json` for repositories and branches, `src/lib/demo-projects.ts` for names, summaries and tints). Projects with a connected repository are sorted by when they were last worked on, and the others are listed under **No repository connected**.
+- The project that has waited longest is pinned above the list under **Asks for revision**, in ember, and opens by default. "Last worked on" is the date of the newest dated `##` entry in the project's `CHANGELOG.md`, or its last commit if it has no dated changelog entry. Bulk commits, such as the 2026-11-18 documentation commit across many repositories, therefore do not hide a quiet project.
+- Clicking a project shows its latest changelog entry, its last five commits (linked to GitHub), and a Documents column. The column has cards for Changelog, Devlog, Roadmap, Readme and Concept, whether at the root or in `docs/`, and an expandable list of every other Markdown file. A document opens inside the page.
+- New `local-service/projectOverview.mjs` with three read-only routes: `POST /projects/list`, `/projects/documents` and `/projects/document`. The list is one GitHub GraphQL query for all repositories through the existing `gh` login, cached for ten minutes (**Refresh** reads again). The browser can name only a project id from the website's list and a path that project's own tree listing returned. Hidden folders, non-Markdown files and files over 1 MB are refused, and repository names that are not plain names are treated as unconnected.
+- New `src/shared/components/Markdown.tsx`, a small reader that builds React elements only (no HTML from documents) and links only `http(s)` addresses.
+- Tests: `tests/project-overview.test.mjs` (5 tests: project order and name validation, changelog dates, query quoting, the revision choice and cache, document allowlist). Suite 137/137, lint and `tsc -b` pass. A run against the real repositories listed all 44 website projects, with 41 connected repositories read. Screenshots were taken from sample data.
+
 ## 2026-11-19 — documentation moved into `docs/`
 
 - Moved `CONCEPT.md` and `ROADMAP.md` into `docs/`. The root keeps only `README.md`, `AGENTS.md`, `LICENSE` and `CHANGELOG.md`; links to the moved files and the documentation rules in `AGENTS.md` were updated. No code changed. Claude Code (Claude Opus 5.5).

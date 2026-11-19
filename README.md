@@ -8,6 +8,8 @@ Babuni Admin is a **private, local control room** for Babuni's projects. One app
 
 ## The workspaces
 
+Above the workspaces, **Projects** (bottom of the sidebar) lists every project on www.babuni.dev with its latest changelog entry, recent commits and documents, read live from GitHub. The project that has waited longest is marked for revision.
+
 ### Morkahja
 
 The established workspace covers server overview, player inspection and moderation, content browsing and local artwork previews. A restricted, operator-approved PostgreSQL view supports read-only player and activity summaries. The Content workspace also includes a persistent local WebP image cache and incremental synchronization.

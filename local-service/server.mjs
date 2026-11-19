@@ -11,6 +11,7 @@ import {
 import { publishLockHolder } from './publishLock.mjs'
 import { planReleaseCleanup, applyReleaseCleanup } from './portfolioReleases.mjs'
 import { documentDiff } from './portfolioDiff.mjs'
+import { projectOverview, projectDocuments, projectDocument } from './projectOverview.mjs'
 import { connectLocal, disconnectLocal } from './connectionLifecycle.mjs'
 import { preflightSshHost } from './sshHostPreflight.mjs'
 import { probeMorkahjaPostgres, isSshProbeActive, fetchMorkahjaReadOnly } from './sshPostgresProbe.mjs'
@@ -172,6 +173,23 @@ const server=createServer(async(req,res)=>{
       } catch(error) {
         const code=['PUBLISH_BUSY','CHECK_REQUIRED','NOTHING_TO_REMOVE'].includes(error.message)?error.message:'PORTFOLIO_OPERATION_FAILED'
         return send(res,409,{error:code})
+      }
+    }
+    // Projects overview above the workspaces: website project list from the
+    // babuni.dev checkout, commits and Markdown read live from GitHub. Read-only.
+    const projectRoutes={
+      '/projects/list':input=>projectOverview(input?.refresh===true),
+      '/projects/documents':input=>projectDocuments(input?.id),
+      '/projects/document':input=>projectDocument(input?.id,String(input?.path ?? '')),
+    }
+    if (req.method==='POST' && Object.hasOwn(projectRoutes,path)) {
+      const input=await body(req)
+      try { return send(res,200,await projectRoutes[path](input)) }
+      catch(error) {
+        const known=['CHECKOUT_UNAVAILABLE','GITHUB_READ_FAILED','PROJECT_UNKNOWN','PROJECT_NOT_CONNECTED',
+          'DOCUMENT_NOT_LISTED','DOCUMENT_TOO_LARGE']
+        const code=known.includes(error.message)?error.message:'PROJECTS_OPERATION_FAILED'
+        return send(res,['PROJECT_UNKNOWN','DOCUMENT_NOT_LISTED'].includes(code)?400:409,{error:code})
       }
     }
     const siteRoutes={

@@ -64,9 +64,15 @@ export function Sidebar() {
           ))}
         </ul>
       </nav>
-      <div className="border-t border-gold/10 px-3 py-2">
+      <div className="space-y-1 border-t border-gold/10 px-3 py-2">
+        <NavLink to="/projects" onClick={() => setSidebarOpen(false)}
+          className={({ isActive }) => `block rounded-md px-3 py-2.5 text-sm ${
+            isActive ? 'bg-gold/15 text-gold-bright' : 'text-fog hover:bg-ash/80 hover:text-parchment'}`}>
+          ◇ Projects
+        </NavLink>
         <NavLink to="/connections" onClick={() => setSidebarOpen(false)}
-          className="block rounded-md px-3 py-2.5 text-sm text-fog hover:bg-ash/80 hover:text-parchment">
+          className={({ isActive }) => `block rounded-md px-3 py-2.5 text-sm ${
+            isActive ? 'bg-gold/15 text-gold-bright' : 'text-fog hover:bg-ash/80 hover:text-parchment'}`}>
           ◎ Connection
         </NavLink>
       </div>

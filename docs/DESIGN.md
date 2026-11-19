@@ -43,6 +43,10 @@ Game content editors expose underlying schema IDs and keys, image previews, enco
 
 Some operations take minutes: asking GitHub about every connected repository, building and publishing the website, checking releases on the server. While one runs, its panel shows a thin gold light sweeping along the top edge, a small turning gold ring beside the text that says what is happening, and button labels that change to **Checking…**, **Publishing…** or **Removing…**. Both pieces live in `src/shared/components/Working.tsx` (`Spinner`, `WorkingBar`) for any workspace to reuse. They only animate while a request is actually waiting for an answer, never as decoration. With reduced motion turned on in the system, they glow softly instead of moving.
 
+## The Projects overview
+
+The Projects page sits above the workspaces, so it has its own top bar (**Babuni Admin · All projects**) and a link at the bottom of the sidebar instead of an entry in a workspace menu. Projects are listed on the left, each with its website tint as a small dot and how long ago it was last worked on. The one asking for revision is pinned above the list in ember with a soft glow, the only warm accent on the page, and its detail card carries the same border. The detail sits in the middle (latest changelog entry, last commits, and the document reader once a document is opened), with the Documents column on the right on wide screens. On a phone the three stack.
+
 ## Saying when the admin is offline
 
 If the local server stops, usually because its terminal was closed, a full-width strip in the alarm red (`--color-alarm`) appears above the sidebar and the page. It says **Babuni Admin is offline** and, in a smaller line, what to do: start Babuni Admin again. Error text elsewhere stays a quiet red; this is the only full red background. It disappears without a click once the server answers again (`src/app/LocalServiceBanner.tsx`).

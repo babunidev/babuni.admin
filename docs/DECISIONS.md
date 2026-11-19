@@ -1,4 +1,12 @@
 # Babuni Admin — Decisions and Alternatives
+## 2026-11-19 — Projects overview and which project asks for revision
+
+**Creative direction:** One overview above the workspaces, reached from the bottom left, of every project on the website: recent commits, the latest changelog entry, and the roadmap, devlog and other documents readable in place. The oldest project should ask for revision and be highlighted.
+
+**Decision:** The page is read-only and reads live from GitHub with the existing `gh` login. The project list is the website's own (the babuni.dev checkout), so the overview always matches what is published. "Oldest" means the longest since the project's newest dated changelog entry, and the last commit counts only when there is no dated entry. Bulk commits across many repositories, such as the 2026-11-18 collaboration-record revision, would otherwise make every project look recent. Exactly one project, the one waiting longest, is marked.
+
+**Alternatives not taken:** The last commit date alone (hidden by bulk commits). The website's document snapshot (it can lag behind the repositories and contains only the published documents). A Markdown library (a small reader without HTML output was enough and keeps documents from injecting markup). Several projects highlighted by an age threshold (the request was for the oldest one).
+
 ## 2026-11-14 — Moderation on by default
 
 **Creative direction:** Moderation should always be on, without typing `BABUNI_MORKAHJA_REMOTE_MODERATION=enabled` before every `npm run dev`.
