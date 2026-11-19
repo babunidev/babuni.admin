@@ -1,4 +1,9 @@
 # Babuni Admin — Changelog
+## 2026-11-19 — Project Manager reads changelog dates at the end of a heading
+
+- The "last worked on" date only recognised headings that start with a date or a version and a date. FlourishForever writes `## 0.6.1-beta — spellbook button (2026-11-19)`, so its newest entries were skipped, and an older date from further down the file made it ask for revision although it had been worked on that day. Any `##` heading with a date anywhere in it now counts. The title is the heading without the date.
+- Checked against the running app, in a read through the real local service: 44 projects, 41 repositories read, no read errors. A document list and a roadmap read worked, and a path outside the listed documents was refused (`DOCUMENT_NOT_LISTED`). After the fix, all 41 dates come from changelogs. Two new test cases; suite 137/137, lint passes.
+
 ## 2026-11-19 — Project Manager detail follows the scroll
 
 - On wide screens, the project detail panel (with its Documents column) now stays at the top of the view while the project list scrolls, and has its own scrolling for long documents. Clicking a project far down the list shows it right away, without scrolling back up. On a phone, where the panel sits below the list, clicking a project scrolls down to it.

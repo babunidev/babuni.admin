@@ -71,6 +71,10 @@ test('latest changelog entry takes the newest date, with a version as title fall
   assert.equal(entry.body, '- b')
   assert.equal(latestChangelogEntry('## 0.4.11-beta — 2026-11-13\n- fix\n').title, '0.4.11-beta')
   assert.equal(latestChangelogEntry('## Unreleased\n'), null)
+  const trailing = latestChangelogEntry('## 0.6.1-beta — spellbook button (2026-11-19)\n- new\n## 0.6.0-beta — older (2026-11-10)\n')
+  assert.equal(trailing.date, '2026-11-19')
+  assert.equal(trailing.title, '0.6.1-beta — spellbook button')
+  assert.equal(latestChangelogEntry('## [1.2.0] - 2026-11-03\n').title, '1.2.0')
   assert.equal(latestChangelogEntry(undefined), null)
 })
 
