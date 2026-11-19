@@ -108,7 +108,7 @@ The new Morkahja `/read-only` route performs manual aggregate and paginated play
 ## Related records
 
 - [Architecture](ARCHITECTURE.md)
-- [Roadmap](../ROADMAP.md)
+- [Roadmap](ROADMAP.md)
 - [Decisions](DECISIONS.md)
 - [Phase 1 hardening](PHASE1_HARDENING_2026-11-03.md)
 

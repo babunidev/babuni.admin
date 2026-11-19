@@ -13,7 +13,7 @@ function fakeCheckout(script) {
 }
 
 test('only standard babuni.dev document paths are allowed', () => {
-  for (const ok of ['README.md', 'CONCEPT.md', 'CHANGELOG.md', 'ROADMAP.md', 'docs/DEVLOG.md', 'docs/AI_COLLABORATION.md'])
+  for (const ok of ['README.md', 'CONCEPT.md', 'CHANGELOG.md', 'ROADMAP.md', 'docs/CONCEPT.md', 'docs/ROADMAP.md', 'docs/DEVLOG.md', 'docs/AI_COLLABORATION.md'])
     assert.equal(isAllowedDocumentPath(ok), true, ok)
   for (const bad of ['', '../README.md', 'docs/../README.md', '/etc/passwd', 'src/lib/x.md', 'docs/devlog.md',
     'docs/DEVLOG.md; rm -rf /', 'docs/DEVLOG.md\n', 'scripts/publish-document.sh', null, undefined, 5])

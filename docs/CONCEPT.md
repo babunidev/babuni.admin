@@ -9,7 +9,7 @@
 
 Babuni Admin is my private workbench, run on my own Nobara Linux PC. It does **not** belong on a publicly accessible website or hosted administration dashboard. The browser interface and its privileged local service should be accessible only on the same computer; from there, the tool initiates authenticated outbound connections to Morkahja, babuni.dev, GitHub and whichever projects require administration. Remote servers continue to enforce their own credentials and permissions.
 
-The separation between a local interface and remote project access is a deliberate design boundary, not a temporary deployment limitation. [Connection manager design](docs/LOCAL_CONNECTION_MANAGER.md).
+The separation between a local interface and remote project access is a deliberate design boundary, not a temporary deployment limitation. [Connection manager design](LOCAL_CONNECTION_MANAGER.md).
 
 ## One administration workbench
 

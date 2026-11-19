@@ -27,7 +27,7 @@ The creative verified the first complete **Publish everything** flow on Nobara o
 
 **Still missing:** editing arbitrary source-repository documents through this UI, broader content management and some browser/device acceptance checks. Live changes require the workflow's own permissions, reviews and safety checks; a read-only connection result alone never grants write access.
 
-For implementation and verification details, see [architecture](docs/ARCHITECTURE.md), [roadmap](ROADMAP.md), [publishing](docs/PUBLISHING.md), and the [local connection manager](docs/LOCAL_CONNECTION_MANAGER.md).
+For implementation and verification details, see [architecture](docs/ARCHITECTURE.md), [roadmap](docs/ROADMAP.md), [publishing](docs/PUBLISHING.md), and the [local connection manager](docs/LOCAL_CONNECTION_MANAGER.md).
 
 ## Run it locally
 
@@ -95,8 +95,8 @@ The code and its history include older Morkahja-specific paths, temporary develo
 
 | What you want to know | Document |
 | --- | --- |
-| Why the tool exists | [Concept](CONCEPT.md) · [Design](docs/DESIGN.md) |
-| What's planned or already changed | [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) |
+| Why the tool exists | [Concept](docs/CONCEPT.md) · [Design](docs/DESIGN.md) |
+| What's planned or already changed | [Roadmap](docs/ROADMAP.md) · [Changelog](CHANGELOG.md) |
 | How it is built | [Architecture](docs/ARCHITECTURE.md) · [Multi-project structure](docs/MULTI_PROJECT_ARCHITECTURE.md) |
 | Connections and permissions | [Connection manager](docs/LOCAL_CONNECTION_MANAGER.md) · [Read-only dashboard](docs/MORKAHJA_READ_ONLY_DASHBOARD.md) |
 | Tests, risks and validation | [Testing](docs/TESTING.md) · [Phase 1 verification](docs/PHASE1_VERIFICATION.md) · [Phase 2 security review](docs/PHASE2_SECURITY_REVIEW_2026-11-04.md) |

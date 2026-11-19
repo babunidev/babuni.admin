@@ -39,7 +39,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [ ] Release gate (below) for every new live write path.
 - [ ] Action attribution and recoverable writes for project-scoped live operations.
 - [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.
-- [ ] Resolve the 12 moderate lint/tooling advisories ([audit](docs/DEPENDENCY_AUDIT_2026-11-03.md)).
+- [ ] Resolve the 12 moderate lint/tooling advisories ([audit](DEPENDENCY_AUDIT_2026-11-03.md)).
 - [ ] Fix the Vite config import-extension warnings.
 - [ ] Resolve local and remote content API inconsistencies; make sure a mock fallback can never look like a successful live write.
 - [x] Update the browser smoke tests' Babuni Dev expectations: CI failed on 2026-11-09 after Documents added a second link; fixed for three links and [CI passed](https://github.com/babunidev/babuni.admin/actions/runs/42732207059) on 2026-11-10 (all five jobs).
@@ -175,7 +175,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [x] Verify current-change unit, PostgreSQL recovery, browser, build and lint checks in CI. The first run exposed an outdated four-field legacy test expectation; commit `6e479a8` updated it to require all eight fields and null optional metrics without approval. All five jobs passed in [CI run 42079244053](https://github.com/babunidev/babuni.admin/actions/runs/42079244053).
 - [x] Operator-provided Nobara screenshot (2026-11-06) verifies the four live cards (75 achievements, 52 earning players, 10 dice unlocks, 6 expansion unlocks), original overview counters, player preview, and a successful refresh status indicating SSH disconnected after snapshot. Unavailable/error branches and connection cleanup under failure are covered by fixtures but not separately exercised live.
 
-[Prepared SQL](scripts/morkahja-batch-a-aggregate-views.sql) · [Candidate contract](docs/MORKAHJA_OVERVIEW_METRICS.md).
+[Prepared SQL](../scripts/morkahja-batch-a-aggregate-views.sql) · [Candidate contract](MORKAHJA_OVERVIEW_METRICS.md).
 
 ## 2026-11-05 — Discover new Morkahja Overview metrics safely
 
@@ -188,7 +188,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [ ] Approve final aggregate definitions and implement new owner-controlled `babuni_admin_ro` views with SELECT-only rights for the existing probe role.
 - [ ] Test disposable fixtures and operator-observed live counters before adding UI cards. No new counter or production view is created in this discovery step.
 
-[Candidate metric definitions and safe audit](docs/MORKAHJA_OVERVIEW_METRICS.md).
+[Candidate metric definitions and safe audit](MORKAHJA_OVERVIEW_METRICS.md).
 
 
 ## 2026-11-05 — Opt-in SSH identity at desktop login
@@ -199,7 +199,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [x] Operator-reported post-login readiness check on Nobara: `SSH_LOGIN_IDENTITY_READY` and `ssh-add -l` showed the expected ED25519 fingerprint `SHA256:2Anm1mb+Uyn2mFh84KYpCENDjGW0PnSkwG2joBOLaes`. This followed the requested fresh-login procedure; the terminal output alone cannot independently prove a logout occurred or that no manual `ssh-add` ran beforehand.
 - [x] Inspect Morkahja game source and prepare candidate definitions plus a metadata-only SQL audit for future aggregate statistics. Live schema confirmation and view implementation remain pending in the discovery milestone above.
 
-[Desktop login setup](docs/SSH_AGENT_DESKTOP_LOGIN.md).
+[Desktop login setup](SSH_AGENT_DESKTOP_LOGIN.md).
 
 
 ## 2026-11-05 — Diagnose automatic Morkahja SSH failures safely
@@ -240,7 +240,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [x] Extend disposable PostgreSQL fixture tests to mirror view access and verify denial without view grants, raw-table privilege rejection, pagination and no session mutation.
 - [x] Verify dashboard overview and first player preview end-to-end on the real Morkahja server using the operator's Nobara screenshots; see successful live snapshot checkpoint above.
 
-[View and access contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
+[View and access contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 ## 2026-11-04 — Diagnose first live Morkahja dashboard read failure
 
@@ -254,7 +254,7 @@ This is the one list of what is still open. The dated sections below stay as his
 - [x] Implement a separate, manual Morkahja dashboard for database counts and 20-row player preview pages.
 - [x] Add fixed SELECT-only queries, repeated role verification, limited response fields and a shared single-flight SSH tunnel lifecycle.
 - [x] Require a second operator-only data-read opt-in and exact `displayName`, `avatarCount`, `lastPlayedAt` field list; browser requests cannot select arbitrary data or queries.
-- [x] Verify the new read-only snapshot and visible approved fields on the actual Morkahja server after fixture tests and the restricted-view adapter update. No live player data was read during AI implementation; the operator subsequently verified successful reads. [Data contract](docs/MORKAHJA_READ_ONLY_DASHBOARD.md).
+- [x] Verify the new read-only snapshot and visible approved fields on the actual Morkahja server after fixture tests and the restricted-view adapter update. No live player data was read during AI implementation; the operator subsequently verified successful reads. [Data contract](MORKAHJA_READ_ONLY_DASHBOARD.md).
 
 **Observed on the operator's Nobara PC:** The Morkahja SSH/database health probe returned `REMOTE_DB_HEALTHY_READ_ONLY` at 20:59 on 2026-11-04. This validates the configured health path, not general data-reading or write authority.
 
@@ -292,9 +292,9 @@ GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine reg
 - [ ] Add real workspace authorization/permissions and Babuni Dev content operations after the secure backend is implemented.
 - [x] Replace historical shim imports with direct feature/shared paths and remove all 33 obsolete re-export files. CI verified TypeScript/Vite build, lint and nine tests, including an import-integrity regression. [Run 41565792784](https://github.com/babunidev/babuni.admin/actions/runs/41565792784).
 - [x] Keep Babuni Dev content operations inactive: the new overview is explicitly a placeholder and cannot edit or publish.
-- [x] Complete the final Phase 1 source/CI verification review and record residual risks in the roadmap, changelog, development journal and architecture. See [Phase 1 verification report](docs/PHASE1_VERIFICATION.md) and [latest passing CI](https://github.com/babunidev/babuni.admin/actions/runs/41645348546).
+- [x] Complete the final Phase 1 source/CI verification review and record residual risks in the roadmap, changelog, development journal and architecture. See [Phase 1 verification report](PHASE1_VERIFICATION.md) and [latest passing CI](https://github.com/babunidev/babuni.admin/actions/runs/41645348546).
 
-- [x] Audit the 23 npm affected package records, compare full and production-scoped results, and document prioritized remediation. [Audit report](docs/DEPENDENCY_AUDIT_2026-11-03.md), [CI evidence](https://github.com/babunidev/babuni.admin/actions/runs/41654264717).
+- [x] Audit the 23 npm affected package records, compare full and production-scoped results, and document prioritized remediation. [Audit report](DEPENDENCY_AUDIT_2026-11-03.md), [CI evidence](https://github.com/babunidev/babuni.admin/actions/runs/41654264717).
 - [x] Apply semver-compatible lockfile security fixes and rerun the full suite: 23 → 12 affected packages (all 12 moderate), zero under `--omit=dev`. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41659550592).
 - [ ] Resolve the 12 remaining moderate lint/tooling advisories in a separate compatibility review; audit report linked below.
 
@@ -306,14 +306,14 @@ GitHub Actions has verified `npm ci`, TypeScript/Vite build, ESLint and nine reg
 - [x] Verify actual PostgreSQL queries, atomic moderation/session changes and all five rendered content-editor forms against disposable fixtures. [CI](https://github.com/babunidev/babuni.admin/actions/runs/41659550592).
 - [ ] Close security and dependency release blockers before any remote/admin production access.
 
-Full findings: [docs/PHASE1_VERIFICATION.md](docs/PHASE1_VERIFICATION.md).
+Full findings: [docs/PHASE1_VERIFICATION.md](PHASE1_VERIFICATION.md).
 
-Additional scope and remaining production blockers: [Phase 1 hardening report](docs/PHASE1_HARDENING_2026-11-03.md).
+Additional scope and remaining production blockers: [Phase 1 hardening report](PHASE1_HARDENING_2026-11-03.md).
 
 ## Phase 2 — Local connection infrastructure (permanent local-only architecture)
 
-- [x] Document Babuni Admin as a single-user application running only on the creative's own PC, with secure **outbound** project connections and no hosted/public administration interface. [Concept](CONCEPT.md) · [Architecture](docs/ARCHITECTURE.md).
-- [x] Design a shared local connection manager: profile contracts, non-browser credential references, status lifecycle, scoped adapter boundaries, UI and test acceptance criteria. **Design only, not implementation.** [Design](docs/LOCAL_CONNECTION_MANAGER.md).
+- [x] Document Babuni Admin as a single-user application running only on the creative's own PC, with secure **outbound** project connections and no hosted/public administration interface. [Concept](CONCEPT.md) · [Architecture](ARCHITECTURE.md).
+- [x] Design a shared local connection manager: profile contracts, non-browser credential references, status lifecycle, scoped adapter boundaries, UI and test acceptance criteria. **Design only, not implementation.** [Design](LOCAL_CONNECTION_MANAGER.md).
 - [x] Introduce a standalone loopback-only local Node service with an ephemeral service token; use Vite as the developer UI/proxy rather than as the connection-profile authority. This is the first local process boundary, not a full privilege/isolation review.
 - [x] Add local, non-secret connection profile creation/listing/removal with disabled-by-default status and isolated persistence tests.
 - [x] Add rendered Chromium Connections tests with disposable profiles, local lifecycle and forged-origin/session denial. Verified only when CI passes.
@@ -324,8 +324,8 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Add a read-only local directory test with verified available/error status; non-local adapters explicitly remain unconfigured.
 - [x] Add manual local-file Connect, Disconnect and Reconnect through read-only probes without background retries.
 - [x] Strengthen local Vite proxy Host/Origin/Fetch Metadata checks and add a per-run browser session capability while keeping the service key server-side.
-- [x] Add Morkahja-only offline SSH host-key trust preflight: dedicated operator-managed known_hosts file, exact host matching, OpenSSH parser check, invalid/unsafe store denial and no outbound connection; verified only by fixture CI tests. [Design](docs/LOCAL_CONNECTION_MANAGER.md).
-- [x] Implement a **disabled-by-default**, operator-gated Morkahja SSH/PostgreSQL health probe: exact host and approved fingerprint, private identity file, keyring password, hardened OpenSSH invocation, temporary loopback tunnel, fixed read-only PostgreSQL metadata/privilege query and tunnel cleanup. Fixture tests verify code paths; **no live Morkahja host has been contacted**. [Configuration and safety](docs/MORKAHJA_SSH_READONLY_PROBE.md).
+- [x] Add Morkahja-only offline SSH host-key trust preflight: dedicated operator-managed known_hosts file, exact host matching, OpenSSH parser check, invalid/unsafe store denial and no outbound connection; verified only by fixture CI tests. [Design](LOCAL_CONNECTION_MANAGER.md).
+- [x] Implement a **disabled-by-default**, operator-gated Morkahja SSH/PostgreSQL health probe: exact host and approved fingerprint, private identity file, keyring password, hardened OpenSSH invocation, temporary loopback tunnel, fixed read-only PostgreSQL metadata/privilege query and tunnel cleanup. Fixture tests verify code paths; **no live Morkahja host has been contacted**. [Configuration and safety](MORKAHJA_SSH_READONLY_PROBE.md).
 - [x] Operator configured the approved SSH host identity and dedicated database read-only role and demonstrated a successful live health check followed by view-only data retrieval on Nobara. Independent hardening of future write-capable adapters remains open.
 - [ ] Implement GitHub remote transport and future authenticated project-scoped content workflows. *(Publishing now runs through babuni.dev's scripts; GitHub editing is in current open work.)*
 - [x] Operator verified the live protected SSH/PostgreSQL health probe and subsequently the restricted-view dashboard using the dedicated `babuni_admin_probe` role. The observed real Morkahja data access remained SELECT-only; this does not authorize moderation, arbitrary SQL or remote writes.
@@ -342,7 +342,7 @@ Additional scope and remaining production blockers: [Phase 1 hardening report](d
 - [x] Verify unlock recovery: after unlocking KDE Wallet, inspection returned `unlocked`, `available` and `missing` again (operator-reported, 2026-11-04). This verifies status recovery, not a post-unlock credential store/retrieve test.
 - [ ] Authorize and connect live content editing to project-scoped files or scoped remote transport.
 - [ ] Extend verified Babuni Dev GitHub metadata access into source-document read/write access, then implement a controlled publishing transport. *(Publishing done 2026-11-09/10; read/write editing in current open work.)*
-- [x] Audit current connection and legacy static middleware boundaries; add project-scope/denied-operation tests and prevent local asset symlink escapes. [Review](docs/PHASE2_SECURITY_REVIEW_2026-11-04.md).
+- [x] Audit current connection and legacy static middleware boundaries; add project-scope/denied-operation tests and prevent local asset symlink escapes. [Review](PHASE2_SECURITY_REVIEW_2026-11-04.md).
 - [ ] Complete operator authentication/authorization, project-scoped live operations, action attribution, recoverable writes and remaining security release gates. Browser origin/session guards alone are insufficient.
 - [ ] Verify loopback-only binding, outbound endpoint restrictions and failure cases with fixtures.
 - [ ] Fix Vite config import-extension warnings as an independent maintenance task.
