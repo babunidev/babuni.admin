@@ -1,4 +1,9 @@
 # Babuni Admin — Changelog
+## 2026-11-19 — Project Manager detail follows the scroll
+
+- On wide screens, the project detail panel (with its Documents column) now stays at the top of the view while the project list scrolls, and has its own scrolling for long documents. Clicking a project far down the list shows it right away, without scrolling back up. On a phone, where the panel sits below the list, clicking a project scrolls down to it.
+- Checked in a browser with 40 sample projects at 1440×900 and 390×844: after scrolling down and clicking the 38th project, its heading was in view (y=101 and y=307). Suite 137/137, lint and `tsc -b` pass.
+
 ## 2026-11-19 — Workspace pages as tabs, workspaces in the sidebar
 
 - The sidebar no longer has a workspace dropdown and a page menu. It now lists three places: **Project Manager** (`/projects`, renamed from Projects), **babuni.dev** and **Morkahja**, with **Connection** at the bottom. The current workspace is marked, and so is a Morkahja subpage such as `/players`.

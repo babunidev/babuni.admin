@@ -49,7 +49,7 @@ The sidebar answers *where am I working*: Project Manager, babuni.dev and Morkah
 
 ## The Projects overview
 
-The Project Manager page sits above the workspaces, so it has its own top bar (**Babuni Admin · All projects**) and a link at the bottom of the sidebar instead of an entry in a workspace menu. Projects are listed on the left, each with its website tint as a small dot and how long ago it was last worked on. The one asking for revision is pinned above the list in ember with a soft glow, the only warm accent on the page, and its detail card carries the same border. The detail sits in the middle (latest changelog entry, last commits, and the document reader once a document is opened), with the Documents column on the right on wide screens. On a phone the three stack.
+The Project Manager page sits above the workspaces, so it has its own top bar (**Babuni Admin · All projects**) and a link at the bottom of the sidebar instead of an entry in a workspace menu. Projects are listed on the left, each with its website tint as a small dot and how long ago it was last worked on. The one asking for revision is pinned above the list in ember with a soft glow, the only warm accent on the page, and its detail card carries the same border. The detail sits in the middle (latest changelog entry, last commits, and the document reader once a document is opened), with the Documents column on the right on wide screens. On wide screens the detail stays in view while the list scrolls, so whatever I click is visible at once; long documents scroll inside it. On a phone the three stack, and choosing a project scrolls down to it.
 
 ## Saying when the admin is offline
 

@@ -43,6 +43,8 @@ export function ProjectsPage() {
   const revision = projects.find(p => p.needsRevision) ?? null
   const { connected, waiting } = useMemo(() => ordered(projects), [projects])
   const selected = projects.find(p => p.id === projectId) ?? revision ?? null
+  const [chosen, setChosen] = useState(false)
+  const select = (id: string) => { setChosen(true); navigate(`/projects/${id}`) }
 
   return (
     <div>
@@ -62,19 +64,19 @@ export function ProjectsPage() {
           {projects.length} projects · read {new Date(overview.checkedAt).toLocaleString()}{overview.cached ? ' (from the last read)' : ''}
         </p>
       )}
-      <div className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)]">
+      <div className="grid gap-5 lg:grid-cols-[17rem_minmax(0,1fr)] lg:items-start">
         <nav aria-label="Projects" className="relative min-w-0">
           <WorkingBar active={loading && !overview} />
           {revision && (
             <div className="mb-4">
               <p className="mb-1.5 text-[10px] uppercase tracking-widest text-ember">Asks for revision</p>
-              <ProjectRow project={revision} active={selected?.id === revision.id} onSelect={() => navigate(`/projects/${revision.id}`)} />
+              <ProjectRow project={revision} active={selected?.id === revision.id} onSelect={() => select(revision.id)} />
             </div>
           )}
           <ul className="space-y-1">
             {connected.map(p => (
               <li key={p.id}>
-                <ProjectRow project={p} active={selected?.id === p.id} onSelect={() => navigate(`/projects/${p.id}`)} />
+                <ProjectRow project={p} active={selected?.id === p.id} onSelect={() => select(p.id)} />
               </li>
             ))}
           </ul>
@@ -84,14 +86,14 @@ export function ProjectsPage() {
               <ul className="space-y-1">
                 {waiting.map(p => (
                   <li key={p.id}>
-                    <ProjectRow project={p} active={selected?.id === p.id} onSelect={() => navigate(`/projects/${p.id}`)} />
+                    <ProjectRow project={p} active={selected?.id === p.id} onSelect={() => select(p.id)} />
                   </li>
                 ))}
               </ul>
             </>
           )}
         </nav>
-        {selected ? <ProjectDetail key={selected.id} project={selected} /> : !loading && !error && (
+        {selected ? <ProjectDetail key={selected.id} project={selected} reveal={chosen} /> : !loading && !error && (
           <p className="text-sm text-fog">No project selected.</p>
         )}
       </div>
@@ -119,7 +121,7 @@ function ProjectRow({ project, active, onSelect }: { project: Project; active: b
   )
 }
 
-function ProjectDetail({ project }: { project: Project }) {
+function ProjectDetail({ project, reveal }: { project: Project; reveal: boolean }) {
   const [list, setList] = useState<ProjectDocumentList | null>(null)
   const [listError, setListError] = useState<string | null>(null)
   const [doc, setDoc] = useState<ProjectDocument | null>(null)
@@ -127,6 +129,12 @@ function ProjectDetail({ project }: { project: Project }) {
   const [docError, setDocError] = useState<string | null>(null)
   const [showAll, setShowAll] = useState(false)
   const reader = useRef<HTMLElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
+  // Wide screens keep the panel in view (sticky); stacked on a phone, scroll down to it.
+  useEffect(() => {
+    if (reveal && window.matchMedia('(max-width: 1023px)').matches)
+      panel.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [reveal])
   useEffect(() => { if (docPath) reader.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) }, [docPath])
 
   useEffect(() => {
@@ -154,7 +162,7 @@ function ProjectDetail({ project }: { project: Project }) {
   const others = paths.filter(p => !keyPaths.has(p))
 
   return (
-    <div className="grid min-w-0 gap-5 xl:grid-cols-[minmax(0,1fr)_17rem]">
+    <div ref={panel} className="scrollbar-thin grid min-w-0 scroll-mt-4 gap-5 lg:sticky lg:top-0 lg:max-h-[calc(100dvh-6.5rem)] lg:overflow-y-auto lg:pr-2 xl:grid-cols-[minmax(0,1fr)_17rem]">
       <div className="min-w-0 space-y-5">
         <section className={`rounded-lg border p-5 ${project.needsRevision ? 'border-ember/60 bg-ember/10' : 'border-gold/15 bg-slate/50'}`}>
           <div className="flex flex-wrap items-start justify-between gap-3">
