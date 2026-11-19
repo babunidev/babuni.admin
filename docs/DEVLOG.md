@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-19 — Knowing when the admin is gone
+
+Closing the terminal left the admin page open in the browser, looking as if it still worked. Only when a save or a check failed did I find out the local server was gone. Now a red strip across the top says that Babuni Admin is offline and that I should start it again, and it goes away by itself once the server is back. AI wrote the banner on 2026-11-15; the tool and model for that work were not recorded. I tried it in the running app and it works. Claude Code (Claude Opus 5.5) wrote this documentation and committed the change.
+
 ## 2026-11-16 — Where the pictures really live
 
 I ran the server check and pasted the result. Saving content was fine: the game has the admin routes and the key. Pictures were not. Players get them from a release folder that is replaced on every release and that my login cannot write, and the folder the admin was reading was an old copy. AI (Claude Code, Claude Opus 5.5) proposed a separate uploads folder that I own, which Nginx looks in before the release, and wrote a one-time setup I run with sudo. It changes one Nginx block, keeps a backup and only reloads if the configuration test passes.

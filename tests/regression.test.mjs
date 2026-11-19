@@ -117,6 +117,9 @@ test('shared shell uses project-owned navigation and reusable controls', async (
   assert.match(app, /\.\/app\/AdminLayout/)
   assert.match(layout, /\.\/Sidebar/)
   assert.match(layout, /features\/morkahja\/components\/MorkahjaTopBar/)
+  assert.match(layout, /LocalServiceBanner/)
+  const banner = await readFile('src/app/LocalServiceBanner.tsx', 'utf8')
+  assert.match(banner, /Babuni Admin is offline/)
   assert.match(sidebar, /\.\/navigation/)
   assert.match(navigation, /features\/morkahja\/navigation/)
   for (const route of ['/', '/players', '/content', '/settings']) {

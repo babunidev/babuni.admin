@@ -1,4 +1,11 @@
 # Babuni Admin — Changelog
+## 2026-11-19 — Offline banner when the local server stops
+
+- When the terminal running `npm run dev` is closed, every page now shows a red strip across the top: **Babuni Admin is offline**, with a line saying the page cannot reach the local server and to start Babuni Admin again. It disappears by itself once the server answers again.
+- New `src/app/LocalServiceBanner.tsx` and `src/app/localServicePresence.ts`. The banner asks `/local-connections-api/session` when the page opens, every 5 seconds, and when the window regains focus or becomes visible. No answer, or a 5xx answer from the Vite proxy, counts as offline; a 4xx answer still counts as online. `localConnectionClient.ts` reports the same result after every local service request, so a failed save shows the banner immediately. The check sends no credentials and reads no data.
+- `AdminLayout.tsx` places the banner above the sidebar and the page; `index.css` adds the `--color-alarm` red.
+- Babuni confirmed the banner works in the running app. One assertion added to `tests/regression.test.mjs`. Suite 132/132, lint and build pass.
+
 ## 2026-11-16 — Every encounter in the Content list
 
 - Content → Encounters showed only the first 100 encounters, without a way to see the rest, although the live catalog has more than 200. The list now shows every encounter on one page; the images in it still load only when their row scrolls into view. A line above the table says how many encounters are listed, or how many match the search. Asked for by Babuni; change made with Claude Code (Claude Opus 5.5). Suite 132/132, lint and `tsc -b` pass.
