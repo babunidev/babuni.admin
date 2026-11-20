@@ -76,6 +76,12 @@ test('latest changelog entry takes the newest date, with a version as title fall
   assert.equal(trailing.title, '0.6.1-beta — spellbook button')
   assert.equal(latestChangelogEntry('## [1.2.0] - 2026-11-03\n').title, '1.2.0')
   assert.equal(latestChangelogEntry(undefined), null)
+  const unreleased = latestChangelogEntry('## [Unreleased]\n\n### Changed — newest (2026-11-19)\n- a\n\n### Added — older (2026-11-13)\n- b\n## 0.1.0 — 2026-11-13\n- c\n')
+  assert.equal(unreleased.date, '2026-11-19')
+  assert.equal(unreleased.title, 'Changed — newest')
+  assert.equal(unreleased.body, '- a')
+  const nested = latestChangelogEntry('## 2026-11-19 — Release\n### Added\n- x\n## 2026-11-01 — Old\n')
+  assert.equal(nested.body, '### Added\n- x')
 })
 
 test('the project query quotes every name and branch', () => {

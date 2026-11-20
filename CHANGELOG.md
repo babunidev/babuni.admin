@@ -1,4 +1,9 @@
 # Babuni Admin — Changelog
+## 2026-11-20 — Project Manager reads dated `###` changelog entries
+
+- babuni.dev keeps its newest entries as `### Changed — … (2026-11-19)` headings under `## [Unreleased]`. Only `##` headings were read, so the Project Manager took the newest dated release heading (2026-11-13), showed "7 days ago" and asked for revision although the project had been worked on that day. Dated `###` headings now count too; an entry's text ends at the next heading of the same or a higher level. Claude Code (Claude Opus 5.5).
+- Checked against babuni.dev's real changelog from GitHub: the newest entry is now 2026-11-19, "Changed — human–AI collaboration record". Two new test cases; suite 137/137, lint and build pass.
+
 ## 2026-11-19 — human–AI collaboration record
 
 - Added a rule to `AGENTS.md` and `docs/DOCUMENTATION.md`: `docs/AI_COLLABORATION.md` takes no dated entries; contributions are recorded in the journal and changelog. Claude Code (Claude Opus 5.5).

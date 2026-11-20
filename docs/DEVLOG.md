@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-20 — babuni.dev wasn't forgotten
+
+The Project Manager said babuni.dev had waited longest, seven days, although I had worked on it all day. Claude Code (Claude Opus 5.5) found that babuni.dev writes its newest changelog entries one heading level deeper, under "Unreleased", and the reader skipped them. It now reads those too, so babuni.dev shows its real last day of work.
+
 ## 2026-11-19 — What I open stays in sight
 
 When I scrolled down the Project Manager list and clicked a project, its content opened at the top of the page, and I had to scroll all the way back up to read it. I asked for the content to open where I am and follow me as I scroll. Claude Code (Claude Opus 5.5) made the detail panel stay in view beside the list, and on the phone the page now jumps down to the project I tapped.

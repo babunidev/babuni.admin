@@ -73,21 +73,23 @@ export async function websiteProjects(checkout = checkoutPath()) {
   })
 }
 
-/** The newest `##` section of a changelog with a date anywhere in its heading
- * (`## 2026-11-19 — …`, `## 0.4.11-beta — 2026-11-13`, `## 0.6.1-beta — title (2026-11-19)`), or null. */
+/** The newest `##` or `###` section of a changelog with a date anywhere in its heading
+ * (`## 2026-11-19 — …`, `## 0.4.11-beta — 2026-11-13`, `## 0.6.1-beta — title (2026-11-19)`,
+ * or `### Changed — title (2026-11-19)` under `## [Unreleased]`), or null. */
 export function latestChangelogEntry(text) {
   if (typeof text !== 'string') return null
   const lines = text.replace(/\r\n/g, '\n').split('\n')
   let best = null
   for (let i = 0; i < lines.length; i++) {
-    if (!/^##\s/.test(lines[i])) continue
+    const level = /^(#{2,3})\s/.exec(lines[i])?.[1].length
+    if (!level) continue
     const date = /(?<!\d)(\d{4}-\d{2}-\d{2})(?!\d)/.exec(lines[i])?.[1]
     if (!date || (best && best.date >= date)) continue
-    const title = lines[i].replace(/^##\s+/, '').replace(date, '')
+    const title = lines[i].replace(/^#{2,3}\s+/, '').replace(date, '')
       .replace(/[[\]()]/g, ' ').replace(/\s*[—–-]\s*$|^\s*[—–-]\s*/g, '').replace(/\s+[—–-]\s+[—–-]\s+/, ' — ')
       .replace(/\s{2,}/g, ' ').trim()
     let end = i + 1
-    while (end < lines.length && !/^##?\s/.test(lines[end])) end++
+    while (end < lines.length && !(/^(#+)\s/.exec(lines[end])?.[1].length <= level)) end++
     best = { date, title: title || null, body: lines.slice(i + 1, end).join('\n').trim().slice(0, 4000) }
   }
   return best
