@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-21 — Choosing is not saving
+
+Picking a new picture in the Content editor saved it everywhere at once, to the live game, my local game and GitHub, before I had even decided. I asked for it to wait for Save. Claude Code (Claude Opus 5.5) changed every editor so a chosen image only shows as a preview until I press Save, and then the image and the record go out together with one result popup.
+
 ## 2026-11-21 — One game, one place
 
 I replaced the picture for Open Lock in the admin tool, and the local game kept showing the old one. The tool had been committing my saves in a second copy of the game, `Morkahja-content-commits`, on its own branch, and pushing to GitHub from there, so my own game folder never saw them. I never wanted that: the game lives in MorkahjaWebApp, on main, and a save should reach my local game, GitHub and the live game. Claude Code (Claude Opus 5.5) changed the save to commit straight in MorkahjaWebApp on main and push from there, without ever pushing my own unpublished commits or touching my uncommitted edits, and removed the side checkout and every old branch, here and on GitHub. **Verification:** the save's tests cover each case (6/6), the full suite 143/143. Not yet tried from the running tool.

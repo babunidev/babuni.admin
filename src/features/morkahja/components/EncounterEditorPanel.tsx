@@ -6,7 +6,7 @@ import {
   REWARD_TYPES,
   SOLUTION_TYPE_GROUPS,
 } from '../utils/gameDataReference'
-import { ImageUploadField } from './ImageUploadField'
+import { ImagePickField } from './ImagePickField'
 import { RemoteContentImage } from './RemoteContentImage'
 
 const inputClass =
@@ -108,7 +108,10 @@ interface EncounterEditorPanelProps {
   onClose: () => void
   isSaving: boolean
   saveError?: string | null
-  onUploadImage?: (file: File) => Promise<string | void>
+  /** Image chosen but not yet saved. */
+  pendingImage?: File | null
+  /** Choose an image; it is uploaded when the encounter is saved. */
+  onPickImage?: (file: File | null) => void
   /** Administrator connection: preview comes from the live server's images. */
   profileId?: string
 }
@@ -122,7 +125,8 @@ export function EncounterEditorPanel({
   onClose,
   isSaving,
   saveError,
-  onUploadImage,
+  pendingImage = null,
+  onPickImage,
   profileId,
 }: EncounterEditorPanelProps) {
   const previewSrc = encounterImageUrl(draft.mEncounterImageName)
@@ -260,10 +264,10 @@ export function EncounterEditorPanel({
             <EditorSection
               title="Image"
               description={
-                profileId && onUploadImage
-                  ? 'Choosing a file uploads it to encounterimages/ on the live server as WebP and commits it to GitHub. The name comes from the encounter title (2_title, 3_title, … if that name is taken), so the old picture stays until you save.'
-                  : useLocalContent && onUploadImage
-                  ? 'Choosing a file copies it into encounterimages/ as WebP. The name is generated from the encounter title (2_title, 3_title, … if that name already exists).'
+                profileId && onPickImage
+                  ? 'A new image is uploaded when you save: to encounterimages/ on the live server as WebP, then MorkahjaWebApp and GitHub. The name comes from the encounter title (2_title, 3_title, … if that name is taken).'
+                  : useLocalContent && onPickImage
+                  ? 'A new image is copied into encounterimages/ as WebP when you save, named after the encounter title.'
                   : undefined
               }
             >
@@ -293,14 +297,11 @@ export function EncounterEditorPanel({
                   className="max-h-40 w-full rounded-lg border border-gold/15 object-cover"
                 />
               )}
-              {onUploadImage && (
-                <ImageUploadField
-                  label="Choose encounter image"
-                  fileName={draft.mEncounterImageName}
-                  onUpload={async (file) => {
-                    const imageName = await onUploadImage(file)
-                    if (imageName) patch({ mEncounterImageName: imageName })
-                  }}
+              {onPickImage && (
+                <ImagePickField
+                  label="New encounter image"
+                  file={pendingImage}
+                  onChange={onPickImage}
                 />
               )}
             </EditorSection>

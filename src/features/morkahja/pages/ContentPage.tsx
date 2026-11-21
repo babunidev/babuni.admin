@@ -27,14 +27,21 @@ import {
   formatRaceId,
   formatRoleId,
 } from '../utils/contentLabels'
-import { ImageUploadField } from '../components/ImageUploadField'
+import { ImagePickField } from '../components/ImagePickField'
+import {
+  ImageUploadError,
+  RecordSaveError,
+  runUploads,
+  saveAfterUploads,
+  type PendingUpload,
+} from '../utils/pendingImages'
 import { SaveResultDialog, type SaveResult } from '../components/SaveResultDialog'
 import {
   catalogFailureResult,
   catalogSaveResult,
   describeSaveError,
-  imageFailureResult,
-  imageUploadResult,
+  imageSaveFailureResult,
+  withImageResults,
 } from '../utils/saveResults'
 import {
   encounterImageUrl,
@@ -48,6 +55,7 @@ import {
 import {
   createEncounter,
   type CatalogSaveReport,
+  type ImageUploadReport,
   type RemoteImageKind,
   imageBaseFromTitle,
   uploadContentImage,
@@ -67,27 +75,9 @@ import {
 
 type ShowResult = (result: SaveResult) => void
 
-/** An upload handler that writes to the live server and shows the result popup. */
-function liveImageUploader(
-  show: ShowResult,
-  onUploaded: () => void,
-  kind: RemoteImageKind,
-  name: string,
-  mode: 'exact' | 'unique',
-  notes: string[] = [],
-) {
-  return async (file: File): Promise<string> => {
-    try {
-      const report = await uploadContentImage(kind, name, file, mode)
-      show(imageUploadResult(report, notes))
-      onUploaded()
-      return report.name.replace(/\.webp$/i, '')
-    } catch (error) {
-      const failure = error instanceof Error ? error : new Error('IMAGE_WRITE_FAILED')
-      show(imageFailureResult(kind, failure))
-      throw new Error(describeSaveError(failure.message), { cause: error })
-    }
-  }
+/** A chosen image to upload to the live server when the record is saved. */
+function liveUpload(kind: RemoteImageKind, name: string, file: File, mode: 'exact' | 'unique' = 'exact'): PendingUpload {
+  return { kind, run: () => uploadContentImage(kind, name, file, mode) }
 }
 
 import type {
@@ -314,16 +304,20 @@ export function ContentPage() {
   const [encounterEditorOpen, setEncounterEditorOpen] = useState(false)
   const [encounterEditKey, setEncounterEditKey] = useState<string | null>(null)
   const [encounterDraft, setEncounterDraft] = useState(createDefaultEncounterDraft)
+  /** Image chosen in the editor; uploaded only when the encounter is saved. */
+  const [encounterImage, setEncounterImage] = useState<File | null>(null)
 
   const openEncounterEditor = (key: string | null, data: EncounterData) => {
     setEncounterEditKey(key)
     setEncounterDraft({ ...data })
+    setEncounterImage(null)
     setEncounterEditorOpen(true)
   }
 
   const closeEncounterEditor = () => {
     setEncounterEditorOpen(false)
     setEncounterEditKey(null)
+    setEncounterImage(null)
   }
 
   const startEncounterEdit = (key: string) => {
@@ -337,12 +331,34 @@ export function ContentPage() {
       const isEdit = Boolean(encounterEditKey)
       const key =
         encounterEditKey ?? String(encounterDraft.mEncounterID).padStart(5, '0')
-      const report = await createEncounter(key, encounterDraft)
-      return { isEdit, report, title: encounterDraft.mEncounterTitle || key }
+      let draft = encounterDraft
+      let images: ImageUploadReport[] = []
+      if (encounterImage) {
+        // The image is named after the title; the record then points at it.
+        if (contentProfileId) {
+          const base = imageBaseFromTitle(draft.mEncounterTitle.trim() || `encounter_${draft.mEncounterID}`)
+          images = await runUploads([liveUpload('encounter', base, encounterImage, 'unique')])
+          draft = { ...draft, mEncounterImageName: images[0].name.replace(/\.webp$/i, '') }
+        } else {
+          const file = encounterImage
+          let imageName: string | undefined
+          await runUploads([{ kind: 'encounter', run: async () => {
+            imageName = await uploadEncounterImageFromTitle(
+              draft.mEncounterTitle.trim() || `Encounter ${draft.mEncounterID}`, draft.mEncounterID, file)
+            return undefined
+          } }])
+          if (imageName) draft = { ...draft, mEncounterImageName: imageName }
+        }
+        setEncounterDraft(draft)
+        setEncounterImage(null)
+      }
+      const report = await saveAfterUploads(images, () => createEncounter(key, draft))
+      return { isEdit, report, images, title: draft.mEncounterTitle || key }
     },
-    onSuccess: ({ isEdit: wasEdit, report, title }) => {
+    onSuccess: ({ isEdit: wasEdit, report, images, title }) => {
       closeEncounterEditor()
-      if (report) setSaveResult(catalogSaveResult('Encounter', title, wasEdit, report))
+      if (images.length) refreshImages()
+      if (report) setSaveResult(withImageResults(catalogSaveResult('Encounter', title, wasEdit, report), images))
       else setStatus(
         wasEdit
             ? useLocalContent ? 'Encounter updated in encountersdata.json.' : 'Encounter updated on VPS.'
@@ -351,8 +367,12 @@ export function ContentPage() {
       void queryClient.invalidateQueries({ queryKey: ['content', 'encounters'] })
     },
     onError: (err: Error) => {
-      if (contentProfileId) {
-        setSaveResult(catalogFailureResult('Encounter', encounterDraft.mEncounterTitle, err))
+      if (err instanceof ImageUploadError) {
+        setSaveResult(imageSaveFailureResult('Encounter', encounterDraft.mEncounterTitle, err.kind, err.failure, err.reports))
+      } else if (contentProfileId) {
+        const uploaded = err instanceof RecordSaveError ? err.reports : []
+        if (uploaded.length) refreshImages()
+        setSaveResult(catalogFailureResult('Encounter', encounterDraft.mEncounterTitle, err, uploaded))
       } else setStatus(err.message)
     },
   })
@@ -489,30 +509,8 @@ export function ContentPage() {
                   ? describeSaveError(saveEncounter.error.message)
                   : null
               }
-              onUploadImage={
-                contentProfileId
-                  ? (file) =>
-                      liveImageUploader(
-                        setSaveResult,
-                        refreshImages,
-                        'encounter',
-                        imageBaseFromTitle(
-                          encounterDraft.mEncounterTitle.trim() ||
-                            `encounter_${encounterDraft.mEncounterID}`,
-                        ),
-                        'unique',
-                        ['The editor now points at this image. Click Save encounter so the game uses it.'],
-                      )(file)
-                  : useLocalContent
-                  ? (file) =>
-                      uploadEncounterImageFromTitle(
-                        encounterDraft.mEncounterTitle.trim() ||
-                          `Encounter ${encounterDraft.mEncounterID}`,
-                        encounterDraft.mEncounterID,
-                        file,
-                      )
-                  : undefined
-              }
+              pendingImage={encounterImage}
+              onPickImage={contentProfileId || useLocalContent ? setEncounterImage : undefined}
             />
           )}
           {detailKind === 'encounters' &&
@@ -616,6 +614,7 @@ function usePanelSave<T>({
   save,
   nameOf,
   exists,
+  uploads,
 }: {
   kind: 'Solution' | 'Expansion' | 'Frame' | 'Portrait'
   queryName: string
@@ -627,35 +626,58 @@ function usePanelSave<T>({
   save: (draft: T) => Promise<CatalogSaveReport | undefined>
   nameOf: (draft: T) => string
   exists: (draft: T) => boolean
+  /** The images chosen in the editor, uploaded first when Save is pressed. */
+  uploads?: (draft: T, images: PendingImages) => PendingUpload[]
 }) {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (draft: T) => ({ draft, wasEdit: exists(draft), report: await save(draft) }),
-    onSuccess: ({ draft, wasEdit, report }) => {
-      onSaved?.()
-      if (report) onResult(catalogSaveResult(kind, nameOf(draft), wasEdit, report))
-      else onStatus(`${kind} saved.`)
-      void queryClient.invalidateQueries({ queryKey: ['content', queryName] })
+    mutationFn: async ({ draft, images }: { draft: T; images: PendingImages }) => {
+      const wasEdit = exists(draft)
+      const uploaded = await runUploads(uploads?.(draft, images) ?? [])
+      return { draft, wasEdit, uploaded, report: await saveAfterUploads(uploaded, () => save(draft)) }
     },
-    onError: (err: Error, draft) => {
-      if (profileId) onResult(catalogFailureResult(kind, nameOf(draft), err))
-      else onStatus(err.message)
+    onSuccess: ({ draft, wasEdit, uploaded, report }) => {
+      onSaved?.()
+      if (report) onResult(withImageResults(catalogSaveResult(kind, nameOf(draft), wasEdit, report), uploaded))
+      else onStatus(`${kind} saved.`)
+      void queryClient.invalidateQueries({ queryKey: uploaded.length ? ['content'] : ['content', queryName] })
+    },
+    onError: (err: Error, { draft }) => {
+      if (err instanceof ImageUploadError) {
+        if (profileId) onResult(imageSaveFailureResult(kind, nameOf(draft), err.kind, err.failure, err.reports))
+        else onStatus(describeSaveError(err.message))
+      } else if (profileId) {
+        const uploaded = err instanceof RecordSaveError ? err.reports : []
+        if (uploaded.length) void queryClient.invalidateQueries({ queryKey: ['content'] })
+        onResult(catalogFailureResult(kind, nameOf(draft), err, uploaded))
+      } else onStatus(err.message)
     },
   })
 }
 
 /** Which item the side editor is working on; `null` while it is closed. */
-type EditorState<T> = { mode: 'add' | 'edit'; draft: T } | null
+/** Images chosen in an editor, by field, waiting for Save. */
+type PendingImages = Record<string, File>
+type EditorState<T> = { mode: 'add' | 'edit'; draft: T; images: PendingImages } | null
 
 function useEditorState<T>() {
   const [editor, setEditor] = useState<EditorState<T>>(null)
   return {
     editor,
-    openAdd: (draft: T) => setEditor({ mode: 'add', draft }),
-    openEdit: (draft: T) => setEditor({ mode: 'edit', draft: { ...draft } }),
+    openAdd: (draft: T) => setEditor({ mode: 'add', draft, images: {} }),
+    openEdit: (draft: T) => setEditor({ mode: 'edit', draft: { ...draft }, images: {} }),
     close: () => setEditor(null),
     patch: (next: Partial<T>) =>
       setEditor((current) => current && { ...current, draft: { ...current.draft, ...next } }),
+    /** Choose (or with `null` drop) the image for one field; nothing is uploaded yet. */
+    pickImage: (field: string, file: File | null) =>
+      setEditor((current) => {
+        if (!current) return current
+        const images = { ...current.images }
+        if (file) images[field] = file
+        else delete images[field]
+        return { ...current, images }
+      }),
   }
 }
 
@@ -782,11 +804,6 @@ interface PanelProps<Row> {
   onResult: ShowResult
 }
 
-function useImageRefresh() {
-  const queryClient = useQueryClient()
-  return () => void queryClient.invalidateQueries({ queryKey: ['content'] })
-}
-
 const newSolution = (): SolutionData => ({
   mSolutionID: 90001,
   mSolutionIconName: 'skill_learn',
@@ -831,8 +848,7 @@ function SolutionsPanel({
     }))
 
   const selected = detailKey ? data[detailKey] : undefined
-  const { editor, openAdd, openEdit, close, patch } = useEditorState<SolutionData>()
-  const refreshImages = useImageRefresh()
+  const { editor, openAdd, openEdit, close, patch, pickImage } = useEditorState<SolutionData>()
 
   const save = usePanelSave<SolutionData>({
     kind: 'Solution',
@@ -844,6 +860,13 @@ function SolutionsPanel({
     save: (d) => createSolution(String(d.mSolutionID), d),
     nameOf: (d) => d.mSolutionName,
     exists: (d) => Object.hasOwn(data, String(d.mSolutionID)),
+    uploads: (d, images) => {
+      const file = images.icon
+      if (!file) return []
+      return profileId
+        ? [liveUpload('solution', d.mSolutionIconName, file)]
+        : [{ kind: 'solution', run: async () => { await uploadSolutionImage(d.mSolutionIconName, file); return undefined } }]
+    },
   })
 
   const draft = editor?.draft
@@ -889,7 +912,7 @@ function SolutionsPanel({
           isSaving={save.isPending}
           saveError={errorText(save.error)}
           warning={replaceWarning(editor.mode, data[String(draft.mSolutionID)]?.mSolutionName, draft.mSolutionID)}
-          onSave={() => save.mutate(draft)}
+          onSave={() => save.mutate(editor)}
           onClose={close}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -932,22 +955,16 @@ function SolutionsPanel({
               className="h-24 w-24 rounded-lg border border-gold/15 object-cover"
             />
           )}
-          {profileId ? (
-            <ImageUploadField
-              label="Upload solution icon (saved under the icon name)"
-              fileName={draft.mSolutionIconName}
-              onUpload={liveImageUploader(onResult, refreshImages, 'solution', draft.mSolutionIconName, 'exact')}
-            />
-          ) : useLocalContent && (
-            <ImageUploadField
-              label="Upload solution icon (.webp)"
-              fileName={draft.mSolutionIconName}
-              onUpload={(file) => uploadSolutionImage(draft.mSolutionIconName, file)}
+          {(profileId || useLocalContent) && (
+            <ImagePickField
+              label="New solution icon"
+              file={editor.images.icon ?? null}
+              onChange={(file) => pickImage('icon', file)}
             />
           )}
           <p className="text-xs text-fog">
             {profileId
-              ? 'A new icon goes straight to solutionimages/ on the live server; the other fields change only when you save.'
+              ? 'Save writes the solution and any new icon to the live game, MorkahjaWebApp and GitHub.'
               : 'Saves to solutiondata.json and solutionimages/ on disk.'}
           </p>
         </ContentEditorPanel>
@@ -968,6 +985,9 @@ const newExpansion = (): ExpansionData => ({
   mExtensioText: '',
   mExtensioUnlockButton: 'im_unlock_expansion_new',
 })
+
+const expansionImageFields = ['mExtensioCollectionImage', 'mExtensioHeaderImage', 'mExtensioUnlockButton'] as const
+type ExpansionImageField = (typeof expansionImageFields)[number]
 
 function ExpansionPanel({
   profileId,
@@ -999,8 +1019,7 @@ function ExpansionPanel({
   }))
 
   const selected = detailKey ? data[detailKey] : undefined
-  const { editor, openAdd, openEdit, close, patch } = useEditorState<ExpansionData>()
-  const refreshImages = useImageRefresh()
+  const { editor, openAdd, openEdit, close, patch, pickImage } = useEditorState<ExpansionData>()
 
   const save = usePanelSave<ExpansionData>({
     kind: 'Expansion',
@@ -1012,13 +1031,16 @@ function ExpansionPanel({
     save: (d) => createExpansion(String(d.mExtensioID), d),
     nameOf: (d) => d.mExtensioName,
     exists: (d) => Object.hasOwn(data, String(d.mExtensioID)),
+    uploads: (d, images) => expansionImageFields
+      .filter((field) => images[field])
+      .map((field) => liveUpload('expansion', d[field], images[field])),
   })
 
   const draft = editor?.draft
   const imageField = (
     current: ExpansionData,
     label: string,
-    field: 'mExtensioCollectionImage' | 'mExtensioHeaderImage' | 'mExtensioUnlockButton',
+    field: ExpansionImageField,
   ) => (
     <div className="space-y-2 rounded-lg border border-gold/10 bg-void/30 p-3">
       <TextField label={`${label} (no .webp)`} value={current[field]} onChange={(v) => patch({ [field]: v })} />
@@ -1031,10 +1053,10 @@ function ExpansionPanel({
         />
       )}
       {profileId && (
-        <ImageUploadField
-          label={`Upload ${label.toLowerCase()}`}
-          fileName={current[field]}
-          onUpload={liveImageUploader(onResult, refreshImages, 'expansion', current[field], 'exact')}
+        <ImagePickField
+          label={`New ${label.toLowerCase()}`}
+          file={editor?.images[field] ?? null}
+          onChange={(file) => pickImage(field, file)}
         />
       )}
     </div>
@@ -1108,7 +1130,7 @@ function ExpansionPanel({
           isSaving={save.isPending}
           saveError={errorText(save.error)}
           warning={replaceWarning(editor.mode, data[String(draft.mExtensioID)]?.mExtensioName, draft.mExtensioID)}
-          onSave={() => save.mutate(draft)}
+          onSave={() => save.mutate(editor)}
           onClose={close}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1184,8 +1206,7 @@ function FramesPanel({
   const selected = detailKey
     ? frames.find((row) => String(row.frameID) === detailKey)
     : undefined
-  const { editor, openAdd, openEdit, close, patch } = useEditorState<FrameData>()
-  const refreshImages = useImageRefresh()
+  const { editor, openAdd, openEdit, close, patch, pickImage } = useEditorState<FrameData>()
 
   const save = usePanelSave<FrameData>({
     kind: 'Frame',
@@ -1197,6 +1218,7 @@ function FramesPanel({
     save: (d) => createFrame(d),
     nameOf: (d) => `#${d.frameID}`,
     exists: (d) => Boolean(data[d.frameID]),
+    uploads: (d, images) => (images.image ? [liveUpload('frame', `frame_${d.frameID}`, images.image)] : []),
   })
 
   const draft = editor?.draft
@@ -1258,7 +1280,7 @@ function FramesPanel({
           isSaving={save.isPending}
           saveError={errorText(save.error)}
           warning={replaceWarning(editor.mode, data[draft.frameID] ? `Frame ${draft.frameID}` : undefined, draft.frameID)}
-          onSave={() => save.mutate(draft)}
+          onSave={() => save.mutate(editor)}
           onClose={close}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1282,10 +1304,10 @@ function FramesPanel({
                 name={`frame_${draft.frameID}`}
                 className="h-32 w-32 rounded-lg border border-gold/15 object-contain"
               />
-              <ImageUploadField
-                label={`Upload frame_${draft.frameID}.webp`}
-                fileName={`frame_${draft.frameID}`}
-                onUpload={liveImageUploader(onResult, refreshImages, 'frame', `frame_${draft.frameID}`, 'exact')}
+              <ImagePickField
+                label={`New frame_${draft.frameID}.webp`}
+                file={editor.images.image ?? null}
+                onChange={(file) => pickImage('image', file)}
               />
             </>
           )}
@@ -1341,8 +1363,7 @@ function PortraitsPanel({
   const selected = detailKey
     ? portraits.find((row) => String(row.avatarID) === detailKey)
     : undefined
-  const { editor, openAdd, openEdit, close, patch } = useEditorState<PortraitData>()
-  const refreshImages = useImageRefresh()
+  const { editor, openAdd, openEdit, close, patch, pickImage } = useEditorState<PortraitData>()
 
   const save = usePanelSave<PortraitData>({
     kind: 'Portrait',
@@ -1354,6 +1375,7 @@ function PortraitsPanel({
     save: (d) => createPortrait(d),
     nameOf: (d) => d.avatarName,
     exists: (d) => Boolean(data[d.avatarID]),
+    uploads: (d, images) => (images.image ? [liveUpload('portrait', `avatar_${d.avatarID}`, images.image)] : []),
   })
 
   const draft = editor?.draft
@@ -1411,7 +1433,7 @@ function PortraitsPanel({
           isSaving={save.isPending}
           saveError={errorText(save.error)}
           warning={replaceWarning(editor.mode, data[draft.avatarID]?.avatarName, draft.avatarID)}
-          onSave={() => save.mutate(draft)}
+          onSave={() => save.mutate(editor)}
           onClose={close}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1437,10 +1459,10 @@ function PortraitsPanel({
                 name={`avatar_${draft.avatarID}`}
                 className="h-40 w-40 rounded-lg border border-gold/15 object-contain"
               />
-              <ImageUploadField
-                label={`Upload avatar_${draft.avatarID}.webp`}
-                fileName={`avatar_${draft.avatarID}`}
-                onUpload={liveImageUploader(onResult, refreshImages, 'portrait', `avatar_${draft.avatarID}`, 'exact')}
+              <ImagePickField
+                label={`New avatar_${draft.avatarID}.webp`}
+                file={editor.images.image ?? null}
+                onChange={(file) => pickImage('image', file)}
               />
             </>
           )}

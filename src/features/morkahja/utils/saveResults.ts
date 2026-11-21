@@ -117,11 +117,21 @@ export function catalogSaveResult(
   }
 }
 
-export function catalogFailureResult(kind: string, name: string, error: Error): SaveResult {
-  return {
+export function catalogFailureResult(
+  kind: string,
+  name: string,
+  error: Error,
+  uploaded: ImageUploadReport[] = [],
+): SaveResult {
+  const failed: SaveResult = {
     title: `${kind} not saved: ${name}`,
     steps: [{ label: 'Live game', state: 'failed', detail: describeSaveError(error.message) }],
     notes: ['Nothing was committed to GitHub. Your edit is still in the form.'],
+  }
+  if (uploaded.length === 0) return failed
+  return {
+    ...withImageResults({ ...failed, notes: [] }, uploaded),
+    notes: ['The new image is saved, but the record is not. Your edit is still in the form; press Save again.'],
   }
 }
 
@@ -163,10 +173,42 @@ export function imageUploadResult(report: ImageUploadReport, notes: string[] = [
   }
 }
 
-export function imageFailureResult(kind: RemoteImageKind, error: Error): SaveResult {
+/** Image steps under their own heading, so they read apart from the record's steps. */
+function prefixed(prefix: string, result: SaveResult): SaveStep[] {
+  return result.steps.map((step) => ({ ...step, label: `${prefix} · ${step.label}` }))
+}
+
+/** One popup for a save that also uploaded the images chosen in the editor. */
+export function withImageResults(main: SaveResult, reports: ImageUploadReport[]): SaveResult {
+  if (reports.length === 0) return main
+  const images = reports.map((report) => ({ report, result: imageUploadResult(report) }))
   return {
-    title: `${imageLabels[kind]} not uploaded`,
-    steps: [{ label: 'Live server', state: 'failed', detail: describeSaveError(error.message) }],
-    notes: ['Nothing was committed to GitHub.'],
+    title: main.title,
+    subtitle: images.map(({ result }) => result.title).join(' · '),
+    steps: [
+      ...images.flatMap(({ report, result }) => prefixed(`${imageLabels[report.kind]} ${report.name}`, result)),
+      ...main.steps,
+    ],
+    notes: [...new Set([...(main.notes ?? []), ...images.flatMap(({ result }) => result.notes ?? [])])],
+  }
+}
+
+/** An image upload failed during a save, so the record was not saved. */
+export function imageSaveFailureResult(
+  kind: string,
+  name: string,
+  failedImage: RemoteImageKind,
+  error: Error,
+  uploaded: ImageUploadReport[],
+): SaveResult {
+  const done = withImageResults({ title: '', steps: [] }, uploaded)
+  return {
+    title: `${kind} not saved: ${name}`,
+    steps: [
+      ...done.steps,
+      { label: imageLabels[failedImage], state: 'failed', detail: describeSaveError(error.message) },
+      { label: 'Record', state: 'skipped', detail: 'Not saved, because the image upload failed.' },
+    ],
+    notes: ['Your edit and the chosen image are still in the editor; press Save again to retry.'],
   }
 }

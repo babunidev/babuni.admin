@@ -49,7 +49,7 @@ test('encounter editor saves a new record into isolated legacy data', async () =
   })
 })
 
-test('solution editor saves record and converts PNG upload to decodable WebP', async () => {
+test('solution editor uploads the chosen PNG as decodable WebP only on Save', async () => {
   await withPage(async page => {
     await page.getByRole('button',{name:'Solutions',exact:true}).click()
     await page.getByRole('button',{name:'Add solution',exact:true}).click()
@@ -60,10 +60,17 @@ test('solution editor saves record and converts PNG upload to decodable WebP', a
     await dialog.getByLabel('Inventory type').fill('2')
     await dialog.getByLabel('Icon name').fill('fixture_uploaded_icon')
     const screenshot = await page.screenshot()
-    await dialog.getByLabel('Upload solution icon (.webp)').setInputFiles({
+    await dialog.getByLabel('New solution icon').setInputFiles({
       name:'fixture.png', mimeType:'image/png', buffer:screenshot,
     })
-    await waitStatus(page,'Saved as fixture_uploaded_icon.webp')
+    // Choosing only previews it; nothing is written until Save.
+    await waitStatus(page,'Not uploaded yet.')
+    // (A missing file gets Vite's HTML fallback, so look for an actual image.)
+    const beforeSave = await page.evaluate(async () => {
+      const response = await fetch('/game/solutionimages/fixture_uploaded_icon.webp',{cache:'no-store'})
+      return response.ok && (response.headers.get('content-type') || '').startsWith('image/')
+    })
+    assert.equal(beforeSave,false)
     await dialog.getByRole('button',{name:'Save solution'}).click()
     await page.getByRole('dialog',{name:'Add solution'}).waitFor({state:'hidden'})
     await waitStatus(page,'Solution saved.')
