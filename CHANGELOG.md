@@ -5,6 +5,11 @@
 - `ImageUploadField` is replaced by `ImagePickField`; `utils/pendingImages.ts` runs the uploads one after another. An encounter's new image is still named after its title, and the record points at that name before it is saved. If an image upload fails, the record is not saved and the editor stays open with your edit and image. If the image is saved but the record then fails, the popup says exactly that. Nothing changed in the local service or on the server.
 - Verification: the content browser suite, run with Vite alone against a temporary copy of `tests/fixtures/legacy/` (no connection service, so no live access), passes 7/7. The solution test now checks that a chosen PNG is not written before Save and decodes as WebP after it. The Connection test in that file needs the connection service and was not run. Unit suite 143/143, lint and build pass. Not yet tried against the live game. Screenshot from the fixture: `~/Pictures/Development Screenshots/babuni-admin/2026-11-21-image-chosen-not-yet-saved.png`.
 
+## 2026-11-21 — A new solution picture is marked frameless
+
+- **Babuni's direction:** remade solution pictures should show whole in the game without a code change per picture. The solution editor now ticks `mSolutionIconFrameless` when a new icon is picked, and shows it as a checkbox ("Remade picture without a painted frame") to change by hand. The flag is part of the solution record, so Save writes it live, to MorkahjaWebApp and to GitHub with the rest; the game reads it (MorkahjaWebApp CHANGELOG). `SolutionData` has the optional field; the editor already kept fields it does not show.
+- Verification: `tsc -b`, lint of the touched files and the suite (143/143) pass. The content browser test was not run (it needs a fixture server not set up here); the editor was not clicked through in a browser. Claude Code (Claude Opus 5.5).
+
 ## 2026-11-21 — Saves land in the local game on main, then GitHub; no side checkout
 
 - **Babuni's direction:** one MorkahjaWebApp project, everything in it, no branches; a save in the admin tool updates the local game, GitHub and the live game. Until now a content save or image upload was committed in a separate checkout, `~/Projects/Morkahja-content-commits` on branch `morkahja-content-edits`, and pushed to GitHub main from there, so the local game never got it (Open Lock's new picture did not show locally).

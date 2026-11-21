@@ -959,9 +959,22 @@ function SolutionsPanel({
             <ImagePickField
               label="New solution icon"
               file={editor.images.icon ?? null}
-              onChange={(file) => pickImage('icon', file)}
+              onChange={(file) => {
+                pickImage('icon', file)
+                // A new picture is a remake without a painted frame (D-051), so the
+                // game shows it whole under the frame it draws.
+                if (file) patch({ mSolutionIconFrameless: true })
+              }}
             />
           )}
+          <label className="flex items-center gap-2 text-sm text-fog">
+            <input
+              type="checkbox"
+              checked={draft.mSolutionIconFrameless === true}
+              onChange={(e) => patch({ mSolutionIconFrameless: e.target.checked })}
+            />
+            Remade picture without a painted frame (the game draws the frame)
+          </label>
           <p className="text-xs text-fog">
             {profileId
               ? 'Save writes the solution and any new icon to the live game, MorkahjaWebApp and GitHub.'

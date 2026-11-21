@@ -30,6 +30,8 @@ export interface SolutionData {
   mSolutionText: string
   mSolutionType: number
   mSolutionUses: number
+  /** A remade picture without a painted frame: the game shows it whole under its drawn frame. */
+  mSolutionIconFrameless?: boolean
 }
 
 export interface ExpansionData {
