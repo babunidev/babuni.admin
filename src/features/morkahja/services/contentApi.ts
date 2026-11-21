@@ -63,6 +63,10 @@ export type ContentGitResult = {
   commit?: string
   message?: string
   skipped?: boolean
+  /** Whether the local commit also reached GitHub main. */
+  pushed?: boolean
+  /** Local main's own commits not yet on GitHub, when that held the push back. */
+  unpublished?: number
   code?: string
   url?: string
 }

@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process'
-import { readFile, writeFile, access, mkdir } from 'node:fs/promises'
+import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { join, dirname } from 'node:path'
 
 const FILES = {
@@ -9,7 +9,6 @@ const FILES = {
   frames: 'frames.json',
   portraits: 'portraits.json',
 }
-const BRANCH = 'morkahja-content-edits'
 // Same folders as the live server, inside the game repository's client/public.
 const IMAGE_FOLDERS = {
   encounter: 'game/encounterimages',
@@ -133,75 +132,72 @@ function applyRecord(kind, key, record, data) {
   return added
 }
 
-async function exists(path) {
-  try { await access(path); return true } catch { return false }
+/**
+ * Babuni's game checkout, on main: the one place the game lives locally
+ * (creative decision 2026-11-21: one MorkahjaWebApp project, no side checkout,
+ * no content branch). A save lands there, so the local game has it at once,
+ * and is pushed from there to GitHub main.
+ */
+function gameRepo(options) {
+  return options.repo
+    || process.env.MORKAHJA_CONTENT_REPO
+    || process.env.MORKAHJA_GAME_REPO
+    || '/home/babuni/Projects/MorkahjaWebApp'
 }
 
-async function ensureWorktree(repo, worktree) {
-  if (await exists(join(worktree, '.git'))) return
-  await git(['worktree', 'prune'], repo)
-  await git(['fetch', '-q', 'origin', 'main'], repo, 60000)
-  let branchExists = true
-  try { await git(['rev-parse', '--verify', '--quiet', BRANCH], repo) }
-  catch { branchExists = false }
-  if (branchExists) await git(['worktree', 'add', worktree, BRANCH], repo)
-  else await git(['worktree', 'add', '-b', BRANCH, worktree, 'origin/main'], repo)
-}
-
-function changedPaths(status) {
-  return status.split('\n').filter(Boolean).map((line) => {
-    const body = line.slice(3)
-    const arrow = body.lastIndexOf(' -> ')
-    return arrow >= 0 ? body.slice(arrow + 4) : body
-  })
-}
-
-async function pushMain(worktree) {
-  try {
-    await git(['push', '-q', 'origin', 'HEAD:main'], worktree, 120000)
-  } catch (error) {
-    if (!/non-fast-forward|rejected|fetch first/i.test(error?.stderr || '')) throw error
-    await git(['fetch', '-q', 'origin', 'main'], worktree, 60000)
-    try { await git(['rebase', 'origin/main'], worktree) }
-    catch (rebaseError) {
-      await git(['rebase', '--abort'], worktree).catch(() => {})
-      throw rebaseError
-    }
-    await git(['push', '-q', 'origin', 'HEAD:main'], worktree, 120000)
-  }
+/** `[behind, ahead]` of local main against GitHub main. */
+async function divergence(repo) {
+  const counts = await git(['rev-list', '--left-right', '--count', 'origin/main...HEAD'], repo)
+  const [behind, ahead] = counts.split(/\s+/).map(Number)
+  return [behind || 0, ahead || 0]
 }
 
 async function commitFile(options, relative, update) {
-  const repo = options.repo || process.env.MORKAHJA_CONTENT_REPO || '/home/babuni/Projects/MorkahjaWebApp'
-  const worktree = options.worktree || process.env.MORKAHJA_CONTENT_WORKTREE || '/home/babuni/Projects/Morkahja-content-commits'
-  const file = join(worktree, relative)
+  const repo = gameRepo(options)
+  const file = join(repo, relative)
   try {
-    await ensureWorktree(repo, worktree)
-    await git(['fetch', '-q', 'origin', 'main'], worktree, 60000)
-    const dirty = changedPaths(await git(['status', '--porcelain', '--untracked-files=no'], worktree))
-      .filter(path => path !== relative)
-    if (dirty.length > 0) return { ok: false, code: 'CONTENT_GIT_DIRTY' }
-    try { await git(['merge', '--ff-only', 'origin/main'], worktree) }
-    catch {
-      try { await git(['rebase', 'origin/main'], worktree) }
-      catch {
-        await git(['rebase', '--abort'], worktree).catch(() => {})
-        return { ok: false, code: 'CONTENT_GIT_DIVERGED' }
+    if (await git(['branch', '--show-current'], repo) !== 'main') return { ok: false, code: 'CONTENT_GIT_NOT_MAIN' }
+
+    // Catch up with GitHub first when local main is simply behind. Babuni's
+    // checkout is never rebased or reset; git refuses a fast-forward that would
+    // touch their uncommitted edits, and then nothing is written.
+    let unpublished = 0
+    let offline = false
+    try {
+      await git(['fetch', '-q', 'origin', 'main'], repo, 60000)
+      const [behind, ahead] = await divergence(repo)
+      if (behind > 0 && ahead > 0) return { ok: false, code: 'CONTENT_GIT_DIVERGED' }
+      if (behind > 0) {
+        try { await git(['merge', '--ff-only', '-q', 'origin/main'], repo) }
+        catch { return { ok: false, code: 'CONTENT_GIT_BEHIND' } }
       }
+      unpublished = ahead
+    } catch {
+      offline = true
     }
+
     const message = await update(file)
     if (!message) return { ok: true, skipped: true }
-    await git(['add', '--', relative], worktree)
-    await git(['commit', '-q', '-m', message, '--only', '--', relative], worktree)
-    if (options.push !== false) await pushMain(worktree)
-    const commit = await git(['rev-parse', '--short', 'HEAD'], worktree)
-    const full = await git(['rev-parse', 'HEAD'], worktree)
-    const remote = await git(['remote', 'get-url', 'origin'], worktree).catch(() => '')
+    await git(['add', '--', relative], repo)
+    // Only this file; whatever else Babuni has staged or changed stays as it is.
+    await git(['commit', '-q', '-m', message, '--only', '--', relative], repo)
+    const commit = await git(['rev-parse', '--short', 'HEAD'], repo)
+    const full = await git(['rev-parse', 'HEAD'], repo)
+    const remote = await git(['remote', 'get-url', 'origin'], repo).catch(() => '')
     const web = /github\.com[:/]([\w.-]+\/[\w.-]+?)(?:\.git)?$/.exec(remote)
-    return { ok: true, commit, message, ...(web ? { url: `https://github.com/${web[1]}/commit/${full}` } : {}) }
+    const result = { ok: true, commit, message, ...(web ? { url: `https://github.com/${web[1]}/commit/${full}` } : {}) }
+
+    // Local main's own unpublished commits are Babuni's to push; never send them along.
+    if (options.push === false) return { ...result, pushed: false }
+    if (offline) return { ...result, pushed: false, code: 'CONTENT_GIT_OFFLINE' }
+    if (unpublished > 0) return { ...result, pushed: false, code: 'CONTENT_GIT_UNPUBLISHED', unpublished }
+    try {
+      await git(['push', '-q', 'origin', 'HEAD:main'], repo, 120000)
+    } catch {
+      return { ...result, pushed: false, code: 'CONTENT_GIT_PUSH_FAILED' }
+    }
+    return { ...result, pushed: true }
   } catch (error) {
-    const stderr = error?.stderr || ''
-    if (/non-fast-forward|rejected|fetch first/i.test(stderr)) return { ok: false, code: 'CONTENT_GIT_PUSH_FAILED' }
     console.error('Morkahja content commit failed:', error?.stderr || error?.message || error)
     return { ok: false, code: 'CONTENT_GIT_FAILED' }
   }

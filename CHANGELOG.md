@@ -1,4 +1,11 @@
 # Babuni Admin — Changelog
+## 2026-11-21 — Saves land in the local game on main, then GitHub; no side checkout
+
+- **Babuni's direction:** one MorkahjaWebApp project, everything in it, no branches; a save in the admin tool updates the local game, GitHub and the live game. Until now a content save or image upload was committed in a separate checkout, `~/Projects/Morkahja-content-commits` on branch `morkahja-content-edits`, and pushed to GitHub main from there, so the local game never got it (Open Lock's new picture did not show locally).
+- `local-service/morkahjaContentGit.mjs` now commits in `~/Projects/MorkahjaWebApp` itself (`MORKAHJA_CONTENT_REPO`, else `MORKAHJA_GAME_REPO`, overrides it), only on `main`, only the saved file (`--only`), leaving Babuni's other edits as they are, then pushes main. Before writing it fast-forwards local main when GitHub is ahead; it never rebases or resets the checkout, and writes nothing locally when main is not on `main` (`CONTENT_GIT_NOT_MAIN`), has diverged (`CONTENT_GIT_DIVERGED`) or cannot catch up without touching uncommitted edits (`CONTENT_GIT_BEHIND`). If local main has its own commits not yet on GitHub, it commits but does not push, so unpublished work is never sent along (`CONTENT_GIT_UNPUBLISHED`). The worktree setup, `morkahja-content-edits` and `MORKAHJA_CONTENT_WORKTREE` are gone.
+- The save popup shows a **Local game** step (the commit in MorkahjaWebApp) and a **GitHub** step (pushed or why not), after the live step.
+- Verification: `tests/morkahja-content-git.test.mjs` rewritten with fixtures for each case (6/6); suite 143/143, `tsc -b` and lint of the touched files pass. Not yet tried from the running admin tool, which needs a restart to load the change. Claude Code (Claude Opus 5.5).
+
 ## 2026-11-21 — Start or restart the local game from Morkahja's Overview
 
 - The description under Morkahja's Overview heading is replaced by one button: **Start backend and frontend** when the game isn't running locally, **Restart backend and frontend** when it is (or when only one half is). A short line next to it shows the game server (port 3000) and client (port 5173) as running or stopped. Claude Code (Claude Opus 5.5).

@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-21 — One game, one place
+
+I replaced the picture for Open Lock in the admin tool, and the local game kept showing the old one. The tool had been committing my saves in a second copy of the game, `Morkahja-content-commits`, on its own branch, and pushing to GitHub from there, so my own game folder never saw them. I never wanted that: the game lives in MorkahjaWebApp, on main, and a save should reach my local game, GitHub and the live game. Claude Code (Claude Opus 5.5) changed the save to commit straight in MorkahjaWebApp on main and push from there, without ever pushing my own unpublished commits or touching my uncommitted edits, and removed the side checkout and every old branch, here and on GitHub. **Verification:** the save's tests cover each case (6/6), the full suite 143/143. Not yet tried from the running tool.
+
 ## 2026-11-21 — One button for the local game
 
 When I work on Morkahja I keep restarting the game's local server and client by hand in a terminal. I asked for a button instead of the text under the Overview heading: Start when nothing runs, Restart when it does. Claude Code (Claude Opus 5.5) added it. It only stops game processes from the Morkahja checkout and logs the output to a file.

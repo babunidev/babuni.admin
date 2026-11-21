@@ -50,34 +50,47 @@ export function describeSaveError(code: string): string {
     IMAGE_TARGET_UNSAFE: 'Something other than a normal file already has that name on the server.',
     IMAGE_WRITE_VERIFY_FAILED: 'The server copy differs from the file you chose.',
     IMAGE_WRITE_BUSY: 'Another image upload is still running.',
-    CONTENT_GIT_FAILED: 'The commit or push failed. Save again to retry.',
-    CONTENT_GIT_PUSH_FAILED: 'GitHub refused the push. Save again to retry.',
+    CONTENT_GIT_FAILED: 'The commit in MorkahjaWebApp failed. Save again to retry.',
+    CONTENT_GIT_PUSH_FAILED: 'GitHub refused the push. Push main from MorkahjaWebApp when ready.',
+    CONTENT_GIT_NOT_MAIN: 'MorkahjaWebApp is not on main, so nothing was written there.',
     CONTENT_GIT_DIVERGED:
-      'GitHub main has commits that clash with this one, so it was not pushed.',
-    CONTENT_GIT_DIRTY:
-      'The commit checkout (Morkahja-content-commits) has other uncommitted edits.',
+      'MorkahjaWebApp main and GitHub main both have commits the other lacks; nothing was written locally.',
+    CONTENT_GIT_BEHIND:
+      'MorkahjaWebApp is behind GitHub and could not catch up without touching your uncommitted edits; nothing was written locally.',
+    CONTENT_GIT_OFFLINE: 'GitHub could not be reached; the commit stays in MorkahjaWebApp until you push.',
+    CONTENT_GIT_UNPUBLISHED:
+      'MorkahjaWebApp main has your own commits that are not on GitHub yet, so nothing was pushed; push main when ready.',
   }
   return known[code] ? `${known[code]} (${code})` : code
 }
 
-function gitStep(git: ContentGitResult | undefined): SaveStep {
+/** The save in Babuni's local game (MorkahjaWebApp, main) and on GitHub main. */
+function gitSteps(git: ContentGitResult | undefined): SaveStep[] {
   if (git?.ok && git.skipped) {
-    return { label: 'GitHub', state: 'skipped', detail: 'GitHub main already had exactly this version.' }
+    return [{ label: 'Local game', state: 'skipped', detail: 'MorkahjaWebApp already had exactly this version.' }]
   }
   if (git?.ok && git.commit) {
-    return {
-      label: 'GitHub',
+    const local: SaveStep = {
+      label: 'Local game',
       state: 'ok',
-      detail: `Committed and pushed to main as ${git.commit}: “${git.message ?? ''}”.`,
-      href: git.url,
-      hrefLabel: git.url ? 'Open the commit on GitHub' : undefined,
+      detail: `Committed in MorkahjaWebApp on main as ${git.commit}: “${git.message ?? ''}”.`,
     }
+    const github: SaveStep = git.pushed
+      ? {
+          label: 'GitHub',
+          state: 'ok',
+          detail: `Pushed to main.`,
+          href: git.url,
+          hrefLabel: git.url ? 'Open the commit on GitHub' : undefined,
+        }
+      : { label: 'GitHub', state: 'failed', detail: `Not pushed. ${describeSaveError(git.code ?? 'CONTENT_GIT_PUSH_FAILED')}` }
+    return [local, github]
   }
-  return {
-    label: 'GitHub',
+  return [{
+    label: 'Local game',
     state: 'failed',
     detail: `Not committed. ${describeSaveError(git?.code ?? 'CONTENT_GIT_FAILED')} The live game keeps the change.`,
-  }
+  }]
 }
 
 export function catalogSaveResult(
@@ -99,7 +112,7 @@ export function catalogSaveResult(
             ? `Written to ${file} on the server and read back unchanged.`
             : `The running game wrote ${file}, dropped its cached copy, and the record read back unchanged. Players get it the next time the game loads content.`,
       },
-      gitStep(report.git),
+      ...gitSteps(report.git),
     ],
   }
 }
@@ -141,7 +154,7 @@ export function imageUploadResult(report: ImageUploadReport, notes: string[] = [
                 : `The public address answered ${report.publicCheck.status || 'nothing'}. The server folder may not be the one players get images from.`,
             href: report.publicCheck.url,
           },
-      gitStep(report.git),
+      ...gitSteps(report.git),
     ],
     notes: [
       ...notes,
