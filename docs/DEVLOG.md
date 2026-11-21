@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-21 — Done, done, done
+
+Seeing the steps was good, but they popped. I wanted the popup to fade in, and the checks to arrive softly and in order, even when several finish at the same moment. Claude Code (Claude Opus 5.5) made the popup and its steps fade in and each check grow in with a soft green ring, one after another from the top.
+
 ## 2026-11-21 — Watching the save happen
 
 When I pressed Save I waited in front of nothing until the whole result popped up at once. I wanted to see the process: the card with every step right away, an hourglass on the step in progress, and each one turning green as it finishes, so it checks them off one after another and I close it when it's done. Claude Code (Claude Opus 5.5) made the local service report each step as it finishes and the popup tick them off live.

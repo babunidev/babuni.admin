@@ -81,3 +81,33 @@ body {
     animation: working-glow 2s ease-in-out infinite;
   }
 }
+
+/* SaveResultDialog: the popup fades in, its steps follow one by one, and a
+   finished step's mark settles in softly instead of popping. */
+@keyframes save-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes save-rise {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes save-mark {
+  0% { opacity: 0; transform: scale(0.4); }
+  60% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes save-ring {
+  from { box-shadow: 0 0 0 0 rgb(52 211 153 / 0.45); }
+  to { box-shadow: 0 0 0 9px rgb(52 211 153 / 0); }
+}
+.save-backdrop-in { animation: save-fade 0.35s ease-out both; }
+.save-card-in { animation: save-rise 0.45s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.save-step-in { animation: save-rise 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.save-text-in { animation: save-fade 0.6s ease-out both; }
+.save-mark-in { animation: save-mark 0.55s cubic-bezier(0.3, 1.4, 0.5, 1) both; }
+.save-ring { animation: save-ring 0.9s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .save-card-in, .save-step-in, .save-mark-in { animation: save-fade 0.4s ease-out both; }
+  .save-ring { animation: none; }
+}

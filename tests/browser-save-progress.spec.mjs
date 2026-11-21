@@ -104,21 +104,42 @@ test('a live solution save lists every step at once and ticks them off in order'
     assert.equal(await popup.getByRole('button', { name: 'Working…' }).isDisabled(), true)
     await page.keyboard.press('Escape')
     await popup.waitFor()
+    await page.waitForTimeout(800)
     await shot(page, 'babuni-admin-save-progress-started')
 
     // The image is done; the record is now being written.
     upload.release()
     await page.waitForFunction(() => document.querySelectorAll('[role=dialog] ol > li > span[aria-label="Done"]').length === 4)
+    await page.waitForTimeout(600)
     assert.deepEqual(await marks(popup), ['Done', 'Done', 'Done', 'Done', 'Working', 'Waiting', 'Waiting'])
     for (let n = 0; !seen.write && n < 50; n++) await page.waitForTimeout(100)
     assert.ok(seen.write)
     await shot(page, 'babuni-admin-save-progress-halfway')
 
+    // The record's three steps finish together, but are checked off one by one from the top.
     write.release()
-    const done = page.getByRole('dialog', { name: 'Solution updated: Haggling' })
-    await done.waitFor()
+    // The heading changes only once everything is checked off.
+    const done = page.locator('[role=dialog]:has(#save-result-title)')
+    let shotTaken = false
+    const seenStages = new Set()
+    for (let n = 0; n < 60; n++) {
+      const now = await marks(done)
+      const count = now.filter((mark) => mark === 'Done').length
+      assert.deepEqual(now.slice(0, count), Array(count).fill('Done'), 'checks fill in from the top')
+      seenStages.add(count)
+      if (count === 7) break
+      if (count < 7) assert.equal(await page.locator('#save-result-title').textContent(), 'Saving solution: Haggling')
+      if (count === 5 && !shotTaken) {
+        shotTaken = true
+        await shot(page, 'babuni-admin-save-progress-checking-off')
+      }
+      await page.waitForTimeout(60)
+    }
+    assert.ok(seenStages.has(5) && seenStages.has(6), `checked off one at a time, saw ${[...seenStages]}`)
     assert.deepEqual(await marks(done), ['Done', 'Done', 'Done', 'Done', 'Done', 'Done', 'Done'])
     await done.getByText('All done').waitFor()
+    await page.getByRole('dialog', { name: 'Solution updated: Haggling' }).waitFor()
+    await page.waitForTimeout(700)
     await shot(page, 'babuni-admin-save-progress-done')
     await done.getByRole('button', { name: 'Close' }).click()
     await done.waitFor({ state: 'hidden' })
