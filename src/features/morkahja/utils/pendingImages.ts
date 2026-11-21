@@ -1,10 +1,18 @@
-import type { ImageUploadReport, RemoteImageKind } from '../services/contentApi'
+import type { ImageUploadReport, RemoteImageKind, ServiceStep } from '../services/contentApi'
 
 /** An image chosen in an editor, uploaded only when the record is saved. */
 export interface PendingUpload {
   kind: RemoteImageKind
+  /** The file name asked for; the server may pick another one. */
+  name: string
   /** Uploads it; returns the live report, or nothing for local-file mode. */
-  run: () => Promise<ImageUploadReport | undefined>
+  run: (onStep: (step: ServiceStep) => void) => Promise<ImageUploadReport | undefined>
+}
+
+/** Where `runUploads` reports each image's steps while it works. */
+export interface UploadProgress {
+  step: (index: number, step: ServiceStep) => void
+  done: (index: number, report: ImageUploadReport) => void
 }
 
 /** An image upload failed during a save; the record itself was not saved. */
@@ -22,12 +30,15 @@ export class ImageUploadError extends Error {
 }
 
 /** Upload one after another, stopping at the first failure. */
-export async function runUploads(uploads: PendingUpload[]): Promise<ImageUploadReport[]> {
+export async function runUploads(uploads: PendingUpload[], progress?: UploadProgress): Promise<ImageUploadReport[]> {
   const reports: ImageUploadReport[] = []
-  for (const upload of uploads) {
+  for (const [index, upload] of uploads.entries()) {
     try {
-      const report = await upload.run()
-      if (report) reports.push(report)
+      const report = await upload.run((step) => progress?.step(index, step))
+      if (report) {
+        reports.push(report)
+        progress?.done(index, report)
+      }
     } catch (error) {
       throw new ImageUploadError(
         upload.kind,

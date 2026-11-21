@@ -35,6 +35,7 @@ import {
   saveAfterUploads,
   type PendingUpload,
 } from '../utils/pendingImages'
+import { startSaveProgress, type SaveProgress } from '../utils/saveProgress'
 import { SaveResultDialog, type SaveResult } from '../components/SaveResultDialog'
 import {
   catalogFailureResult,
@@ -57,6 +58,7 @@ import {
   type CatalogSaveReport,
   type ImageUploadReport,
   type RemoteImageKind,
+  type ServiceStep,
   imageBaseFromTitle,
   uploadContentImage,
   createExpansion,
@@ -77,7 +79,7 @@ type ShowResult = (result: SaveResult) => void
 
 /** A chosen image to upload to the live server when the record is saved. */
 function liveUpload(kind: RemoteImageKind, name: string, file: File, mode: 'exact' | 'unique' = 'exact'): PendingUpload {
-  return { kind, run: () => uploadContentImage(kind, name, file, mode) }
+  return { kind, name, run: (onStep) => uploadContentImage(kind, name, file, mode, onStep) }
 }
 
 import type {
@@ -333,16 +335,23 @@ export function ContentPage() {
         encounterEditKey ?? String(encounterDraft.mEncounterID).padStart(5, '0')
       let draft = encounterDraft
       let images: ImageUploadReport[] = []
+      const base = imageBaseFromTitle(draft.mEncounterTitle.trim() || `encounter_${draft.mEncounterID}`)
+      const progress = contentProfileId
+        ? startSaveProgress({
+            kind: 'Encounter',
+            name: draft.mEncounterTitle || key,
+            images: encounterImage ? [{ kind: 'encounter', name: `${base}.webp` }] : [],
+          }, setSaveResult)
+        : undefined
       if (encounterImage) {
         // The image is named after the title; the record then points at it.
         if (contentProfileId) {
-          const base = imageBaseFromTitle(draft.mEncounterTitle.trim() || `encounter_${draft.mEncounterID}`)
-          images = await runUploads([liveUpload('encounter', base, encounterImage, 'unique')])
+          images = await runUploads([liveUpload('encounter', base, encounterImage, 'unique')], progress?.uploads)
           draft = { ...draft, mEncounterImageName: images[0].name.replace(/\.webp$/i, '') }
         } else {
           const file = encounterImage
           let imageName: string | undefined
-          await runUploads([{ kind: 'encounter', run: async () => {
+          await runUploads([{ kind: 'encounter', name: file.name, run: async () => {
             imageName = await uploadEncounterImageFromTitle(
               draft.mEncounterTitle.trim() || `Encounter ${draft.mEncounterID}`, draft.mEncounterID, file)
             return undefined
@@ -352,7 +361,7 @@ export function ContentPage() {
         setEncounterDraft(draft)
         setEncounterImage(null)
       }
-      const report = await saveAfterUploads(images, () => createEncounter(key, draft))
+      const report = await saveAfterUploads(images, () => createEncounter(key, draft, progress?.record))
       return { isEdit, report, images, title: draft.mEncounterTitle || key }
     },
     onSuccess: ({ isEdit: wasEdit, report, images, title }) => {
@@ -623,7 +632,7 @@ function usePanelSave<T>({
   onResult: ShowResult
   /** Runs after a successful save, e.g. to close the editor. */
   onSaved?: () => void
-  save: (draft: T) => Promise<CatalogSaveReport | undefined>
+  save: (draft: T, onStep?: (step: ServiceStep) => void) => Promise<CatalogSaveReport | undefined>
   nameOf: (draft: T) => string
   exists: (draft: T) => boolean
   /** The images chosen in the editor, uploaded first when Save is pressed. */
@@ -633,8 +642,17 @@ function usePanelSave<T>({
   return useMutation({
     mutationFn: async ({ draft, images }: { draft: T; images: PendingImages }) => {
       const wasEdit = exists(draft)
-      const uploaded = await runUploads(uploads?.(draft, images) ?? [])
-      return { draft, wasEdit, uploaded, report: await saveAfterUploads(uploaded, () => save(draft)) }
+      const pending = uploads?.(draft, images) ?? []
+      // With the live game, the popup lists every step at once and ticks them off.
+      const progress: SaveProgress | undefined = profileId
+        ? startSaveProgress({
+            kind,
+            name: nameOf(draft),
+            images: pending.map((upload) => ({ kind: upload.kind, name: `${upload.name.replace(/\.webp$/i, '')}.webp` })),
+          }, onResult)
+        : undefined
+      const uploaded = await runUploads(pending, progress?.uploads)
+      return { draft, wasEdit, uploaded, report: await saveAfterUploads(uploaded, () => save(draft, progress?.record)) }
     },
     onSuccess: ({ draft, wasEdit, uploaded, report }) => {
       onSaved?.()
@@ -857,7 +875,7 @@ function SolutionsPanel({
     onStatus,
     onResult,
     onSaved: close,
-    save: (d) => createSolution(String(d.mSolutionID), d),
+    save: (d, onStep) => createSolution(String(d.mSolutionID), d, onStep),
     nameOf: (d) => d.mSolutionName,
     exists: (d) => Object.hasOwn(data, String(d.mSolutionID)),
     uploads: (d, images) => {
@@ -865,7 +883,7 @@ function SolutionsPanel({
       if (!file) return []
       return profileId
         ? [liveUpload('solution', d.mSolutionIconName, file)]
-        : [{ kind: 'solution', run: async () => { await uploadSolutionImage(d.mSolutionIconName, file); return undefined } }]
+        : [{ kind: 'solution', name: d.mSolutionIconName, run: async () => { await uploadSolutionImage(d.mSolutionIconName, file); return undefined } }]
     },
   })
 
@@ -1041,7 +1059,7 @@ function ExpansionPanel({
     onStatus,
     onResult,
     onSaved: close,
-    save: (d) => createExpansion(String(d.mExtensioID), d),
+    save: (d, onStep) => createExpansion(String(d.mExtensioID), d, onStep),
     nameOf: (d) => d.mExtensioName,
     exists: (d) => Object.hasOwn(data, String(d.mExtensioID)),
     uploads: (d, images) => expansionImageFields
@@ -1228,7 +1246,7 @@ function FramesPanel({
     onStatus,
     onResult,
     onSaved: close,
-    save: (d) => createFrame(d),
+    save: (d, onStep) => createFrame(d, onStep),
     nameOf: (d) => `#${d.frameID}`,
     exists: (d) => Boolean(data[d.frameID]),
     uploads: (d, images) => (images.image ? [liveUpload('frame', `frame_${d.frameID}`, images.image)] : []),
@@ -1385,7 +1403,7 @@ function PortraitsPanel({
     onStatus,
     onResult,
     onSaved: close,
-    save: (d) => createPortrait(d),
+    save: (d, onStep) => createPortrait(d, onStep),
     nameOf: (d) => d.avatarName,
     exists: (d) => Boolean(data[d.avatarID]),
     uploads: (d, images) => (images.image ? [liveUpload('portrait', `avatar_${d.avatarID}`, images.image)] : []),

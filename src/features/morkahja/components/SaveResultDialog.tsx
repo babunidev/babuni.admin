@@ -1,8 +1,11 @@
 import { useEffect, useRef } from 'react'
 
-export type SaveStepState = 'ok' | 'failed' | 'skipped'
+/** `pending` and `working` show a save that is still running. */
+export type SaveStepState = 'ok' | 'failed' | 'skipped' | 'pending' | 'working'
 
 export interface SaveStep {
+  /** Stable key while a running save updates the step in place. */
+  id?: string
   label: string
   state: SaveStepState
   detail: string
@@ -21,11 +24,15 @@ const marks: Record<SaveStepState, { glyph: string; className: string; word: str
   ok: { glyph: '✓', className: 'border-emerald-400/40 text-emerald-300', word: 'Done' },
   failed: { glyph: '✕', className: 'border-red-400/50 text-red-300', word: 'Failed' },
   skipped: { glyph: '–', className: 'border-fog/40 text-fog', word: 'Nothing to do' },
+  pending: { glyph: '', className: 'border-fog/25 text-fog/50', word: 'Waiting' },
+  working: { glyph: '⧗', className: 'border-gold/50 text-gold-bright animate-pulse', word: 'Working' },
 }
 
 /**
- * Centered result of one save or upload. Clicking beside it, pressing Escape
- * or the Close button dismisses it.
+ * Centered result of one save or upload. While the save runs, every step is
+ * listed with an hourglass on the one in progress, and each turns into its
+ * check mark as the server reports it. Once nothing is running, clicking
+ * beside it, pressing Escape or the Close button dismisses it.
  */
 export function SaveResultDialog({
   result,
@@ -35,16 +42,18 @@ export function SaveResultDialog({
   onClose: () => void
 }) {
   const closeButton = useRef<HTMLButtonElement>(null)
+  const open = result !== null
+  const running = Boolean(result?.steps.some((step) => step.state === 'pending' || step.state === 'working'))
 
   useEffect(() => {
-    if (!result) return
+    if (!open || running) return
     closeButton.current?.focus()
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [result, onClose])
+  }, [open, running, onClose])
 
   if (!result) return null
   const failed = result.steps.some((step) => step.state === 'failed')
@@ -54,19 +63,20 @@ export function SaveResultDialog({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-[2px]"
       onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onClose()
+        if (!running && event.target === event.currentTarget) onClose()
       }}
     >
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="save-result-title"
+        aria-busy={running}
         className={`w-full max-w-lg rounded-lg border bg-slate p-6 shadow-2xl shadow-black/60 ${
           allFailed ? 'border-red-400/40' : failed ? 'border-amber-400/40' : 'border-gold/30'
         }`}
       >
-        <p className="text-xs uppercase tracking-widest text-fog">
-          {allFailed ? 'Not saved' : failed ? 'Partly done' : 'All done'}
+        <p className="text-xs uppercase tracking-widest text-fog" aria-live="polite">
+          {running ? 'Saving…' : allFailed ? 'Not saved' : failed ? 'Partly done' : 'All done'}
         </p>
         <h2 id="save-result-title" className="mt-1 font-serif text-xl text-gold-bright">
           {result.title}
@@ -77,15 +87,15 @@ export function SaveResultDialog({
           {result.steps.map((step) => {
             const mark = marks[step.state]
             return (
-              <li key={step.label} className="flex gap-3">
+              <li key={step.id ?? step.label} className="flex gap-3">
                 <span
                   aria-label={mark.word}
-                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm ${mark.className}`}
+                  className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm transition-colors duration-300 ${mark.className}`}
                 >
                   {mark.glyph}
                 </span>
                 <div className="min-w-0">
-                  <p className="text-sm text-parchment">{step.label}</p>
+                  <p className={`text-sm ${step.state === 'pending' ? 'text-fog' : 'text-parchment'}`}>{step.label}</p>
                   <p className="mt-0.5 break-words text-sm text-fog">{step.detail}</p>
                   {step.href && (
                     <a
@@ -116,9 +126,10 @@ export function SaveResultDialog({
             ref={closeButton}
             type="button"
             onClick={onClose}
-            className="rounded border border-gold/30 bg-gold/15 px-4 py-1.5 text-sm text-gold-bright hover:bg-gold/25"
+            disabled={running}
+            className="rounded border border-gold/30 bg-gold/15 px-4 py-1.5 text-sm text-gold-bright hover:bg-gold/25 disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-gold/15"
           >
-            Close
+            {running ? 'Working…' : 'Close'}
           </button>
         </div>
       </div>

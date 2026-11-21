@@ -14,7 +14,7 @@ const catalogFiles: Record<string, string> = {
   Portrait: 'portraits.json',
 }
 
-const imageLabels: Record<RemoteImageKind, string> = {
+export const imageLabels: Record<RemoteImageKind, string> = {
   encounter: 'Encounter image',
   solution: 'Solution icon',
   expansion: 'Expansion image',
@@ -65,7 +65,7 @@ export function describeSaveError(code: string): string {
 }
 
 /** The save in Babuni's local game (MorkahjaWebApp, main) and on GitHub main. */
-function gitSteps(git: ContentGitResult | undefined): SaveStep[] {
+export function gitSteps(git: ContentGitResult | undefined): SaveStep[] {
   if (git?.ok && git.skipped) {
     return [{ label: 'Local game', state: 'skipped', detail: 'MorkahjaWebApp already had exactly this version.' }]
   }
@@ -99,21 +99,23 @@ export function catalogSaveResult(
   wasEdit: boolean,
   report: CatalogSaveReport,
 ): SaveResult {
-  const file = catalogFiles[kind]
   return {
     title: `${kind} ${wasEdit ? 'updated' : 'added'}: ${name}`,
     subtitle: report.checkedAt ? `Saved ${new Date(report.checkedAt).toLocaleString()}` : undefined,
-    steps: [
-      {
-        label: 'Live game',
-        state: 'ok',
-        detail:
-          report.via === 'file'
-            ? `Written to ${file} on the server and read back unchanged.`
-            : `The running game wrote ${file}, dropped its cached copy, and the record read back unchanged. Players get it the next time the game loads content.`,
-      },
-      ...gitSteps(report.git),
-    ],
+    steps: [liveCatalogStep(kind, report.via), ...gitSteps(report.git)],
+  }
+}
+
+/** The record reached the live game. */
+export function liveCatalogStep(kind: keyof typeof catalogFiles, via: CatalogSaveReport['via']): SaveStep {
+  const file = catalogFiles[kind]
+  return {
+    label: 'Live game',
+    state: 'ok',
+    detail:
+      via === 'file'
+        ? `Written to ${file} on the server and read back unchanged.`
+        : `The running game wrote ${file}, dropped its cached copy, and the record read back unchanged. Players get it the next time the game loads content.`,
   }
 }
 
@@ -174,7 +176,7 @@ export function imageUploadResult(report: ImageUploadReport, notes: string[] = [
 }
 
 /** Image steps under their own heading, so they read apart from the record's steps. */
-function prefixed(prefix: string, result: SaveResult): SaveStep[] {
+export function prefixed(prefix: string, result: SaveResult): SaveStep[] {
   return result.steps.map((step) => ({ ...step, label: `${prefix} · ${step.label}` }))
 }
 

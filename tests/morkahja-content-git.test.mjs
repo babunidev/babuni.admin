@@ -172,3 +172,32 @@ test('an uploaded image is committed into client/public and pushed', async () =>
     await rm(root, { recursive: true, force: true })
   }
 })
+
+test('the local commit is reported before the push to GitHub runs', async () => {
+  const { root, bare, repo } = await fixture()
+  try {
+    const events = []
+    const saved = await commitMorkahjaContent({
+      kind: 'encounters',
+      key: '19001',
+      data: { mEncounterID: 19001, mEncounterTitle: 'Verdani’s Vigil', mEncounterText: 'Progress story' },
+    }, {
+      repo,
+      // Runs between the commit and the push, so `pushed` is not known yet.
+      onCommitted: (result) => events.push({ result }),
+    })
+    assert.equal(saved.pushed, true)
+    assert.equal(events.length, 1)
+    assert.equal(events[0].result.commit, saved.commit)
+    assert.equal(events[0].result.pushed, undefined)
+    const unchanged = await commitMorkahjaContent({
+      kind: 'encounters',
+      key: '19001',
+      data: { mEncounterID: 19001, mEncounterTitle: 'Verdani’s Vigil', mEncounterText: 'Progress story' },
+    }, { repo, onCommitted: () => events.push('again') })
+    assert.equal(unchanged.skipped, true)
+    assert.equal(events.length, 1)
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})

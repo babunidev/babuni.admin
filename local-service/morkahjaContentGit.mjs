@@ -186,6 +186,8 @@ async function commitFile(options, relative, update) {
     const remote = await git(['remote', 'get-url', 'origin'], repo).catch(() => '')
     const web = /github\.com[:/]([\w.-]+\/[\w.-]+?)(?:\.git)?$/.exec(remote)
     const result = { ok: true, commit, message, ...(web ? { url: `https://github.com/${web[1]}/commit/${full}` } : {}) }
+    // Lets the save popup tick off the local commit while the push still runs.
+    try { options.onCommitted?.(result) } catch { /* progress only */ }
 
     // Local main's own unpublished commits are Babuni's to push; never send them along.
     if (options.push === false) return { ...result, pushed: false }

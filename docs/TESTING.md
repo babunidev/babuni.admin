@@ -250,6 +250,8 @@ GitHub Actions includes a separate nonmutating `audit` job, which runs `npm audi
 
 The hardening review branch adds `npm run test:postgres` (requires an explicit localhost `TEST_DATABASE_URL` pointing to a **disposable database named `babuni_fixture`**) and `npm run test:browser:content` (requires an explicitly configured local-only, temporary Morkahja game-content fixture server). **Never run the PostgreSQL test against a real database**: it creates and drops tables within that dedicated test database.
 
+`npm run test:browser:save-progress` checks that the Content save popup lists every step at once and ticks them off as the local service reports them. Start a plain Vite dev server without `BABUNI_LOCAL_SERVICE_TOKEN` on `127.0.0.1:4190` (or set `BROWSER_TEST_BASE_URL`); the test answers every `/local-connections-api` request itself with synthetic data, so nothing reaches a connection, the game or GitHub. Set `BABUNI_SCREENSHOT_DIR` to keep a screenshot of each stage.
+
 The CI `postgres-fixtures` job uses an ephemeral PostgreSQL 16 service; its four tests cover real SQL and transaction rollback. The browser job creates a temporary game folder from `tests/fixtures/legacy/`, explicitly enables local content middleware there, and runs five browser editor/image tests. A pinned public Morkahja WebP file is downloaded into the temporary fixture and decoded in Chromium.
 
 Run `npm ci`, `npm run build`, `npm run lint`, `npm test`, `npm run test:integration` as usual. The special database/browser fixture commands belong only in their isolated environments. [Verified CI run 41659550592](https://github.com/babunidev/babuni.admin/actions/runs/41659550592) · [Hardening report](PHASE1_HARDENING_2026-11-03.md).

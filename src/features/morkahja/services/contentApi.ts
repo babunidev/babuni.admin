@@ -9,7 +9,11 @@ import type {
 } from '../types/gameContent'
 import { imageFileToWebpBase64 } from '../utils/imageFileToWebpBase64'
 import { apiPost } from '../../../services/http'
-import { localConnectionApi } from '../../../shared/services/localConnectionClient'
+import {
+  localConnectionApi,
+  localConnectionStream,
+  type ServiceStep,
+} from '../../../shared/services/localConnectionClient'
 
 import { MODERATION_PROFILE_KEY, getModerationProfileId } from './adminApi'
 
@@ -23,13 +27,14 @@ export async function uploadContentImage(
   name: string,
   file: File,
   mode: 'exact' | 'unique',
+  onStep: (step: ServiceStep) => void = () => {},
 ): Promise<ImageUploadReport> {
   const id = getContentProfileId()
   if (!id) throw new Error('CONTENT_PROFILE_REQUIRED')
   const base64 = await imageFileToWebpBase64(file)
-  return localConnectionApi<ImageUploadReport>('POST', '/' + id + '/content-image-upload', {
+  return localConnectionStream<ImageUploadReport>('/' + id + '/content-image-upload', {
     kind, name: name.replace(/\.webp$/i, ''), mode, base64,
-  })
+  }, onStep)
 }
 
 /** Lowercase snake_case file name from a title, as the game's encounter images use. */
@@ -79,6 +84,8 @@ export type CatalogSaveReport = {
   git?: ContentGitResult
 }
 
+export type { ServiceStep }
+
 export type RemoteImageKind = 'encounter' | 'solution' | 'expansion' | 'frame' | 'portrait'
 
 export type ImageUploadReport = {
@@ -92,15 +99,20 @@ export type ImageUploadReport = {
   checkedAt: string
 }
 
-async function remoteWrite(kind: string, key: string | number, data: unknown): Promise<CatalogSaveReport> {
+async function remoteWrite(
+  kind: string,
+  key: string | number,
+  data: unknown,
+  onStep: (step: ServiceStep) => void = () => {},
+): Promise<CatalogSaveReport> {
   const id = getContentProfileId()
   if (!id) throw new Error('CONTENT_PROFILE_REQUIRED')
   const expectedRevision = contentRevisions.get(id + ':' + kind)
   if (!expectedRevision) throw new Error('CONTENT_REVISION_REQUIRED')
   const revisionKey = id + ':' + kind
   try {
-    const response = await localConnectionApi<{ok:true} & CatalogSaveReport>(
-      'POST','/' + id + '/content-write',{kind,key,data,expectedRevision})
+    const response = await localConnectionStream<{ok:true} & CatalogSaveReport>(
+      '/' + id + '/content-write',{kind,key,data,expectedRevision},onStep)
     contentRevisions.set(revisionKey, response.revision)
     return response
   } catch (error) {
@@ -190,8 +202,9 @@ export async function fetchPortraits(): Promise<PortraitsDataFile> {
 export async function createEncounter(
   key: string,
   data: EncounterMap[string],
+  onStep?: (step: ServiceStep) => void,
 ): Promise<CatalogSaveReport | undefined> {
-  if (getContentProfileId()) return remoteWrite('encounters', key, data)
+  if (getContentProfileId()) return remoteWrite('encounters', key, data, onStep)
   if (useLocalContent) {
     await localPost('/encounters', { key, data })
     return undefined
@@ -203,8 +216,9 @@ export async function createEncounter(
 export async function createSolution(
   key: string,
   data: SolutionMap[string],
+  onStep?: (step: ServiceStep) => void,
 ): Promise<CatalogSaveReport | undefined> {
-  if (getContentProfileId()) return remoteWrite('solutions', key, data)
+  if (getContentProfileId()) return remoteWrite('solutions', key, data, onStep)
   if (useLocalContent) {
     await localPost('/solutions', { key, data })
     return undefined
@@ -216,8 +230,9 @@ export async function createSolution(
 export async function createExpansion(
   key: string,
   data: ExpansionData,
+  onStep?: (step: ServiceStep) => void,
 ): Promise<CatalogSaveReport | undefined> {
-  if (getContentProfileId()) return remoteWrite('expansions', key, data)
+  if (getContentProfileId()) return remoteWrite('expansions', key, data, onStep)
   if (useLocalContent) {
     await localPost('/expansions', { key, data })
     return undefined
@@ -228,8 +243,9 @@ export async function createExpansion(
 
 export async function createFrame(
   data: NonNullable<FramesDataFile['Frames'][number]>,
+  onStep?: (step: ServiceStep) => void,
 ): Promise<CatalogSaveReport | undefined> {
-  if (getContentProfileId()) return remoteWrite('frames', data.frameID, data)
+  if (getContentProfileId()) return remoteWrite('frames', data.frameID, data, onStep)
   if (useLocalContent) {
     await localPost('/frames', data)
     return undefined
@@ -240,8 +256,9 @@ export async function createFrame(
 
 export async function createPortrait(
   data: NonNullable<PortraitsDataFile['Avatar'][number]>,
+  onStep?: (step: ServiceStep) => void,
 ): Promise<CatalogSaveReport | undefined> {
-  if (getContentProfileId()) return remoteWrite('portraits', data.avatarID, data)
+  if (getContentProfileId()) return remoteWrite('portraits', data.avatarID, data, onStep)
   if (useLocalContent) {
     await localPost('/portraits', data)
     return undefined

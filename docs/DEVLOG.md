@@ -1,4 +1,7 @@
 # Babuni Admin — Development Journal
+## 2026-11-21 — Watching the save happen
+
+When I pressed Save I waited in front of nothing until the whole result popped up at once. I wanted to see the process: the card with every step right away, an hourglass on the step in progress, and each one turning green as it finishes, so it checks them off one after another and I close it when it's done. Claude Code (Claude Opus 5.5) made the local service report each step as it finishes and the popup tick them off live.
 ## 2026-11-21 — Choosing is not saving
 
 Picking a new picture in the Content editor saved it everywhere at once, to the live game, my local game and GitHub, before I had even decided. I asked for it to wait for Save. Claude Code (Claude Opus 5.5) changed every editor so a chosen image only shows as a preview until I press Save, and then the image and the record go out together with one result popup.

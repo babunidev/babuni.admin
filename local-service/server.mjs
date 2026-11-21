@@ -43,6 +43,31 @@ function send(res, code, data) {
     'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'})
   res.end(JSON.stringify(data))
 }
+/**
+ * A save that reports its steps as they finish, when the UI asks for
+ * `application/x-ndjson`: one `{event:'step'}` line per finished step, then
+ * one `{event:'done',status,body}` line. Errors before the first step still
+ * answer as plain JSON, so both kinds of client read every outcome.
+ */
+function progressReply(req, res) {
+  const streaming = /application\/x-ndjson/.test(String(req.headers.accept || ''))
+  const start = () => {
+    if (res.headersSent) return
+    res.writeHead(200, {'Content-Type':'application/x-ndjson; charset=utf-8',
+      'Cache-Control':'no-store', 'X-Content-Type-Options':'nosniff'})
+  }
+  return {
+    step(event) {
+      if (!streaming) return
+      start()
+      res.write(JSON.stringify({...event, event:'step'}) + '\n')
+    },
+    send(code, data) {
+      if (!res.headersSent) return send(res, code, data)
+      res.end(JSON.stringify({event:'done', status:code, body:data}) + '\n')
+    },
+  }
+}
 function validKey(supplied) {
   if (typeof supplied !== 'string') return false
   const a = Buffer.from(supplied)
@@ -342,6 +367,7 @@ const server=createServer(async(req,res)=>{
       try {payload=await body(req,128*1024)}
       catch {return send(res,400,{error:'CONTENT_INVALID_REQUEST'})}
       const request={...payload,action:action==='content-read'?'read':'write'}
+      const reply=progressReply(req,res)
       const report=await performMorkahjaContent(profile,request)
       if(!report.ok) {
         const status=report.code==='REMOTE_CONTENT_BUSY'?409:
@@ -351,9 +377,10 @@ const server=createServer(async(req,res)=>{
         return send(res,status,{error:report.code})
       }
       if(request.action==='write') {
+        reply.step({step:'live',via:report.via})
         const gitResult=await commitMorkahjaContent({
           kind:request.kind, key:request.key, data:request.data,
-        })
+        },{onCommitted:git=>reply.step({step:'local',git})})
         // The live game already has the edit; report the GitHub step on its own.
         report.git=gitResult
       }
@@ -362,22 +389,25 @@ const server=createServer(async(req,res)=>{
         detail:'Scoped content operation completed; temporary SSH session closed.',
         checkedAt:report.checkedAt,lastSuccessAt:report.checkedAt,
       })
-      return send(res,200,report)
+      return reply.send(200,report)
     }
     if (req.method==='POST' && action==='content-image-upload') {
       if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
       let payload
       try {payload=await body(req,3*1024*1024+4096)}
       catch {return send(res,413,{error:'IMAGE_TOO_LARGE'})}
+      const reply=progressReply(req,res)
       const report=await writeMorkahjaImage(profile,payload)
       if(!report.ok) return send(res,
         report.code==='IMAGE_WRITE_BUSY'?409:
         ['REMOTE_MODERATION_DISABLED','REMOTE_CONTENT_DISABLED','REMOTE_SCOPE_DENIED'].includes(report.code)?403:
         /^(INVALID_IMAGE_|IMAGE_NOT_WEBP)/.test(report.code)?400:422,{error:report.code})
+      reply.step({step:'live',name:report.name,replaced:report.replaced,publicCheck:report.publicCheck})
       await morkahjaImageCache.store(profile,report.kind,report.name,report.bytes).catch(()=>{})
-      const git=await commitMorkahjaImage({kind:report.kind,name:report.name,bytes:report.bytes})
+      const git=await commitMorkahjaImage({kind:report.kind,name:report.name,bytes:report.bytes},
+        {onCommitted:result=>reply.step({step:'local',git:result})})
       const {bytes:_bytes,...result}=report
-      return send(res,200,{...result,git,checkedAt:new Date().toISOString()})
+      return reply.send(200,{...result,git,checkedAt:new Date().toISOString()})
     }
     if(req.method==='POST' && action==='content-image-sync') {
       if(!hasCapability(profile,'ssh:content'))return send(res,403,{error:'CAPABILITY_DENIED'})
@@ -430,7 +460,10 @@ const server=createServer(async(req,res)=>{
     const message=error instanceof Error ? error.message : 'UNKNOWN'
     const status=error.status===413?413:
       ['INVALID_JSON','INVALID_PROFILE','UNKNOWN_FIELDS'].includes(message)?400:500
-    return send(res,status,{error:status===500?'LOCAL_SERVICE_FAILURE':message})
+    const body={error:status===500?'LOCAL_SERVICE_FAILURE':message}
+    // A progress stream already started: finish it with the failure instead.
+    if(res.headersSent) return res.end(JSON.stringify({event:'done',status,body})+'\n')
+    return send(res,status,body)
   }
 })
 server.on('error',error=>{console.error('Local service could not bind to loopback:',error.code||error.message);process.exitCode=1})
