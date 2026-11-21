@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-21 — A quiet start
+
+Every time I started Babuni Admin, the window filled with `curl` connection failures and a Vite warning about file extensions, and I wondered what was wrong. Nothing was: the curl lines were my launcher asking whether the server was up yet, and the warning was Vite announcing a future change. Claude Code (Claude Opus 5.5) added the `.ts` extensions Vite asked for and made the launcher's waiting silent.
+
 ## 2026-11-21 — Editing everything, not only encounters
 
 I opened a solution in Morkahja's Content tab and found no way to edit it. Encounters had an Edit button, but solutions, expansions, frames and portraits didn't. Their editor was a form far down the page that I hadn't noticed. Claude Code (Claude Opus 5.5) gave every detail panel an Edit button and every tab an Add button, both opening the same side editor as the encounters. It also added the three solution fields the old form had left out.

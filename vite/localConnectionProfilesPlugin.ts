@@ -1,6 +1,6 @@
 import type { Plugin } from 'vite'
-import { LocalConnectionRegistry } from './localConnectionRegistry'
-import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard'
+import { LocalConnectionRegistry } from './localConnectionRegistry.ts'
+import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard.ts'
 
 export function localConnectionProfilesPlugin(
   registry: LocalConnectionRegistry = new LocalConnectionRegistry(),

@@ -1,4 +1,10 @@
 # Babuni Admin — Changelog
+## 2026-11-21 — No Vite config warning at startup
+
+- Vite 8 warned on every `npm run dev` that `vite.config.ts` and the `vite/` plugins import local files without a file extension, which its upcoming native config loader won't support. The eight runtime imports now name their `.ts` file (`vite.config.ts`, `vite/localAdminPlugin.ts`, `vite/localContentPlugin.ts`, plus the same two in the unused `vite/localConnectionProfilesPlugin.ts`); `tsconfig.node.json` already allowed `.ts` imports. Type-only imports were left as they are, since they disappear before loading. Claude Code (Claude Opus 5.5).
+- Vite now starts without the warning. Build, lint and the unit suite (137/137) pass.
+- Outside this repository: the desktop launcher `~/.local/bin/babuni-admin` printed `curl: (7) Failed to connect` while it waited for the server to come up. Those lines were its own readiness checks, not errors; it now checks silently and still opens the browser once the server answers.
+
 ## 2026-11-21 — Quieter Content page header
 
 - Removed three lines of explanation from the top of Morkahja's Content page: the description under the heading, "Using your administrator connection…" and "Live game catalog and images via your administrator connection…". Babuni knows what the page does. The page still says when the administrator connection or connection service is unavailable, and when content is coming from local files or another source instead of the live game. Claude Code (Claude Opus 5.5).

@@ -1,6 +1,6 @@
 import type { ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
-import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard'
+import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard.ts'
 
 import {
   banPlayerInPostgres,
@@ -12,7 +12,7 @@ import {
   listPlayersFromPostgres,
   timeoutPlayerInPostgres,
   unbanPlayerInPostgres,
-} from './postgresAdmin'
+} from './postgresAdmin.ts'
 
 function sendJson(res: ServerResponse, status: number, data: unknown): void {
   res.statusCode = status

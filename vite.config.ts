@@ -2,14 +2,14 @@ import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
-import { localSessionGuard } from './vite/localSessionGuard'
+import { localSessionGuard } from './vite/localSessionGuard.ts'
 import tailwindcss from '@tailwindcss/vite'
-import { morkahjaLocalAdminPlugin } from './vite/localAdminPlugin'
+import { morkahjaLocalAdminPlugin } from './vite/localAdminPlugin.ts'
 import {
   morkahjaLocalContentPlugin,
   resolveMorkahjaGameDataDir,
   resolveMorkahjaPublicRoot,
-} from './vite/localContentPlugin'
+} from './vite/localContentPlugin.ts'
 
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 

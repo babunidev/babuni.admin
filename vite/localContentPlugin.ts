@@ -9,9 +9,9 @@ import {
 import { join, resolve, relative, sep, isAbsolute } from 'node:path'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import type { Plugin } from 'vite'
-import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard'
-import { resolveEncounterImageBase } from './encounterImageNaming'
-import { writeFileWithBackup } from './atomicGameWrites'
+import { readLimitedBody, rejectNonLocalRequest } from './localRequestGuard.ts'
+import { resolveEncounterImageBase } from './encounterImageNaming.ts'
+import { writeFileWithBackup } from './atomicGameWrites.ts'
 
 const JSON_FILES = {
   encounters: 'encountersdata.json',
