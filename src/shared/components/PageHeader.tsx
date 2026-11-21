@@ -4,9 +4,11 @@ interface PageHeaderProps {
   title: string
   description?: string
   action?: ReactNode
+  /** Shown under the title, in place of a description. */
+  children?: ReactNode
 }
 
-export function PageHeader({ title, description, action }: PageHeaderProps) {
+export function PageHeader({ title, description, action, children }: PageHeaderProps) {
   return (
     <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
       <div>
@@ -16,6 +18,7 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
         {description && (
           <p className="mt-1 max-w-2xl text-sm text-fog">{description}</p>
         )}
+        {children && <div className="mt-2">{children}</div>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </header>

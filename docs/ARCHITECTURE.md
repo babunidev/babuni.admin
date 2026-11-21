@@ -1,5 +1,9 @@
 # Babuni Admin — Architecture
 
+## Local Morkahja development stack (2026-11-21)
+
+The Morkahja Overview header (`DevStackControl`) starts or restarts the game's local server and client. `local-service/morkahjaDevStack.mjs` finds listeners on ports 3000 and 5173 with `ss`, accepts them only when their `/proc` working directory is inside the MorkahjaWebApp checkout, and stops their launcher chain (node, `npm`, `sh`) without reaching the user's shell. It then spawns `npm run dev:backend` and `npm run dev:client` detached, with a terminal-like environment stripped of admin secrets, and waits up to 30 s for both ports. This acts on the operator's own PC only; nothing reaches the live server.
+
 ## Sidebar and top bars (2026-11-19)
 
 `src/app/Sidebar.tsx` lists the places: Project Manager and the workspaces from `src/app/navigation.ts`, then Connection. A workspace is current when `workspaceForPath` names it and the path is not a page above the workspaces (`isMetaPath`: `/projects`, `/connections`). `AdminLayout` picks the top bar: `MetaTopBar` for those pages, otherwise the workspace's own bar, which renders that workspace's `navItems` as tabs through `WorkspaceTabs`.

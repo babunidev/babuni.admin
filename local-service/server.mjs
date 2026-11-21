@@ -22,6 +22,7 @@ import { performMorkahjaContent, isContentActive, stopAllContentSsh } from './mo
 import { commitMorkahjaContent, commitMorkahjaImage } from './morkahjaContentGit.mjs'
 import { writeMorkahjaImage } from './morkahjaImageWrite.mjs'
 import { morkahjaImageCache } from './morkahjaImageCache.mjs'
+import { devStackStatus, restartDevStack } from './morkahjaDevStack.mjs'
 import { credentialStatus, keyringHealth, clearCredential, requiresCredential } from './keyring.mjs'
 import { hasCapability, specForProfile } from '../vite/connectionAdapters.ts'
 import { LocalConnectionRegistry } from '../vite/localConnectionRegistry.ts'
@@ -211,6 +212,20 @@ const server=createServer(async(req,res)=>{
           'FETCH_FAILED','SNAPSHOT_DIRTY','NOT_ON_MAIN','BEHIND_ORIGIN','UNPUSHED_OTHER_COMMITS','NOTHING_TO_COMMIT','COMMIT_FAILED','ORIGIN_MOVED']
         const code=known.includes(error.message)?error.message:'PORTFOLIO_OPERATION_FAILED'
         return send(res,code==='SOURCE_DENIED'?400:409,{error:code})
+      }
+    }
+    // Morkahja local development stack (game server + client) on this PC.
+    if (req.method==='GET' && path==='/morkahja/dev-stack') {
+      try { return send(res,200,await devStackStatus()) }
+      catch { return send(res,503,{error:'DEV_STACK_STATUS_FAILED'}) }
+    }
+    if (req.method==='POST' && path==='/morkahja/dev-stack/restart') {
+      try {
+        // 200 either way: a slow game start is not a local-service failure.
+        return send(res,200,await restartDevStack())
+      } catch(error) {
+        const known=['DEV_STACK_BUSY','GAME_CHECKOUT_UNAVAILABLE','PORT_HELD_BY_OTHER_PROGRAM']
+        return send(res,409,{error:known.includes(error.message)?error.message:'DEV_STACK_START_FAILED'})
       }
     }
     if (req.method==='POST' && path==='/maintenance/retire-legacy') {

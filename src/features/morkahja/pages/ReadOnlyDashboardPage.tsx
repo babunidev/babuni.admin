@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { PageHeader } from '../../../shared/components/PageHeader'
 import { StatCard } from '../components/StatCard'
+import { DevStackControl } from '../components/DevStackControl'
 import { localConnectionApi } from '../../../shared/services/localConnectionClient'
 import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
 
@@ -175,8 +176,9 @@ export function ReadOnlyDashboardPage() {
 
   const page = playerPage?.data
   return <div className="max-w-5xl space-y-6">
-    <PageHeader title="Morkahja — Overview"
-      description="Realm overview and player activity from the existing PostgreSQL views; supports the single administrator profile." />
+    <PageHeader title="Morkahja — Overview">
+      <DevStackControl />
+    </PageHeader>
     <div className="flex flex-wrap items-center justify-between gap-3">
       <p className="text-sm text-fog" role="status">{status}</p>
       <button type="button" className={button} disabled={busy || !profileId}

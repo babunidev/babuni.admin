@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-21 — One button for the local game
+
+When I work on Morkahja I keep restarting the game's local server and client by hand in a terminal. I asked for a button instead of the text under the Overview heading: Start when nothing runs, Restart when it does. Claude Code (Claude Opus 5.5) added it. It only stops game processes from the Morkahja checkout and logs the output to a file.
+
 ## 2026-11-21 — A quiet start
 
 Every time I started Babuni Admin, the window filled with `curl` connection failures and a Vite warning about file extensions, and I wondered what was wrong. Nothing was: the curl lines were my launcher asking whether the server was up yet, and the warning was Vite announcing a future change. Claude Code (Claude Opus 5.5) added the `.ts` extensions Vite asked for and made the launcher's waiting silent.
