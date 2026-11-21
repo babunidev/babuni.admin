@@ -1,4 +1,9 @@
 # Babuni Admin — Changelog
+## 2026-11-21 — Quieter Content page header
+
+- Removed three lines of explanation from the top of Morkahja's Content page: the description under the heading, "Using your administrator connection…" and "Live game catalog and images via your administrator connection…". Babuni knows what the page does. The page still says when the administrator connection or connection service is unavailable, and when content is coming from local files or another source instead of the live game. Claude Code (Claude Opus 5.5).
+- Typecheck, lint and the unit suite (137/137) pass.
+
 ## 2026-11-21 — Edit button for solutions, expansions, frames and portraits
 
 - Only encounters had an Edit button. The other four tabs had an "Add or edit" form at the bottom of the page, and its "Edit “…”" button appeared only there, not in the detail panel you open by clicking an item. Every detail panel now has an **Edit** button in its header, and every tab has an **Add …** button. Both open the same right-side editor the encounters use (`src/features/morkahja/components/ContentEditorPanel.tsx`), and the bottom forms are gone. Claude Code (Claude Opus 5.5).

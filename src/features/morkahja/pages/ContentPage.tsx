@@ -148,7 +148,7 @@ export function ContentPage() {
   const queryClient = useQueryClient()
   const imageCache=useMorkahjaImageCacheStatus()
   const [contentProfileId, setContentProfileId] = useState(() => getContentProfileId() || '')
-  const [contentProfileStatus, setContentProfileStatus] = useState('Checking Morkahja administrator connection…')
+  const [contentProfileStatus, setContentProfileStatus] = useState('')
   const [connectionReady,setConnectionReady] = useState(false)
 
   useEffect(() => {
@@ -160,9 +160,7 @@ export function ContentPage() {
       const active = activateMorkahjaConnection(result.profiles)
       setContentProfileId(active?.id || '')
       setConnectionReady(true)
-      setContentProfileStatus(active
-        ? 'Using your administrator connection. Saves go to the live game and are committed to GitHub.'
-        : 'Administrator connection unavailable. Configure it in Connection.')
+      setContentProfileStatus(active ? '' : 'Administrator connection unavailable. Configure it in Connection.')
     }).catch(() => {
       if (mounted) {
         setContentProfileStatus('Connection service unavailable; live content access not verified.')
@@ -363,8 +361,9 @@ export function ContentPage() {
     void queryClient.invalidateQueries({ queryKey: ['content'] })
   }
 
+  // Only said when content is not coming from the live game.
   const dataSourceHint = contentProfileId
-    ? 'Live game catalog and images via your administrator connection · saves are committed to GitHub'
+    ? null
     : useLocalContent
     ? `Local files: MorkahjaWebApp/server/game (data) + client/public (images, UI); saves go to disk`
     : gameDataBaseUrl
@@ -373,14 +372,11 @@ export function ContentPage() {
 
   return (
     <div>
-      <PageHeader
-        title="Content"
-        description="Browse and add encounters, solutions, expansions, frames, and portraits."
-      />
-      <p className="mb-3 text-xs text-fog" role="status">
+      <PageHeader title="Content" />
+      {contentProfileStatus && <p className="mb-3 text-xs text-fog" role="status">
         {contentProfileStatus}
-      </p>
-      <p className="mb-4 text-xs text-fog">{dataSourceHint}</p>
+      </p>}
+      {connectionReady && dataSourceHint && <p className="mb-4 text-xs text-fog">{dataSourceHint}</p>}
       {contentProfileId && <p className="mb-3 text-xs text-fog" role="status">
         {activeContentError ? 'Last remote catalog read failed; no fallback content used.'
           : activeContentLoaded ? 'Last remote catalog read succeeded; SSH session closed.'
