@@ -13,6 +13,7 @@ interface SolutionDetailPanelProps {
   solution: SolutionData
   encounters: EncounterMap
   onClose: () => void
+  onEdit?: () => void
 }
 
 export function SolutionDetailPanel({
@@ -21,6 +22,7 @@ export function SolutionDetailPanel({
   solution,
   encounters,
   onClose,
+  onEdit,
 }: SolutionDetailPanelProps) {
   const usedInEncounters = useMemo(() => {
     const matches: Array<{ key: string; encounter: EncounterData }> = []
@@ -72,6 +74,7 @@ export function SolutionDetailPanel({
       ]}
       rawJson={solution}
       onClose={onClose}
+      onEdit={onEdit}
     >
       {usedInEncounters.length > 0 && (
         <section className="border-b border-gold/10 pb-5">

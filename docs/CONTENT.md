@@ -26,6 +26,8 @@ The original game field spellings matter. In `EncounterData`, the actual code us
 
 An encounter editor can change its title, category, difficulty, reward and linked solution choices A–D. The detail panel resolves those references from the solution map and uses expansion data to display context. New encounter keys are zero-padded to five digits; the editor keeps an existing encounter's storage key when updating.
 
+Solutions, expansions, frames and portraits work the same way: each detail panel has an **Edit** button and each tab an **Add …** button, both opening the shared right-side editor (`ContentEditorPanel.tsx`). While editing, the ID (and with it the JSON key) is fixed; when adding, the editor warns if the ID already exists, since saving replaces that entry. The solution editor covers all eight solution fields.
+
 Image workflows include WebP conversion in browser-side utilities, optional title-derived encounter slugs, duplicate-name collision suffixes and file upload through the local plugin. Those are **local file operations**, not proof of a remote content-management backend. Any future art/gallery attribution must distinguish original game images from admin UI thumbnails.
 
 ## Player information is privileged, not portfolio material

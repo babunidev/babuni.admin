@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-21 — Editing everything, not only encounters
+
+I opened a solution in Morkahja's Content tab and found no way to edit it. Encounters had an Edit button, but solutions, expansions, frames and portraits didn't. Their editor was a form far down the page that I hadn't noticed. Claude Code (Claude Opus 5.5) gave every detail panel an Edit button and every tab an Add button, both opening the same side editor as the encounters. It also added the three solution fields the old form had left out.
+
 ## 2026-11-20 — babuni.dev wasn't forgotten
 
 The Project Manager said babuni.dev had waited longest, seven days, although I had worked on it all day. Claude Code (Claude Opus 5.5) found that babuni.dev writes its newest changelog entries one heading level deeper, under "Unreleased", and the reader skipped them. It now reads those too, so babuni.dev shows its real last day of work.

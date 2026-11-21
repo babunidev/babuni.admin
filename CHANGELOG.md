@@ -1,4 +1,11 @@
 # Babuni Admin — Changelog
+## 2026-11-21 — Edit button for solutions, expansions, frames and portraits
+
+- Only encounters had an Edit button. The other four tabs had an "Add or edit" form at the bottom of the page, and its "Edit “…”" button appeared only there, not in the detail panel you open by clicking an item. Every detail panel now has an **Edit** button in its header, and every tab has an **Add …** button. Both open the same right-side editor the encounters use (`src/features/morkahja/components/ContentEditorPanel.tsx`), and the bottom forms are gone. Claude Code (Claude Opus 5.5).
+- When editing, the ID is fixed, so an edit cannot accidentally create a copy under a new key; when adding, the editor warns if the ID already belongs to an entry, because saving would replace it. A failed save shows its error in the editor and keeps it open; a successful save closes it and the detail panel shows the new values.
+- The solution editor now covers every field: type, inventory type and reward type were missing (with type and reward labels from `gameDataReference.ts`). The editors show the current image from the live server next to its upload field.
+- Saving still goes through the same `create*` functions and the same live-write and GitHub path as before; nothing changed on the server side. Checked against a temporary copy of `tests/fixtures/legacy/` with Vite alone (no connection service, so no live access): the content browser suite passes 7/7, including two new tests that open each detail panel, click Edit and save. The eighth test in that file, the Connection screen, needs the connection service and was not run. Unit suite 137/137, lint and build pass. Not yet tried against the live game.
+
 ## 2026-11-20 — Project Manager reads dated `###` changelog entries
 
 - babuni.dev keeps its newest entries as `### Changed — … (2026-11-19)` headings under `## [Unreleased]`. Only `##` headings were read, so the Project Manager took the newest dated release heading (2026-11-13), showed "7 days ago" and asked for revision although the project had been worked on that day. Dated `###` headings now count too; an entry's text ends at the next heading of the same or a higher level. Claude Code (Claude Opus 5.5).

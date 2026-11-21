@@ -5,6 +5,7 @@ import { localConnectionApi } from '../../../shared/services/localConnectionClie
 import { activateMorkahjaConnection } from '../../../shared/services/morkahjaConnection'
 import { useMorkahjaImageCacheStatus } from '../../../shared/services/morkahjaImageCacheStatus'
 import { ContentDetailPanel } from '../components/ContentDetailPanel'
+import { ContentEditorPanel } from '../components/ContentEditorPanel'
 import { RemoteContentImage } from '../components/RemoteContentImage'
 import {
   ContentImageGrid,
@@ -16,7 +17,11 @@ import { PageHeader } from '../../../shared/components/PageHeader'
 import { SolutionDetailPanel } from '../components/SolutionDetailPanel'
 import { Table, type Column } from '../../../shared/components/Table'
 import { buildEncounterDetail } from '../utils/encounterDetail'
-import { createDefaultEncounterDraft } from '../utils/gameDataReference'
+import {
+  createDefaultEncounterDraft,
+  formatRewardTypeLabel,
+  formatSolutionTypeLabel,
+} from '../utils/gameDataReference'
 import {
   formatGenderId,
   formatRaceId,
@@ -87,10 +92,12 @@ function liveImageUploader(
 
 import type {
   EncounterData,
+  EncounterMap,
   ExpansionData,
   FrameData,
   PortraitData,
   SolutionData,
+  SolutionMap,
 } from '../types/gameContent'
 
 type Tab = 'encounters' | 'solutions' | 'expansions' | 'frames' | 'portraits'
@@ -105,14 +112,17 @@ const tabs: { id: Tab; label: string }[] = [
 
 function Field({
   label,
+  hint,
   children,
 }: {
   label: string
+  hint?: string
   children: ReactNode
 }) {
   return (
     <label className="block text-sm text-fog">
       {label}
+      {hint && <span className="mt-0.5 block text-xs text-fog/80">{hint}</span>}
       <div className="mt-1">{children}</div>
     </label>
   )
@@ -237,28 +247,6 @@ export function ContentPage() {
   }, [encountersQuery.data, search])
   const encounterTotal = Object.keys(encountersQuery.data ?? {}).length
 
-  const solutionGridItems = useMemo((): ContentGridItem[] => {
-    const map = solutionsQuery.data ?? {}
-    const q = search.toLowerCase()
-    return Object.entries(map)
-      .filter(([key, row]) => {
-        if (!q) return true
-        return (
-          key.includes(q) ||
-          row.mSolutionName.toLowerCase().includes(q) ||
-          String(row.mSolutionID).includes(q) ||
-          row.mSolutionIconName.toLowerCase().includes(q)
-        )
-      })
-      .map(([key, row]) => ({
-        id: key,
-        imageSrc: solutionImageUrl(row.mSolutionIconName),
-        remoteKind: 'solution',
-        remoteName: row.mSolutionIconName,
-        title: row.mSolutionName,
-      }))
-  }, [solutionsQuery.data, search])
-
   const selectedEncounterDetail = useMemo(() => {
     if (detailKind !== 'encounters' || !itemKey || !encountersQuery.data) {
       return null
@@ -279,15 +267,6 @@ export function ContentPage() {
     solutionsQuery.data,
     expansionsQuery.data,
   ])
-
-  const selectedSolution = useMemo(() => {
-    if (detailKind !== 'solutions' || !itemKey || !solutionsQuery.data) {
-      return null
-    }
-    const solution = solutionsQuery.data[itemKey]
-    if (!solution) return null
-    return { key: itemKey, solution }
-  }, [detailKind, itemKey, solutionsQuery.data])
 
   const encounterColumns: Column<(EncounterData & { key: string })>[] = [
     { key: 'key', header: 'Key', className: 'font-mono text-xs' },
@@ -355,17 +334,6 @@ export function ContentPage() {
     openEncounterEditor(key, data)
   }
 
-  const [solutionDraft, setSolutionDraft] = useState<SolutionData>({
-    mSolutionID: 90001,
-    mSolutionIconName: 'skill_learn',
-    mSolutionInventoryType: 1,
-    mSolutionName: 'New solution',
-    mSolutionRewardType: 1,
-    mSolutionText: '',
-    mSolutionType: 1,
-    mSolutionUses: 1,
-  })
-
   const saveEncounter = useMutation({
     mutationFn: async () => {
       const isEdit = Boolean(encounterEditKey)
@@ -391,27 +359,6 @@ export function ContentPage() {
     },
   })
 
-  const saveSolution = useMutation({
-    mutationFn: async () => {
-      const key = String(solutionDraft.mSolutionID)
-      const wasEdit = Boolean(solutionsQuery.data?.[key])
-      const report = await createSolution(key, solutionDraft)
-      return { report, wasEdit }
-    },
-    onSuccess: ({ report, wasEdit }) => {
-      if (report) {
-        setSaveResult(catalogSaveResult('Solution', solutionDraft.mSolutionName, wasEdit, report))
-      } else setStatus(useLocalContent
-        ? 'Solution saved to solutiondata.json on disk.'
-        : 'Solution saved on VPS.')
-      void queryClient.invalidateQueries({ queryKey: ['content', 'solutions'] })
-    },
-    onError: (err: Error) => {
-      if (contentProfileId) {
-        setSaveResult(catalogFailureResult('Solution', solutionDraft.mSolutionName, err))
-      } else setStatus(err.message)
-    },
-  })
   const refreshImages = () => {
     void queryClient.invalidateQueries({ queryKey: ['content'] })
   }
@@ -595,150 +542,19 @@ export function ContentPage() {
       )}
 
       {activeTab === 'solutions' && (
-        <div className="space-y-8">
-          <p className="text-xs text-fog/80">
-            Click an icon to view full description and linked encounters.
-          </p>
-          <ContentImageGrid
-            profileId={contentProfileId}
-            items={solutionGridItems}
-            selectedId={detailKind === 'solutions' ? itemKey : undefined}
-            onSelect={(key) => openItem('solutions', key)}
-            emptyMessage="No solutions loaded."
-          />
-          {detailKind === 'solutions' && selectedSolution && (
-            <SolutionDetailPanel
-              profileId={contentProfileId}
-              keyId={selectedSolution.key}
-              solution={selectedSolution.solution}
-              encounters={encountersQuery.data ?? {}}
-              onClose={closeDetail}
-            />
-          )}
-          {detailKind === 'solutions' &&
-            itemKey &&
-            !selectedSolution &&
-            !solutionsQuery.isLoading && (
-              <p className="text-sm text-red-300/90">
-                Solution &quot;{itemKey}&quot; not found.
-              </p>
-            )}
-          <section className="rounded-lg border border-gold/15 bg-slate/50 p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-sm uppercase tracking-widest text-gold-bright">
-                Add or edit solution
-              </h2>
-              {selectedSolution && (
-                <button
-                  type="button"
-                  onClick={() => setSolutionDraft({ ...selectedSolution.solution })}
-                  className="rounded border border-gold/25 px-3 py-1 text-xs text-gold-bright hover:bg-gold/15"
-                >
-                  Edit “{selectedSolution.solution.mSolutionName}”
-                </button>
-              )}
-            </div>
-            <p className="mt-1 text-xs text-fog">
-              {contentProfileId
-                ? 'Saving with an existing ID replaces that solution in the live game. The icon goes to solutionimages/ on the server.'
-                : 'Saves to solutiondata.json and solutionimages/ on disk.'}
-            </p>
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <Field label="ID">
-                <input
-                  type="number"
-                  className={inputClass}
-                  value={solutionDraft.mSolutionID}
-                  onChange={(e) =>
-                    setSolutionDraft((d) => ({
-                      ...d,
-                      mSolutionID: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-              <Field label="Name">
-                <input
-                  className={inputClass}
-                  value={solutionDraft.mSolutionName}
-                  onChange={(e) =>
-                    setSolutionDraft((d) => ({
-                      ...d,
-                      mSolutionName: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-              <Field label="Icon name">
-                <input
-                  className={inputClass}
-                  value={solutionDraft.mSolutionIconName}
-                  onChange={(e) =>
-                    setSolutionDraft((d) => ({
-                      ...d,
-                      mSolutionIconName: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-              {contentProfileId ? (
-                <ImageUploadField
-                  label="Upload solution icon (saved under the icon name)"
-                  fileName={solutionDraft.mSolutionIconName}
-                  onUpload={liveImageUploader(
-                    setSaveResult,
-                    refreshImages,
-                    'solution',
-                    solutionDraft.mSolutionIconName,
-                    'exact',
-                  )}
-                />
-              ) : useLocalContent && (
-                <ImageUploadField
-                  label="Upload solution icon (.webp)"
-                  fileName={solutionDraft.mSolutionIconName}
-                  onUpload={(file) =>
-                    uploadSolutionImage(solutionDraft.mSolutionIconName, file)
-                  }
-                />
-              )}
-              <Field label="Uses">
-                <input
-                  type="number"
-                  className={inputClass}
-                  value={solutionDraft.mSolutionUses}
-                  onChange={(e) =>
-                    setSolutionDraft((d) => ({
-                      ...d,
-                      mSolutionUses: Number(e.target.value),
-                    }))
-                  }
-                />
-              </Field>
-              <Field label="Text">
-                <textarea
-                  className={inputClass}
-                  rows={3}
-                  value={solutionDraft.mSolutionText}
-                  onChange={(e) =>
-                    setSolutionDraft((d) => ({
-                      ...d,
-                      mSolutionText: e.target.value,
-                    }))
-                  }
-                />
-              </Field>
-            </div>
-            <button
-              type="button"
-              disabled={saveSolution.isPending}
-              onClick={() => saveSolution.mutate()}
-              className="mt-4 rounded border border-gold/30 bg-gold/15 px-4 py-2 text-sm text-gold-bright disabled:opacity-50"
-            >
-              Save solution
-            </button>
-          </section>
-        </div>
+        <SolutionsPanel
+          profileId={contentProfileId}
+          data={solutionsQuery.data ?? {}}
+          encounters={encountersQuery.data ?? {}}
+          isLoading={solutionsQuery.isLoading}
+          search={search}
+          selectedKey={detailKind === 'solutions' ? itemKey : undefined}
+          onSelect={(key) => openItem('solutions', key)}
+          onCloseDetail={closeDetail}
+          detailKey={detailKind === 'solutions' ? itemKey : undefined}
+          onStatus={setStatus}
+          onResult={setSaveResult}
+        />
       )}
 
       {activeTab === 'expansions' && (
@@ -793,22 +609,25 @@ export function ContentPage() {
   )
 }
 
-/** Save handling shared by the expansion, frame and portrait editors. */
+/** Save handling shared by the solution, expansion, frame and portrait editors. */
 function usePanelSave<T>({
   kind,
   queryName,
   profileId,
   onStatus,
   onResult,
+  onSaved,
   save,
   nameOf,
   exists,
 }: {
-  kind: 'Expansion' | 'Frame' | 'Portrait'
+  kind: 'Solution' | 'Expansion' | 'Frame' | 'Portrait'
   queryName: string
   profileId?: string
   onStatus: (msg: string) => void
   onResult: ShowResult
+  /** Runs after a successful save, e.g. to close the editor. */
+  onSaved?: () => void
   save: (draft: T) => Promise<CatalogSaveReport | undefined>
   nameOf: (draft: T) => string
   exists: (draft: T) => boolean
@@ -817,6 +636,7 @@ function usePanelSave<T>({
   return useMutation({
     mutationFn: async (draft: T) => ({ draft, wasEdit: exists(draft), report: await save(draft) }),
     onSuccess: ({ draft, wasEdit, report }) => {
+      onSaved?.()
       if (report) onResult(catalogSaveResult(kind, nameOf(draft), wasEdit, report))
       else onStatus(`${kind} saved.`)
       void queryClient.invalidateQueries({ queryKey: ['content', queryName] })
@@ -828,21 +648,41 @@ function usePanelSave<T>({
   })
 }
 
+/** Which item the side editor is working on; `null` while it is closed. */
+type EditorState<T> = { mode: 'add' | 'edit'; draft: T } | null
+
+function useEditorState<T>() {
+  const [editor, setEditor] = useState<EditorState<T>>(null)
+  return {
+    editor,
+    openAdd: (draft: T) => setEditor({ mode: 'add', draft }),
+    openEdit: (draft: T) => setEditor({ mode: 'edit', draft: { ...draft } }),
+    close: () => setEditor(null),
+    patch: (next: Partial<T>) =>
+      setEditor((current) => current && { ...current, draft: { ...current.draft, ...next } }),
+  }
+}
+
 function NumberField({
   label,
   value,
   onChange,
+  hint,
+  disabled,
 }: {
   label: string
   value: number
   onChange: (value: number) => void
+  hint?: string
+  disabled?: boolean
 }) {
   return (
-    <Field label={label}>
+    <Field label={label} hint={hint}>
       <input
         type="number"
-        className={inputClass}
+        className={`${inputClass} disabled:opacity-60`}
         value={Number.isFinite(value) ? value : 0}
+        disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
       />
     </Field>
@@ -865,38 +705,74 @@ function TextField({
   )
 }
 
-function EditorHeader({
-  title,
-  loadLabel,
-  onLoad,
-  hint,
+function TextAreaField({
+  label,
+  value,
+  onChange,
+  rows = 5,
 }: {
-  title: string
-  loadLabel?: string
-  onLoad?: () => void
-  hint: string
+  label: string
+  value: string
+  onChange: (value: string) => void
+  rows?: number
 }) {
   return (
+    <Field label={label}>
+      <textarea
+        className={inputClass}
+        rows={rows}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </Field>
+  )
+}
+
+/** Hint line above a grid with the tab's "Add …" button on the right. */
+function PanelIntro({
+  hint,
+  addLabel,
+  onAdd,
+}: {
+  hint: string
+  addLabel: string
+  onAdd: () => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p className="text-xs text-fog/80">{hint}</p>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="shrink-0 rounded border border-gold/30 bg-gold/15 px-4 py-2 text-sm text-gold-bright transition hover:bg-gold/25"
+      >
+        {addLabel}
+      </button>
+    </div>
+  )
+}
+
+const idHint = (mode: 'add' | 'edit') =>
+  mode === 'edit' ? 'Fixed while editing — the entry keeps its ID.' : undefined
+
+/** Warns when a new entry's ID already belongs to an existing one. */
+function replaceWarning(mode: 'add' | 'edit', existingName: string | undefined, id: number) {
+  return mode === 'add' && existingName !== undefined
+    ? `ID ${id} already belongs to “${existingName}”. Saving replaces it.`
+    : null
+}
+
+function editorSubtitle(mode: 'add' | 'edit', fileName: string, key: string | number) {
+  return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm uppercase tracking-widest text-gold-bright">{title}</h2>
-        {onLoad && loadLabel && (
-          <button
-            type="button"
-            onClick={onLoad}
-            className="rounded border border-gold/25 px-3 py-1 text-xs text-gold-bright hover:bg-gold/15"
-          >
-            Edit “{loadLabel}”
-          </button>
-        )}
-      </div>
-      <p className="mt-1 text-xs text-fog">{hint}</p>
+      {mode === 'edit' ? 'Updates' : 'Saves as'} key{' '}
+      <span className="font-mono text-parchment">{key}</span> in {fileName}
     </>
   )
 }
 
-const saveButtonClass =
-  'mt-4 rounded border border-gold/30 bg-gold/15 px-4 py-2 text-sm text-gold-bright disabled:opacity-50'
+const errorText = (error: unknown) =>
+  error instanceof Error ? describeSaveError(error.message) : null
 
 interface PanelProps<Row> {
   profileId?: string
@@ -914,6 +790,188 @@ function useImageRefresh() {
   const queryClient = useQueryClient()
   return () => void queryClient.invalidateQueries({ queryKey: ['content'] })
 }
+
+const newSolution = (): SolutionData => ({
+  mSolutionID: 90001,
+  mSolutionIconName: 'skill_learn',
+  mSolutionInventoryType: 1,
+  mSolutionName: 'New solution',
+  mSolutionRewardType: 1,
+  mSolutionText: '',
+  mSolutionType: 1,
+  mSolutionUses: 1,
+})
+
+function SolutionsPanel({
+  profileId,
+  data,
+  encounters,
+  isLoading,
+  search,
+  selectedKey,
+  onSelect,
+  onCloseDetail,
+  detailKey,
+  onStatus,
+  onResult,
+}: PanelProps<SolutionMap> & { encounters: EncounterMap; isLoading: boolean }) {
+  const q = search.toLowerCase()
+  const gridItems: ContentGridItem[] = Object.entries(data)
+    .filter(([key, row]) => {
+      if (!q) return true
+      return (
+        key.includes(q) ||
+        row.mSolutionName.toLowerCase().includes(q) ||
+        String(row.mSolutionID).includes(q) ||
+        row.mSolutionIconName.toLowerCase().includes(q)
+      )
+    })
+    .map(([key, row]) => ({
+      id: key,
+      imageSrc: solutionImageUrl(row.mSolutionIconName),
+      remoteKind: 'solution',
+      remoteName: row.mSolutionIconName,
+      title: row.mSolutionName,
+    }))
+
+  const selected = detailKey ? data[detailKey] : undefined
+  const { editor, openAdd, openEdit, close, patch } = useEditorState<SolutionData>()
+  const refreshImages = useImageRefresh()
+
+  const save = usePanelSave<SolutionData>({
+    kind: 'Solution',
+    queryName: 'solutions',
+    profileId,
+    onStatus,
+    onResult,
+    onSaved: close,
+    save: (d) => createSolution(String(d.mSolutionID), d),
+    nameOf: (d) => d.mSolutionName,
+    exists: (d) => Object.hasOwn(data, String(d.mSolutionID)),
+  })
+
+  const draft = editor?.draft
+  return (
+    <div className="space-y-6">
+      <PanelIntro
+        hint="Click an icon to view its description and linked encounters, then Edit to change it."
+        addLabel="Add solution"
+        onAdd={() => {
+          if (detailKey) onCloseDetail()
+          save.reset()
+          openAdd(newSolution())
+        }}
+      />
+      <ContentImageGrid
+        profileId={profileId}
+        items={gridItems}
+        selectedId={selectedKey}
+        onSelect={onSelect}
+        emptyMessage="No solutions loaded."
+      />
+      {selected && detailKey && !editor && (
+        <SolutionDetailPanel
+          profileId={profileId}
+          keyId={detailKey}
+          solution={selected}
+          encounters={encounters}
+          onClose={onCloseDetail}
+          onEdit={() => {
+            save.reset()
+            openEdit(selected)
+          }}
+        />
+      )}
+      {detailKey && !selected && !isLoading && (
+        <p className="text-sm text-red-300/90">Solution &quot;{detailKey}&quot; not found.</p>
+      )}
+      {editor && draft && (
+        <ContentEditorPanel
+          title={editor.mode === 'edit' ? 'Edit solution' : 'Add solution'}
+          subtitle={editorSubtitle(editor.mode, 'solutiondata.json', draft.mSolutionID)}
+          saveLabel={editor.mode === 'edit' ? 'Save changes' : 'Save solution'}
+          isSaving={save.isPending}
+          saveError={errorText(save.error)}
+          warning={replaceWarning(editor.mode, data[String(draft.mSolutionID)]?.mSolutionName, draft.mSolutionID)}
+          onSave={() => save.mutate(draft)}
+          onClose={close}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <NumberField
+              label="ID"
+              hint={idHint(editor.mode)}
+              disabled={editor.mode === 'edit'}
+              value={draft.mSolutionID}
+              onChange={(v) => patch({ mSolutionID: v })}
+            />
+            <TextField label="Name" value={draft.mSolutionName} onChange={(v) => patch({ mSolutionName: v })} />
+            <NumberField
+              label={`Type (${formatSolutionTypeLabel(draft.mSolutionType)})`}
+              value={draft.mSolutionType}
+              onChange={(v) => patch({ mSolutionType: v })}
+            />
+            <NumberField label="Uses" value={draft.mSolutionUses} onChange={(v) => patch({ mSolutionUses: v })} />
+            <NumberField
+              label="Inventory type"
+              value={draft.mSolutionInventoryType}
+              onChange={(v) => patch({ mSolutionInventoryType: v })}
+            />
+            <NumberField
+              label={`Reward type (${formatRewardTypeLabel(draft.mSolutionRewardType)})`}
+              value={draft.mSolutionRewardType}
+              onChange={(v) => patch({ mSolutionRewardType: v })}
+            />
+          </div>
+          <TextAreaField label="Text" value={draft.mSolutionText} onChange={(v) => patch({ mSolutionText: v })} />
+          <TextField
+            label="Icon name"
+            value={draft.mSolutionIconName}
+            onChange={(v) => patch({ mSolutionIconName: v })}
+          />
+          {profileId && draft.mSolutionIconName && (
+            <RemoteContentImage
+              profileId={profileId}
+              kind="solution"
+              name={draft.mSolutionIconName}
+              className="h-24 w-24 rounded-lg border border-gold/15 object-cover"
+            />
+          )}
+          {profileId ? (
+            <ImageUploadField
+              label="Upload solution icon (saved under the icon name)"
+              fileName={draft.mSolutionIconName}
+              onUpload={liveImageUploader(onResult, refreshImages, 'solution', draft.mSolutionIconName, 'exact')}
+            />
+          ) : useLocalContent && (
+            <ImageUploadField
+              label="Upload solution icon (.webp)"
+              fileName={draft.mSolutionIconName}
+              onUpload={(file) => uploadSolutionImage(draft.mSolutionIconName, file)}
+            />
+          )}
+          <p className="text-xs text-fog">
+            {profileId
+              ? 'A new icon goes straight to solutionimages/ on the live server; the other fields change only when you save.'
+              : 'Saves to solutiondata.json and solutionimages/ on disk.'}
+          </p>
+        </ContentEditorPanel>
+      )}
+    </div>
+  )
+}
+
+const newExpansion = (): ExpansionData => ({
+  mExtensioActive: true,
+  mExtensioCollectionImage: 'im_collection_expansion_new',
+  mExtensioCost: 50,
+  mExtensioHeaderImage: 'im_header_expansion_new',
+  mExtensioID: 1010,
+  mExtensioName: 'New expansion',
+  mExtensioReward: 20,
+  mExtensioSummaryText: 'New content pack',
+  mExtensioText: '',
+  mExtensioUnlockButton: 'im_unlock_expansion_new',
+})
 
 function ExpansionPanel({
   profileId,
@@ -945,20 +1003,7 @@ function ExpansionPanel({
   }))
 
   const selected = detailKey ? data[detailKey] : undefined
-
-  const [draft, setDraft] = useState<ExpansionData>({
-    mExtensioActive: true,
-    mExtensioCollectionImage: 'im_collection_expansion_new',
-    mExtensioCost: 50,
-    mExtensioHeaderImage: 'im_header_expansion_new',
-    mExtensioID: 1010,
-    mExtensioName: 'New expansion',
-    mExtensioReward: 20,
-    mExtensioSummaryText: 'New content pack',
-    mExtensioText: '',
-    mExtensioUnlockButton: 'im_unlock_expansion_new',
-  })
-  const patch = (next: Partial<ExpansionData>) => setDraft((d) => ({ ...d, ...next }))
+  const { editor, openAdd, openEdit, close, patch } = useEditorState<ExpansionData>()
   const refreshImages = useImageRefresh()
 
   const save = usePanelSave<ExpansionData>({
@@ -967,19 +1012,33 @@ function ExpansionPanel({
     profileId,
     onStatus,
     onResult,
+    onSaved: close,
     save: (d) => createExpansion(String(d.mExtensioID), d),
     nameOf: (d) => d.mExtensioName,
     exists: (d) => Object.hasOwn(data, String(d.mExtensioID)),
   })
 
-  const imageField = (label: string, field: 'mExtensioCollectionImage' | 'mExtensioHeaderImage' | 'mExtensioUnlockButton') => (
-    <div className="space-y-2">
-      <TextField label={`${label} (no .webp)`} value={draft[field]} onChange={(v) => patch({ [field]: v })} />
+  const draft = editor?.draft
+  const imageField = (
+    current: ExpansionData,
+    label: string,
+    field: 'mExtensioCollectionImage' | 'mExtensioHeaderImage' | 'mExtensioUnlockButton',
+  ) => (
+    <div className="space-y-2 rounded-lg border border-gold/10 bg-void/30 p-3">
+      <TextField label={`${label} (no .webp)`} value={current[field]} onChange={(v) => patch({ [field]: v })} />
+      {profileId && current[field] && (
+        <RemoteContentImage
+          profileId={profileId}
+          kind="expansion"
+          name={current[field]}
+          className="max-h-32 w-full rounded border border-gold/15 object-contain"
+        />
+      )}
       {profileId && (
         <ImageUploadField
           label={`Upload ${label.toLowerCase()}`}
-          fileName={draft[field]}
-          onUpload={liveImageUploader(onResult, refreshImages, 'expansion', draft[field], 'exact')}
+          fileName={current[field]}
+          onUpload={liveImageUploader(onResult, refreshImages, 'expansion', current[field], 'exact')}
         />
       )}
     </div>
@@ -987,9 +1046,15 @@ function ExpansionPanel({
 
   return (
     <div className="space-y-6">
-      <p className="text-xs text-fog/80">
-        Click an image to view expansion text, costs, and assets.
-      </p>
+      <PanelIntro
+        hint="Click an image to view expansion text, costs and assets, then Edit to change it."
+        addLabel="Add expansion"
+        onAdd={() => {
+          if (detailKey) onCloseDetail()
+          save.reset()
+          openAdd(newExpansion())
+        }}
+      />
       <ContentImageGrid
         profileId={profileId}
         items={gridItems}
@@ -998,7 +1063,7 @@ function ExpansionPanel({
         columns="wide"
         emptyMessage="No expansions loaded."
       />
-      {selected && detailKey && (
+      {selected && detailKey && !editor && (
         <ContentDetailPanel
           title={selected.mExtensioName}
           subtitle={`Key ${detailKey} · ID ${selected.mExtensioID}`}
@@ -1033,22 +1098,37 @@ function ExpansionPanel({
           ]}
           rawJson={selected}
           onClose={onCloseDetail}
+          onEdit={() => {
+            save.reset()
+            openEdit(selected)
+          }}
         />
       )}
-      <section className="rounded-lg border border-gold/15 bg-slate/50 p-5">
-        <EditorHeader
-          title="Add or edit expansion"
-          loadLabel={selected?.mExtensioName}
-          onLoad={selected ? () => setDraft({ ...selected }) : undefined}
-          hint="The ID is also the JSON key. Saving with an existing ID replaces that expansion."
-        />
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <TextField label="Name" value={draft.mExtensioName} onChange={(v) => patch({ mExtensioName: v })} />
-          <NumberField label="ID" value={draft.mExtensioID} onChange={(v) => patch({ mExtensioID: v })} />
-          <NumberField label="Gem cost" value={draft.mExtensioCost} onChange={(v) => patch({ mExtensioCost: v })} />
-          <NumberField label="Reward ID" value={draft.mExtensioReward} onChange={(v) => patch({ mExtensioReward: v })} />
+      {editor && draft && (
+        <ContentEditorPanel
+          title={editor.mode === 'edit' ? 'Edit expansion' : 'Add expansion'}
+          subtitle={editorSubtitle(editor.mode, 'expansiondata.json', draft.mExtensioID)}
+          saveLabel={editor.mode === 'edit' ? 'Save changes' : 'Save expansion'}
+          isSaving={save.isPending}
+          saveError={errorText(save.error)}
+          warning={replaceWarning(editor.mode, data[String(draft.mExtensioID)]?.mExtensioName, draft.mExtensioID)}
+          onSave={() => save.mutate(draft)}
+          onClose={close}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Name" value={draft.mExtensioName} onChange={(v) => patch({ mExtensioName: v })} />
+            <NumberField
+              label="ID"
+              hint={idHint(editor.mode)}
+              disabled={editor.mode === 'edit'}
+              value={draft.mExtensioID}
+              onChange={(v) => patch({ mExtensioID: v })}
+            />
+            <NumberField label="Gem cost" value={draft.mExtensioCost} onChange={(v) => patch({ mExtensioCost: v })} />
+            <NumberField label="Reward ID" value={draft.mExtensioReward} onChange={(v) => patch({ mExtensioReward: v })} />
+          </div>
           <TextField label="Summary" value={draft.mExtensioSummaryText} onChange={(v) => patch({ mExtensioSummaryText: v })} />
-          <label className="flex items-center gap-2 self-end text-sm text-fog">
+          <label className="flex items-center gap-2 text-sm text-fog">
             <input
               type="checkbox"
               checked={draft.mExtensioActive}
@@ -1056,32 +1136,23 @@ function ExpansionPanel({
             />
             Active in shop
           </label>
-          <div className="md:col-span-2">
-            <Field label="Description">
-              <textarea
-                className={inputClass}
-                rows={4}
-                value={draft.mExtensioText}
-                onChange={(e) => patch({ mExtensioText: e.target.value })}
-              />
-            </Field>
-          </div>
-          {imageField('Collection image', 'mExtensioCollectionImage')}
-          {imageField('Header image', 'mExtensioHeaderImage')}
-          {imageField('Unlock button', 'mExtensioUnlockButton')}
-        </div>
-        <button
-          type="button"
-          disabled={save.isPending}
-          onClick={() => save.mutate(draft)}
-          className={saveButtonClass}
-        >
-          {save.isPending ? 'Saving…' : 'Save expansion'}
-        </button>
-      </section>
+          <TextAreaField label="Description" rows={6} value={draft.mExtensioText} onChange={(v) => patch({ mExtensioText: v })} />
+          {imageField(draft, 'Collection image', 'mExtensioCollectionImage')}
+          {imageField(draft, 'Header image', 'mExtensioHeaderImage')}
+          {imageField(draft, 'Unlock button', 'mExtensioUnlockButton')}
+        </ContentEditorPanel>
+      )}
     </div>
   )
 }
+
+const newFrame = (): FrameData => ({
+  frameGem: 30,
+  frameID: 900,
+  frameRace: 0,
+  frameRole: 0,
+  frameType: 1,
+})
 
 function FramesPanel({
   profileId,
@@ -1117,15 +1188,7 @@ function FramesPanel({
   const selected = detailKey
     ? frames.find((row) => String(row.frameID) === detailKey)
     : undefined
-
-  const [draft, setDraft] = useState<FrameData>({
-    frameGem: 30,
-    frameID: 900,
-    frameRace: 0,
-    frameRole: 0,
-    frameType: 1,
-  })
-  const patch = (next: Partial<FrameData>) => setDraft((d) => ({ ...d, ...next }))
+  const { editor, openAdd, openEdit, close, patch } = useEditorState<FrameData>()
   const refreshImages = useImageRefresh()
 
   const save = usePanelSave<FrameData>({
@@ -1134,16 +1197,24 @@ function FramesPanel({
     profileId,
     onStatus,
     onResult,
+    onSaved: close,
     save: (d) => createFrame(d),
     nameOf: (d) => `#${d.frameID}`,
     exists: (d) => Boolean(data[d.frameID]),
   })
 
+  const draft = editor?.draft
   return (
     <div className="space-y-6">
-      <p className="text-xs text-fog/80">
-        Click a frame to view gem cost and race/role restrictions.
-      </p>
+      <PanelIntro
+        hint="Click a frame to view gem cost and race/role restrictions, then Edit to change it."
+        addLabel="Add frame"
+        onAdd={() => {
+          if (detailKey) onCloseDetail()
+          save.reset()
+          openAdd(newFrame())
+        }}
+      />
       <ContentImageGrid
         profileId={profileId}
         items={gridItems}
@@ -1151,7 +1222,7 @@ function FramesPanel({
         onSelect={onSelect}
         emptyMessage="No frames loaded."
       />
-      {selected && (
+      {selected && !editor && (
         <ContentDetailPanel
           title={`Frame ${selected.frameID}`}
           subtitle={`frames.json entry`}
@@ -1177,41 +1248,67 @@ function FramesPanel({
           ]}
           rawJson={selected}
           onClose={onCloseDetail}
+          onEdit={() => {
+            save.reset()
+            openEdit(selected)
+          }}
         />
       )}
-      <section className="rounded-lg border border-gold/15 bg-slate/50 p-5">
-        <EditorHeader
-          title="Add or edit frame"
-          loadLabel={selected ? `Frame ${selected.frameID}` : undefined}
-          onLoad={selected ? () => setDraft({ ...selected }) : undefined}
-          hint="Saving with an existing ID replaces that frame. Its picture is always frame_<ID>.webp."
-        />
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <NumberField label="Frame ID" value={draft.frameID} onChange={(v) => patch({ frameID: v })} />
-          <NumberField label="Gem cost" value={draft.frameGem} onChange={(v) => patch({ frameGem: v })} />
-          <NumberField label="Type" value={draft.frameType} onChange={(v) => patch({ frameType: v })} />
-          <NumberField label={`Race (${formatRaceId(draft.frameRace)})`} value={draft.frameRace} onChange={(v) => patch({ frameRace: v })} />
-          <NumberField label={`Role (${formatRoleId(draft.frameRole)})`} value={draft.frameRole} onChange={(v) => patch({ frameRole: v })} />
-          {profileId && (
-            <ImageUploadField
-              label={`Upload frame_${draft.frameID}.webp`}
-              fileName={`frame_${draft.frameID}`}
-              onUpload={liveImageUploader(onResult, refreshImages, 'frame', `frame_${draft.frameID}`, 'exact')}
-            />
-          )}
-        </div>
-        <button
-          type="button"
-          disabled={save.isPending}
-          onClick={() => save.mutate(draft)}
-          className={saveButtonClass}
+      {editor && draft && (
+        <ContentEditorPanel
+          title={editor.mode === 'edit' ? 'Edit frame' : 'Add frame'}
+          subtitle={editorSubtitle(editor.mode, 'frames.json', draft.frameID)}
+          saveLabel={editor.mode === 'edit' ? 'Save changes' : `Save frame #${draft.frameID}`}
+          isSaving={save.isPending}
+          saveError={errorText(save.error)}
+          warning={replaceWarning(editor.mode, data[draft.frameID] ? `Frame ${draft.frameID}` : undefined, draft.frameID)}
+          onSave={() => save.mutate(draft)}
+          onClose={close}
         >
-          {save.isPending ? 'Saving…' : `Save frame #${draft.frameID}`}
-        </button>
-      </section>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <NumberField
+              label="Frame ID"
+              hint={idHint(editor.mode)}
+              disabled={editor.mode === 'edit'}
+              value={draft.frameID}
+              onChange={(v) => patch({ frameID: v })}
+            />
+            <NumberField label="Gem cost" value={draft.frameGem} onChange={(v) => patch({ frameGem: v })} />
+            <NumberField label="Type" value={draft.frameType} onChange={(v) => patch({ frameType: v })} />
+            <NumberField label={`Race (${formatRaceId(draft.frameRace)})`} value={draft.frameRace} onChange={(v) => patch({ frameRace: v })} />
+            <NumberField label={`Role (${formatRoleId(draft.frameRole)})`} value={draft.frameRole} onChange={(v) => patch({ frameRole: v })} />
+          </div>
+          {profileId && (
+            <>
+              <RemoteContentImage
+                profileId={profileId}
+                kind="frame"
+                name={`frame_${draft.frameID}`}
+                className="h-32 w-32 rounded-lg border border-gold/15 object-contain"
+              />
+              <ImageUploadField
+                label={`Upload frame_${draft.frameID}.webp`}
+                fileName={`frame_${draft.frameID}`}
+                onUpload={liveImageUploader(onResult, refreshImages, 'frame', `frame_${draft.frameID}`, 'exact')}
+              />
+            </>
+          )}
+          <p className="text-xs text-fog">The picture is always frame_&lt;ID&gt;.webp.</p>
+        </ContentEditorPanel>
+      )}
     </div>
   )
 }
+
+const newPortrait = (): PortraitData => ({
+  avatarGems: 0,
+  avatarGenderID: 2,
+  avatarID: 900,
+  avatarName: 'New avatar',
+  avatarRace: 1,
+  avatarRole: 1,
+  avatarType: 0,
+})
 
 function PortraitsPanel({
   profileId,
@@ -1248,17 +1345,7 @@ function PortraitsPanel({
   const selected = detailKey
     ? portraits.find((row) => String(row.avatarID) === detailKey)
     : undefined
-
-  const [draft, setDraft] = useState<PortraitData>({
-    avatarGems: 0,
-    avatarGenderID: 2,
-    avatarID: 900,
-    avatarName: 'New avatar',
-    avatarRace: 1,
-    avatarRole: 1,
-    avatarType: 0,
-  })
-  const patch = (next: Partial<PortraitData>) => setDraft((d) => ({ ...d, ...next }))
+  const { editor, openAdd, openEdit, close, patch } = useEditorState<PortraitData>()
   const refreshImages = useImageRefresh()
 
   const save = usePanelSave<PortraitData>({
@@ -1267,16 +1354,24 @@ function PortraitsPanel({
     profileId,
     onStatus,
     onResult,
+    onSaved: close,
     save: (d) => createPortrait(d),
     nameOf: (d) => d.avatarName,
     exists: (d) => Boolean(data[d.avatarID]),
   })
 
+  const draft = editor?.draft
   return (
     <div className="space-y-6">
-      <p className="text-xs text-fog/80">
-        Click a portrait to view avatar stats and creation defaults.
-      </p>
+      <PanelIntro
+        hint="Click a portrait to view avatar stats and creation defaults, then Edit to change it."
+        addLabel="Add portrait"
+        onAdd={() => {
+          if (detailKey) onCloseDetail()
+          save.reset()
+          openAdd(newPortrait())
+        }}
+      />
       <ContentImageGrid
         profileId={profileId}
         items={gridItems}
@@ -1284,7 +1379,7 @@ function PortraitsPanel({
         onSelect={onSelect}
         emptyMessage="No portraits loaded."
       />
-      {selected && (
+      {selected && !editor && (
         <ContentDetailPanel
           title={selected.avatarName}
           subtitle={`Avatar ID ${selected.avatarID}`}
@@ -1306,40 +1401,56 @@ function PortraitsPanel({
           ]}
           rawJson={selected}
           onClose={onCloseDetail}
+          onEdit={() => {
+            save.reset()
+            openEdit(selected)
+          }}
         />
       )}
-      <section className="rounded-lg border border-gold/15 bg-slate/50 p-5">
-        <EditorHeader
-          title="Add or edit portrait"
-          loadLabel={selected?.avatarName}
-          onLoad={selected ? () => setDraft({ ...selected }) : undefined}
-          hint="Saving with an existing ID replaces that portrait. Its picture is always avatar_<ID>.webp."
-        />
-        <div className="mt-4 grid gap-4 md:grid-cols-3">
-          <TextField label="Avatar name" value={draft.avatarName} onChange={(v) => patch({ avatarName: v })} />
-          <NumberField label="Avatar ID" value={draft.avatarID} onChange={(v) => patch({ avatarID: v })} />
-          <NumberField label="Gem cost" value={draft.avatarGems} onChange={(v) => patch({ avatarGems: v })} />
-          <NumberField label={`Race (${formatRaceId(draft.avatarRace)})`} value={draft.avatarRace} onChange={(v) => patch({ avatarRace: v })} />
-          <NumberField label={`Role (${formatRoleId(draft.avatarRole)})`} value={draft.avatarRole} onChange={(v) => patch({ avatarRole: v })} />
-          <NumberField label={`Gender (${formatGenderId(draft.avatarGenderID)})`} value={draft.avatarGenderID} onChange={(v) => patch({ avatarGenderID: v })} />
-          <NumberField label="Type" value={draft.avatarType} onChange={(v) => patch({ avatarType: v })} />
-          {profileId && (
-            <ImageUploadField
-              label={`Upload avatar_${draft.avatarID}.webp`}
-              fileName={`avatar_${draft.avatarID}`}
-              onUpload={liveImageUploader(onResult, refreshImages, 'portrait', `avatar_${draft.avatarID}`, 'exact')}
-            />
-          )}
-        </div>
-        <button
-          type="button"
-          disabled={save.isPending}
-          onClick={() => save.mutate(draft)}
-          className={saveButtonClass}
+      {editor && draft && (
+        <ContentEditorPanel
+          title={editor.mode === 'edit' ? 'Edit portrait' : 'Add portrait'}
+          subtitle={editorSubtitle(editor.mode, 'portraits.json', draft.avatarID)}
+          saveLabel={editor.mode === 'edit' ? 'Save changes' : 'Save portrait'}
+          isSaving={save.isPending}
+          saveError={errorText(save.error)}
+          warning={replaceWarning(editor.mode, data[draft.avatarID]?.avatarName, draft.avatarID)}
+          onSave={() => save.mutate(draft)}
+          onClose={close}
         >
-          {save.isPending ? 'Saving…' : 'Save portrait'}
-        </button>
-      </section>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <TextField label="Avatar name" value={draft.avatarName} onChange={(v) => patch({ avatarName: v })} />
+            <NumberField
+              label="Avatar ID"
+              hint={idHint(editor.mode)}
+              disabled={editor.mode === 'edit'}
+              value={draft.avatarID}
+              onChange={(v) => patch({ avatarID: v })}
+            />
+            <NumberField label="Gem cost" value={draft.avatarGems} onChange={(v) => patch({ avatarGems: v })} />
+            <NumberField label="Type" value={draft.avatarType} onChange={(v) => patch({ avatarType: v })} />
+            <NumberField label={`Race (${formatRaceId(draft.avatarRace)})`} value={draft.avatarRace} onChange={(v) => patch({ avatarRace: v })} />
+            <NumberField label={`Role (${formatRoleId(draft.avatarRole)})`} value={draft.avatarRole} onChange={(v) => patch({ avatarRole: v })} />
+            <NumberField label={`Gender (${formatGenderId(draft.avatarGenderID)})`} value={draft.avatarGenderID} onChange={(v) => patch({ avatarGenderID: v })} />
+          </div>
+          {profileId && (
+            <>
+              <RemoteContentImage
+                profileId={profileId}
+                kind="portrait"
+                name={`avatar_${draft.avatarID}`}
+                className="h-40 w-40 rounded-lg border border-gold/15 object-contain"
+              />
+              <ImageUploadField
+                label={`Upload avatar_${draft.avatarID}.webp`}
+                fileName={`avatar_${draft.avatarID}`}
+                onUpload={liveImageUploader(onResult, refreshImages, 'portrait', `avatar_${draft.avatarID}`, 'exact')}
+              />
+            </>
+          )}
+          <p className="text-xs text-fog">The picture is always avatar_&lt;ID&gt;.webp.</p>
+        </ContentEditorPanel>
+      )}
     </div>
   )
 }

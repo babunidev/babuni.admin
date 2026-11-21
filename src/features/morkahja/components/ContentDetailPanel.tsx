@@ -17,6 +17,8 @@ interface ContentDetailPanelProps {
   textSection?: { title: string; body: string }
   rawJson?: object
   onClose: () => void
+  /** Shows an Edit button in the header that opens the item's editor. */
+  onEdit?: () => void
 }
 
 function DetailSection({
@@ -47,6 +49,7 @@ export function ContentDetailPanel({
   textSection,
   rawJson,
   onClose,
+  onEdit,
 }: ContentDetailPanelProps) {
   return (
     <>
@@ -71,13 +74,24 @@ export function ContentDetailPanel({
             </h2>
             {subtitle && <p className="mt-1 text-xs text-fog">{subtitle}</p>}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="shrink-0 rounded border border-gold/20 px-2 py-1 text-xs text-fog hover:bg-ash/60 hover:text-parchment"
-          >
-            Close
-          </button>
+          <div className="flex shrink-0 gap-2">
+            {onEdit && (
+              <button
+                type="button"
+                onClick={onEdit}
+                className="rounded border border-gold/30 bg-gold/15 px-3 py-1 text-xs text-gold-bright hover:bg-gold/25"
+              >
+                Edit
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded border border-gold/20 px-2 py-1 text-xs text-fog hover:bg-ash/60 hover:text-parchment"
+            >
+              Close
+            </button>
+          </div>
         </header>
 
         <div className="scrollbar-thin flex-1 overflow-y-auto px-5 py-5">
