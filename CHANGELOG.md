@@ -1,4 +1,10 @@
 # Babuni Admin — Changelog
+## 2026-11-21 — The save popup fades out, and Close answers the click
+
+- **Babuni's direction:** the popup should fade out on close as it fades in, and the Close button should give feedback when clicked. Close, Escape or a click beside the popup now fade it out and let it sink slightly over 0.26 s before it is gone. Reduced motion gives a plain fade. The Close button presses in (scales to 95 % and darkens) while clicked and stays pressed while the popup fades. On hover it glows faintly gold, and keyboard focus shows a soft gold ring instead of the browser's white outline. Claude Code (Claude Opus 5.5).
+- `SaveResultDialog` fades out on its own and only then calls `onClose`, keeping the latest `onClose` in a ref, so a parent re-render cannot restart the fade.
+- Verification: `tests/browser-save-progress.spec.mjs` now checks that the popup is still there and fading right after Close and is gone after the fade. It passes against Vite with synthetic data. Unit suite 144/144, lint and build pass. Screenshot at the moment of the click: `~/Pictures/Development Screenshots/babuni.admin/2026-11-21-babuni-admin-save-progress-closing.png`.
+
 ## 2026-11-21 — The save popup fades in and checks steps off one by one
 
 - **Babuni's direction:** no popping. The popup should fade in, the checks should arrive softly, and steps that finish together should still be checked off in order, top first. The popup and its card now fade and rise in, with its steps following one after another. A finished step's mark grows in with a small overshoot and a fading green ring. Finished steps are checked off one at a time, 380 ms apart and 450 ms after the popup opens, so a group finishing together reads as done, done, done. Until its check comes, a finished step shows its text faintly and only one hourglass shows, on the first unchecked step. The heading stays "Saving …" and Close stays disabled until the last check; then the final heading, subtitle and notes fade in. With reduced motion set in the system, everything fades and nothing moves. Claude Code (Claude Opus 5.5).

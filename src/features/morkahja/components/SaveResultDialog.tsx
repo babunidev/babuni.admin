@@ -33,6 +33,9 @@ const FIRST_CHECK_MS = 450
 /** Pause between two checks that are ready at the same time. */
 const NEXT_CHECK_MS = 380
 
+/** How long the popup takes to fade out before it is gone. */
+const CLOSE_MS = 260
+
 const finished = (step: SaveStep) => step.state !== 'pending' && step.state !== 'working'
 
 /**
@@ -40,7 +43,7 @@ const finished = (step: SaveStep) => step.state !== 'pending' && step.state !== 
  * an hourglass on the one in progress. Finished steps are checked off one at
  * a time from the top, even when several finish together, each mark settling
  * in softly. Once all are checked off, clicking beside it, pressing Escape or
- * the Close button dismisses it.
+ * the Close button fades it out, and then it is gone.
  */
 export function SaveResultDialog({
   result,
@@ -54,12 +57,15 @@ export function SaveResultDialog({
   /** How many steps, from the top, are shown as finished. */
   const [revealed, setRevealed] = useState(0)
   const [shownOpen, setShownOpen] = useState(open)
+  /** Fading out after Close; the parent is told once the fade is over. */
+  const [leaving, setLeaving] = useState(false)
   /** The heading the popup opened with, kept until the last check. */
   const [openingTitle, setOpeningTitle] = useState(result?.title ?? '')
   if (shownOpen !== open) {
     setShownOpen(open)
     if (open) {
       setRevealed(0)
+      setLeaving(false)
       setOpeningTitle(result?.title ?? '')
     }
   }
@@ -74,15 +80,25 @@ export function SaveResultDialog({
     return () => window.clearTimeout(timer)
   }, [nextReady, checked])
 
+  // The parent may pass a new onClose each render; that must not restart the fade.
+  const latestOnClose = useRef(onClose)
+  useEffect(() => { latestOnClose.current = onClose })
+  useEffect(() => {
+    if (!leaving) return
+    const timer = window.setTimeout(() => latestOnClose.current(), CLOSE_MS)
+    return () => window.clearTimeout(timer)
+  }, [leaving])
+  const close = () => setLeaving(true)
+
   useEffect(() => {
     if (!open || busy) return
     closeButton.current?.focus()
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') setLeaving(true)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [open, busy, onClose])
+  }, [open, busy])
 
   if (!result) return null
   const failed = steps.some((step) => step.state === 'failed')
@@ -97,9 +113,9 @@ export function SaveResultDialog({
 
   return (
     <div
-      className="save-backdrop-in fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-[2px]"
+      className={`${leaving ? 'save-backdrop-out pointer-events-none' : 'save-backdrop-in'} fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-[2px]`}
       onMouseDown={(event) => {
-        if (!busy && event.target === event.currentTarget) onClose()
+        if (!busy && event.target === event.currentTarget) close()
       }}
     >
       <div
@@ -107,7 +123,7 @@ export function SaveResultDialog({
         aria-modal="true"
         aria-labelledby="save-result-title"
         aria-busy={busy}
-        className={`save-card-in w-full max-w-lg rounded-lg border bg-slate p-6 shadow-2xl shadow-black/60 transition-colors duration-700 ${
+        className={`${leaving ? 'save-card-out' : 'save-card-in'} w-full max-w-lg rounded-lg border bg-slate p-6 shadow-2xl shadow-black/60 transition-colors duration-700 ${
           busy ? 'border-gold/30' : allFailed ? 'border-red-400/40' : failed ? 'border-amber-400/40' : 'border-gold/30'
         }`}
       >
@@ -178,9 +194,11 @@ export function SaveResultDialog({
           <button
             ref={closeButton}
             type="button"
-            onClick={onClose}
+            onClick={close}
             disabled={busy}
-            className="rounded border border-gold/30 bg-gold/15 px-4 py-1.5 text-sm text-gold-bright transition-opacity duration-500 hover:bg-gold/25 disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-gold/15"
+            className={`rounded border border-gold/30 bg-gold/15 px-4 py-1.5 text-sm text-gold-bright transition-[opacity,transform,background-color,box-shadow] duration-150 ease-out hover:bg-gold/25 hover:shadow-[0_0_12px_-2px] hover:shadow-gold/40 active:scale-95 active:bg-gold/35 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gold/60 disabled:cursor-wait disabled:opacity-50 disabled:hover:bg-gold/15 disabled:hover:shadow-none disabled:active:scale-100 ${
+              leaving ? 'scale-95 bg-gold/35' : ''
+            }`}
           >
             {busy ? 'Working…' : 'Close'}
           </button>

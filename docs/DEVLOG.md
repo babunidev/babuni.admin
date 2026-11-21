@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-21 — A soft goodbye
+
+The popup now arrived gently but vanished the instant I closed it, and the Close button gave no sign it had been pressed. Claude Code (Claude Opus 5.5) made the popup fade out the way it fades in, and the button press in under my click.
+
 ## 2026-11-21 — Done, done, done
 
 Seeing the steps was good, but they popped. I wanted the popup to fade in, and the checks to arrive softly and in order, even when several finish at the same moment. Claude Code (Claude Opus 5.5) made the popup and its steps fade in and each check grow in with a soft green ring, one after another from the top.

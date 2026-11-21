@@ -141,8 +141,13 @@ test('a live solution save lists every step at once and ticks them off in order'
     await page.getByRole('dialog', { name: 'Solution updated: Haggling' }).waitFor()
     await page.waitForTimeout(700)
     await shot(page, 'babuni-admin-save-progress-done')
+    // Close fades the popup out first, and only then is it gone.
+    const closedAt = Date.now()
     await done.getByRole('button', { name: 'Close' }).click()
-    await done.waitFor({ state: 'hidden' })
+    assert.equal(await page.locator('.save-card-out').count(), 1)
+    await shot(page, 'babuni-admin-save-progress-closing')
+    await page.locator('#save-result-title').waitFor({ state: 'detached' })
+    assert.ok(Date.now() - closedAt >= 200, 'the popup stays while it fades out')
     assert.ok(seen.upload)
     assert.deepEqual(errors, [])
   } finally { await context.close() }
