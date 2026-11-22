@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-22 — One missed push, stuck forever
+
+Saving Tidal Strike told me nothing reached GitHub because MorkahjaWebApp had "my own commits" waiting. They weren't mine: one earlier save's push had failed, and from then on every save mistook that leftover Admin commit for my unpublished work and held back, piling up more. Claude Code (Claude Opus 5.5) taught the save to tell its own earlier commits from mine and push them along with the next save, while anything I committed by hand still stops the push. **Verification:** 146/146 tests, lint and build; not yet seen live.
+
 ## 2026-11-21 — A soft goodbye
 
 The popup now arrived gently but vanished the instant I closed it, and the Close button gave no sign it had been pressed. Claude Code (Claude Opus 5.5) made the popup fade out the way it fades in, and the button press in under my click.

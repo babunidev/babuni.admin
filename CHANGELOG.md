@@ -1,4 +1,10 @@
 # Babuni Admin — Changelog
+## 2026-11-22 — One missed push no longer blocks every later save
+
+- **Babuni's direction:** saving Tidal Strike reported "Not pushed … your own commits that are not on GitHub yet" for the image and the record; find out why and fix it. Cause: the save before it (Lavastone Culinary, 13:40) pushed its image but its record commit `9c704344` did not reach GitHub (a failed or offline push). From then on every save counted that leftover Admin commit as Babuni's own unpublished work and refused to push, adding one more stuck commit each time. Claude Code (Claude Opus 5.5).
+- `local-service/morkahjaContentGit.mjs` now sorts local main's commits not on GitHub: an earlier Admin save (subject `Admin: `, one parent, only the five catalog files or WebP files in the five image folders) is pushed along with the next save, and the result carries `carried`; any other commit still holds the push back with `CONTENT_GIT_UNPUBLISHED`, now counting only those. The popup says "Pushed to main, together with N earlier Admin saves …", and the unpublished message says the held-back commits are not Admin saves.
+- Verification: two new tests (an Admin save made with `push: false` is pushed with the next one; an `Admin:`-named commit touching another file still blocks the push). Unit suite 146/146, lint and build pass. The three stuck commits in MorkahjaWebApp (`9c704344`, `9590d40d`, `a08719bf`) all match the rule, so the next save after restarting the local service should push them; not yet observed.
+
 ## 2026-11-21 — The save popup fades out, and Close answers the click
 
 - **Babuni's direction:** the popup should fade out on close as it fades in, and the Close button should give feedback when clicked. Close, Escape or a click beside the popup now fade it out and let it sink slightly over 0.26 s before it is gone. Reduced motion gives a plain fade. The Close button presses in (scales to 95 % and darkens) while clicked and stays pressed while the popup fades. On hover it glows faintly gold, and keyboard focus shows a soft gold ring instead of the browser's white outline. Claude Code (Claude Opus 5.5).

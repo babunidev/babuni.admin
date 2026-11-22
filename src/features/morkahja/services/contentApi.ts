@@ -72,6 +72,8 @@ export type ContentGitResult = {
   pushed?: boolean
   /** Local main's own commits not yet on GitHub, when that held the push back. */
   unpublished?: number
+  /** Earlier Admin saves that had missed GitHub and were pushed along with this one. */
+  carried?: number
   code?: string
   url?: string
 }

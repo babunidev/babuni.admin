@@ -59,7 +59,7 @@ export function describeSaveError(code: string): string {
       'MorkahjaWebApp is behind GitHub and could not catch up without touching your uncommitted edits; nothing was written locally.',
     CONTENT_GIT_OFFLINE: 'GitHub could not be reached; the commit stays in MorkahjaWebApp until you push.',
     CONTENT_GIT_UNPUBLISHED:
-      'MorkahjaWebApp main has your own commits that are not on GitHub yet, so nothing was pushed; push main when ready.',
+      'MorkahjaWebApp main has commits of your own (not Admin saves) that are not on GitHub yet, so nothing was pushed; push main when ready.',
   }
   return known[code] ? `${known[code]} (${code})` : code
 }
@@ -79,7 +79,9 @@ export function gitSteps(git: ContentGitResult | undefined): SaveStep[] {
       ? {
           label: 'GitHub',
           state: 'ok',
-          detail: `Pushed to main.`,
+          detail: git.carried
+            ? `Pushed to main, together with ${git.carried} earlier Admin ${git.carried === 1 ? 'save' : 'saves'} that had not reached GitHub yet.`
+            : `Pushed to main.`,
           href: git.url,
           hrefLabel: git.url ? 'Open the commit on GitHub' : undefined,
         }

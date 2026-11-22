@@ -152,6 +152,42 @@ async function divergence(repo) {
   return [behind || 0, ahead || 0]
 }
 
+const ADMIN_PATHS = [
+  ...Object.values(FILES).map((file) => `server/game/${file}`),
+  ...Object.values(IMAGE_FOLDERS).map((folder) => `client/public/${folder}/`),
+]
+
+/** A path one of these save functions writes. */
+function isAdminPath(path) {
+  return ADMIN_PATHS.some((allowed) => allowed.endsWith('/')
+    ? path.startsWith(allowed) && /^[A-Za-z0-9][A-Za-z0-9_-]{0,119}\.webp$/.test(path.slice(allowed.length))
+    : path === allowed)
+}
+
+/**
+ * Splits local main's commits not yet on GitHub into the ones an earlier
+ * Admin save made (an `Admin: ` subject, one parent, only catalog/image paths)
+ * and everything else. A save whose push failed once must not block every
+ * later save; Babuni's own work still is never sent along.
+ */
+async function unpublishedCommits(repo) {
+  const log = await git(['log', '--format=%H %P%x09%s', 'origin/main..HEAD'], repo)
+  let admin = 0
+  let other = 0
+  for (const line of log ? log.split('\n') : []) {
+    const [ids, subject = ''] = line.split('\t')
+    const [sha, ...parents] = ids.split(' ')
+    let ours = parents.length === 1 && subject.startsWith('Admin: ')
+    if (ours) {
+      const files = await git(['diff-tree', '--no-commit-id', '--name-only', '-r', sha], repo)
+      ours = files !== '' && files.split('\n').every(isAdminPath)
+    }
+    if (ours) admin += 1
+    else other += 1
+  }
+  return { admin, other }
+}
+
 async function commitFile(options, relative, update) {
   const repo = gameRepo(options)
   const file = join(repo, relative)
@@ -162,6 +198,7 @@ async function commitFile(options, relative, update) {
     // checkout is never rebased or reset; git refuses a fast-forward that would
     // touch their uncommitted edits, and then nothing is written.
     let unpublished = 0
+    let carried = 0
     let offline = false
     try {
       await git(['fetch', '-q', 'origin', 'main'], repo, 60000)
@@ -171,7 +208,7 @@ async function commitFile(options, relative, update) {
         try { await git(['merge', '--ff-only', '-q', 'origin/main'], repo) }
         catch { return { ok: false, code: 'CONTENT_GIT_BEHIND' } }
       }
-      unpublished = ahead
+      if (ahead > 0) ({ admin: carried, other: unpublished } = await unpublishedCommits(repo))
     } catch {
       offline = true
     }
@@ -189,7 +226,8 @@ async function commitFile(options, relative, update) {
     // Lets the save popup tick off the local commit while the push still runs.
     try { options.onCommitted?.(result) } catch { /* progress only */ }
 
-    // Local main's own unpublished commits are Babuni's to push; never send them along.
+    // Babuni's own unpublished commits are theirs to push; never send them along.
+    // Earlier Admin saves that missed GitHub (a failed or offline push) go with this one.
     if (options.push === false) return { ...result, pushed: false }
     if (offline) return { ...result, pushed: false, code: 'CONTENT_GIT_OFFLINE' }
     if (unpublished > 0) return { ...result, pushed: false, code: 'CONTENT_GIT_UNPUBLISHED', unpublished }
@@ -198,7 +236,7 @@ async function commitFile(options, relative, update) {
     } catch {
       return { ...result, pushed: false, code: 'CONTENT_GIT_PUSH_FAILED' }
     }
-    return { ...result, pushed: true }
+    return { ...result, pushed: true, ...(carried > 0 ? { carried } : {}) }
   } catch (error) {
     console.error('Morkahja content commit failed:', error?.stderr || error?.message || error)
     return { ok: false, code: 'CONTENT_GIT_FAILED' }

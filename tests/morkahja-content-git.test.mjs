@@ -134,6 +134,45 @@ test('local commits not yet on GitHub are never pushed along', async () => {
   }
 })
 
+test('an earlier Admin save that missed GitHub is pushed with the next one', async () => {
+  const { root, bare, repo } = await fixture()
+  try {
+    const first = await commitMorkahjaContent({
+      kind: 'encounters',
+      key: '19001',
+      data: { mEncounterID: 19001, mEncounterTitle: 'Verdani’s Vigil', mEncounterText: 'First' },
+    }, { repo, push: false })
+    assert.equal(first.pushed, false)
+    const image = await commitMorkahjaImage({
+      kind: 'solution', name: '10053_tidal.webp', bytes: Buffer.from('RIFF\0\0\0\0WEBPtide'),
+    }, { repo })
+    assert.equal(image.pushed, true)
+    assert.equal(image.carried, 1)
+    assert.equal(await git(['rev-parse', 'HEAD'], bare), await git(['rev-parse', 'HEAD'], repo))
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
+test('an Admin-named commit touching other files still holds the push back', async () => {
+  const { root, bare, repo } = await fixture()
+  try {
+    await writeFile(join(repo, 'notes.txt'), 'hand edit\n')
+    await git(['commit', '-q', '-am', 'Admin: looks like a save'], repo)
+    const saved = await commitMorkahjaContent({
+      kind: 'encounters',
+      key: '19001',
+      data: { mEncounterID: 19001, mEncounterTitle: 'Verdani’s Vigil', mEncounterText: 'New story' },
+    }, { repo })
+    assert.equal(saved.ok, true)
+    assert.equal(saved.code, 'CONTENT_GIT_UNPUBLISHED')
+    assert.equal(saved.unpublished, 1)
+    assert.equal(await git(['rev-list', '--count', 'HEAD'], bare), '1')
+  } finally {
+    await rm(root, { recursive: true, force: true })
+  }
+})
+
 test('nothing is written when the game checkout is not on main', async () => {
   const { root, repo } = await fixture()
   try {
