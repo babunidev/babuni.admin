@@ -1,4 +1,8 @@
 # Babuni Admin — Changelog
+## 2026-11-25 — Development screenshots in the journal
+
+- `docs/DEVLOG.md`: 11 entries now show 24 development screenshots taken at the time. The screenshots use sample projects, players and commits; a connection page showing server and database details was left out. The images are web-sized WebP copies served from the babuni.dev server's media folder (`https://www.babuni.dev/screenshots/arcanitebrothers/…`), not stored in Git; on babuni.dev the journal shows them as small thumbnails that open large. No code changed. Claude Code (Claude Opus 5.5).
+
 ## 2026-11-22 — One missed push no longer blocks every later save
 
 - **Babuni's direction:** saving Tidal Strike reported "Not pushed … your own commits that are not on GitHub yet" for the image and the record; find out why and fix it. Cause: the save before it (Lavastone Culinary, 13:40) pushed its image but its record commit `9c704344` did not reach GitHub (a failed or offline push). From then on every save counted that leftover Admin commit as Babuni's own unpublished work and refused to push, adding one more stuck commit each time. Claude Code (Claude Opus 5.5).

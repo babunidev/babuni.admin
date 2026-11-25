@@ -7,16 +7,24 @@ Saving Tidal Strike told me nothing reached GitHub because MorkahjaWebApp had "m
 
 The popup now arrived gently but vanished the instant I closed it, and the Close button gave no sign it had been pressed. Claude Code (Claude Opus 5.5) made the popup fade out the way it fades in, and the button press in under my click.
 
+![The save card fading out after Close](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/babuni-admin-save-progress-closing.webp)
+
 ## 2026-11-21 — Done, done, done
 
 Seeing the steps was good, but they popped. I wanted the popup to fade in, and the checks to arrive softly and in order, even when several finish at the same moment. Claude Code (Claude Opus 5.5) made the popup and its steps fade in and each check grow in with a soft green ring, one after another from the top.
 
+![Checks arriving one after another](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/babuni-admin-save-progress-checking-off.webp) ![A later moment of the same save](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/babuni-admin-save-progress-checking-off-3.webp)
+
 ## 2026-11-21 — Watching the save happen
 
 When I pressed Save I waited in front of nothing until the whole result popped up at once. I wanted to see the process: the card with every step right away, an hourglass on the step in progress, and each one turning green as it finishes, so it checks them off one after another and I close it when it's done. Claude Code (Claude Opus 5.5) made the local service report each step as it finishes and the popup tick them off live.
+
+![The save card with every step as soon as Save is pressed](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/babuni-admin-save-progress-started.webp) ![Halfway: the first steps checked off](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/babuni-admin-save-progress-halfway.webp) ![All done](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/babuni-admin-save-progress-done.webp)
 ## 2026-11-21 — Choosing is not saving
 
 Picking a new picture in the Content editor saved it everywhere at once, to the live game, my local game and GitHub, before I had even decided. I asked for it to wait for Save. Claude Code (Claude Opus 5.5) changed every editor so a chosen image only shows as a preview until I press Save, and then the image and the record go out together with one result popup.
+
+![A new picture chosen but not saved yet](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/image-chosen-not-yet-saved.webp)
 
 ## 2026-11-21 — One game, one place
 
@@ -34,6 +42,8 @@ Every time I started Babuni Admin, the window filled with `curl` connection fail
 
 I opened a solution in Morkahja's Content tab and found no way to edit it. Encounters had an Edit button, but solutions, expansions, frames and portraits didn't. Their editor was a form far down the page that I hadn't noticed. Claude Code (Claude Opus 5.5) gave every detail panel an Edit button and every tab an Add button, both opening the same side editor as the encounters. It also added the three solution fields the old form had left out.
 
+![A solution's details with the new Edit button](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/solution-detail-edit-button.webp) ![Editing a solution](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-21/solution-editor.webp)
+
 ## 2026-11-20 — babuni.dev wasn't forgotten
 
 The Project Manager said babuni.dev had waited longest, seven days, although I had worked on it all day. Claude Code (Claude Opus 5.5) found that babuni.dev writes its newest changelog entries one heading level deeper, under "Unreleased", and the reader skipped them. It now reads those too, so babuni.dev shows its real last day of work.
@@ -42,13 +52,19 @@ The Project Manager said babuni.dev had waited longest, seven days, although I h
 
 When I scrolled down the Project Manager list and clicked a project, its content opened at the top of the page, and I had to scroll all the way back up to read it. I asked for the content to open where I am and follow me as I scroll. Claude Code (Claude Opus 5.5) made the detail panel stay in view beside the list, and on the phone the page now jumps down to the project I tapped.
 
+![A project opened from far down the list stays in view](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-19/project-manager-scrolled.webp) ![The same on a phone](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-19/project-manager-scrolled-phone.webp)
+
 ## 2026-11-19 — Tabs on top, places on the left
 
 The Project Manager button at the bottom of the sidebar felt right, so I wanted every workspace reached the same way. Now the left side holds Project Manager, babuni.dev and Morkahja as buttons, so I can jump between them in one click, and the pages of a workspace (Overview, Moderation, Content, Settings) are tabs across the top, where the "Realm Console" title used to be. Claude Code (Claude Opus 5.5) made the change, kept Morkahja's connection badges and clock in the top bar, and moved the browser tests from the old dropdown to the new buttons.
 
+![The babuni.dev workspace with tabs on top and places on the left](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-19/workspace-tabs-babuni-dev.webp) ![Morkahja's Moderation tab with sample players, not live accounts](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-19/workspace-tabs-morkahja.webp) ![The workspace tabs on a phone](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-19/workspace-tabs-phone.webp)
+
 ## 2026-11-19 — One place for all my projects
 
 With more than forty projects on the website, I sometimes lose track of which one needs me. I wanted a place above the workspaces, reachable from the bottom of the sidebar, that lists every project on the website, shows the recent commits and the latest changelog entry of each, and lets me open the roadmap, devlog and other documents right there. I also wanted the project that has waited longest to stand out and ask for a revision. Claude Code (Claude Opus 5.5) built the Projects page. It reads the website's own project list and asks GitHub for every repository in one request. While building it, AI noticed that a documentation commit on 2026-11-18 had touched many repositories at once, which would have made almost every project look freshly worked on. So the waiting time comes from each project's latest dated changelog entry, and the last commit only counts when there is no changelog. On the first real read, WorkThatGodBod came up as the project asking for revision, last worked on 2026-10-26.
+
+![The Project Manager above the workspaces, with sample projects](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-19/projects-overview.webp) ![The Project Manager on a phone](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-19/projects-overview-phone.webp)
 
 ## 2026-11-19 — Knowing when the admin is gone
 
@@ -62,6 +78,8 @@ I ran the server check and pasted the result. Saving content was fine: the game 
 
 A save in Content gave me one short line at the bottom of the page, and I could never tell what had actually happened: whether the game had the change, whether it was on GitHub. I asked for a popup in the middle of the screen that tells me, as the person making the content, what was done, and that I can click away. I also wanted full control over the content: new encounters with their own pictures, replacing pictures, and the same for solutions and the rest. AI (Claude Code, Claude Opus 5.5) built the popup and made pictures upload through the same administrator connection. After each upload it downloads the picture from the public game address to prove players get it, then commits it to the game repository. It also opened up the expansion, frame and portrait editors. I decided against a backup copy on the server for every save. This is my own tool, we are early in development, and GitHub already keeps every version.
 
+![The save result for an encounter: live game and GitHub, sample data](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-16/save-result-popup-encounter.webp) ![A save where GitHub failed, shown step by step](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-16/save-result-popup-github-failed.webp) ![The save result for a new encounter image](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-16/save-result-popup-image-upload.webp) ![The save result at phone width](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-16/save-result-popup-phone-width.webp)
+
 ## 2026-11-14 — A save that reaches GitHub
 
 Saving an encounter updated the live game and stopped there. The older admin commits, titled `Admin: update encounter …`, used to land in the Morkahja project on this PC. Every content save needed to become a commit on GitHub as well. AI (Cursor, Grok 4.7) wired that onto the save that already reaches the live catalog. The commit uses a second checkout of `babunidev/Morkahja` that stays on main, because the working folder is on another branch with unfinished changes.
@@ -73,6 +91,8 @@ Moderation stopped working whenever I started the admin with a plain `npm run de
 ## 2026-11-12 — Seeing that it's working
 
 A repository check takes a minute or two and a publish several minutes, and the page barely changed while they ran. It was hard to tell a running check from a stuck one. I asked for a visible working state. AI added a thin gold light that sweeps along the top of the busy panel and a small turning ring beside the status text, in the admin's own colours, with button labels that say what is happening.
+
+![A running repository check with its working animation](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-12/babuni-dev-working-animation.webp)
 
 ## 2026-11-12 — A publish that wasn't running
 
@@ -97,6 +117,8 @@ The first Repositories page worked, but using it meant clicking Check on every s
 When I started the app, the panel said publishing was waiting, which confused me at first. AI traced it to another session that was halfway through adding new repositories to the website in the babuni.dev folder. Its unfinished document list would have been committed and pushed on its own by the new button, so AI changed the button to pause and explain instead whenever that list holds someone else's uncommitted changes.
 
 Once that work was committed, the panel showed my admin's documents and the newly connected eldgrim waiting. One click on **Publish everything** pulled them, pushed the snapshot and published the site; a few minutes later the panel said everything was live, with the previous release kept for rollback.
+
+![The babuni.dev workspace: changes waiting to be published, with one Publish everything button](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-10/screenshot-20261110-040056.webp) ![Changes from two connected repositories waiting](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-10/screenshot-20261110-051936.webp) ![Everything is live after one click](https://www.babuni.dev/screenshots/arcanitebrothers/2026-11-10/screenshot-20261110-052031.webp)
 
 ## 2026-11-10 — Bringing the other repositories along
 
