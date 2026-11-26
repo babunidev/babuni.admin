@@ -1,4 +1,8 @@
 # Babuni Admin — Development Journal
+## 2026-11-26 — Not on Fyrskar's ID
+
+When Morkahja's lands became their own expansions, Fyrskar Mountains got the ID 1010, and my "Add expansion" form always started at 1010, switched on and priced. One unchanged save would have turned Fyrskar on with made-up prices. Claude Code (Claude Opus 5.5) noticed it while checking the new catalog and made the form start switched off on the next free ID. **Verification:** 146/146 tests and the build; the form not opened in the browser.
+
 ## 2026-11-22 — One missed push, stuck forever
 
 Saving Tidal Strike told me nothing reached GitHub because MorkahjaWebApp had "my own commits" waiting. They weren't mine: one earlier save's push had failed, and from then on every save mistook that leftover Admin commit for my unpublished work and held back, piling up more. Claude Code (Claude Opus 5.5) taught the save to tell its own earlier commits from mine and push them along with the next save, while anything I committed by hand still stops the push. **Verification:** 146/146 tests, lint and build; not yet seen live.

@@ -1004,12 +1004,17 @@ function SolutionsPanel({
   )
 }
 
-const newExpansion = (): ExpansionData => ({
-  mExtensioActive: true,
+/**
+ * A new expansion starts switched off, on the first unused ID: the old fixed
+ * 1010 is now Fyrskar Mountains (Morkahja D-063), and saving under an existing
+ * ID would overwrite that region and could switch it on.
+ */
+const newExpansion = (existing: Record<string, unknown>): ExpansionData => ({
+  mExtensioActive: false,
   mExtensioCollectionImage: 'im_collection_expansion_new',
   mExtensioCost: 50,
   mExtensioHeaderImage: 'im_header_expansion_new',
-  mExtensioID: 1010,
+  mExtensioID: Math.max(1000, ...Object.keys(existing).map(Number).filter(Number.isInteger)) + 1,
   mExtensioName: 'New expansion',
   mExtensioReward: 20,
   mExtensioSummaryText: 'New content pack',
@@ -1101,7 +1106,7 @@ function ExpansionPanel({
         onAdd={() => {
           if (detailKey) onCloseDetail()
           save.reset()
-          openAdd(newExpansion())
+          openAdd(newExpansion(data))
         }}
       />
       <ContentImageGrid

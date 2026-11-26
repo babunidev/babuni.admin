@@ -1,4 +1,10 @@
 # Babuni Admin — Changelog
+## 2026-11-26 — A new expansion no longer starts on Fyrskar's ID
+
+- **Cause:** "Add expansion" opened a draft with the fixed ID 1010, switched on, at 50 gems. Morkahja's regional expansions (Morkahja D-063, same day) gave 1010 to Fyrskar Mountains as an inactive future region. Since a draft whose ID already exists is saved as an edit, saving a new expansion unchanged would have overwritten Fyrskar and switched it on with placeholder prices. Found by Claude Code (Claude Opus 5.5) while checking the Admin tool against the new catalog.
+- `src/features/morkahja/pages/ContentPage.tsx`: a new expansion now starts switched off, on the first unused ID (highest existing plus one, at least 1001).
+- Verification: unit suite 146/146 and `tsc -b` pass; the Add expansion form was not opened in the browser.
+
 ## 2026-11-25 — Development screenshots in the journal
 
 - `docs/DEVLOG.md`: 11 entries now show 24 development screenshots taken at the time. The screenshots use sample projects, players and commits; a connection page showing server and database details was left out. The images are web-sized WebP copies served from the babuni.dev server's media folder (`https://www.babuni.dev/screenshots/arcanitebrothers/…`), not stored in Git; on babuni.dev the journal shows them as small thumbnails that open large. No code changed. Claude Code (Claude Opus 5.5).
